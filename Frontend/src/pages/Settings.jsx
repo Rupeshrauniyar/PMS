@@ -46,7 +46,7 @@ const Settings = () => {
   ];
 
   const handleSignOut = async () => {
-    // await GoogleAuth.signOut();ZZ
+    // await GoogleAuth.signOut();
     await axios.post(`${import.meta.env.VITE_backendUrl}/api/auth/signout`, {
       token: localStorage.getItem("token"),
       fcmToken: localStorage.getItem("fcmToken"),
