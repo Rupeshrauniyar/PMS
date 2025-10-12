@@ -24,50 +24,51 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 const Index = () => {
   const { user } = useContext(AppContext);
-  // useEffect(() => {
-  //   if (localStorage.getItem("token")) {
-  //     const getFCMToken = () => {
-  //       return new Promise((resolve, reject) => {
-  //         const timeout = setTimeout(() => {
-  //           reject(new Error("FCM token timeout"));
-  //         }, 10000); // 10 second timeout
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      const getFCMToken = () => {
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error("FCM token timeout"));
+          }, 10000); // 10 second timeout
 
-  //         PushNotifications.addListener("registration", (tokenData) => {
-  //           clearTimeout(timeout);
-  //           resolve(tokenData.value);
-  //         });
+          PushNotifications.addListener("registration", (tokenData) => {
+            clearTimeout(timeout);
+            resolve(tokenData.value);
+          });
 
-  //         PushNotifications.addListener("registrationError", (error) => {
-  //           clearTimeout(timeout);
-  //           reject(error);
-  //         });
+          PushNotifications.addListener("registrationError", (error) => {
+            clearTimeout(timeout);
+            reject(error);
+          });
 
-  //         PushNotifications.register();
-  //       });
-  //     };
-  //     const tryIt = async () => {
-  //       try {
-  //         const token = await getFCMToken();
-  //         if (token === localStorage.getItem("fcmToken")) return;
-  //         console.log("FCM Token:", token);
-  //         // const token = "njdjndhsbbj"
-  //         localStorage.setItem("fcmToken", token);
-  //         await axios.post(
-  //           `${import.meta.env.VITE_backendUrl}/api/auth/update-fcm-token`,
-  //           {
-  //             fcmToken: token,
-  //             token: localStorage.getItem("token"),
-  //           }
-  //         );
-  //       } catch (err) {
-  //         console.error("Failed to get FCM token:", err.message);
-  //       }
-  //     };
-  //     tryIt();
-  //   } else {
-  //     console.log("No token available");
-  //   }
-  // }, [user]);
+          PushNotifications.register();
+        });
+      };
+      const tryIt = async () => {
+        try {
+          const token = await getFCMToken();
+          if (token === localStorage.getItem("fcmToken")) return;
+          console.log("FCM Token:", token);
+          // const token = "njdjndhsbbj"
+          localStorage.setItem("fcmToken", token);
+          await axios.post(
+            `${import.meta.env.VITE_backendUrl}/api/auth/update-fcm-token`,
+            {
+              fcmToken: token,
+              token: localStorage.getItem("token"),
+            }
+          );
+        } catch (err) {
+          console.error("Failed to get FCM token:", err.message);
+        }
+      };
+      tryIt();
+    } else {
+      console.log("No token available");
+    }
+  }, [user]);
+ 
   const location = useLocation();
   return (
     <div

@@ -23,26 +23,50 @@
     />
 
     <!-- Author -->
-    <meta name="author" content="GMYR Pvt Ltd" />
+    <meta
+      name="author"
+      content="GMYR Pvt Ltd"
+    />
 
     <!-- Open Graph for social sharing -->
-    <meta property="og:title" content="Property Management System (PMS)" />
+    <meta
+      property="og:title"
+      content="Property Management System (PMS)"
+    />
     <meta
       property="og:description"
       content="Manage, list, and rent properties easily with PMS. A smart property management solution."
     />
-    <meta property="og:image" content="/og-image.png" />
-    <meta property="og:url" content="https://pmsnepal.vercel.app" />
-    <meta property="og:type" content="website" />
+    <meta
+      property="og:image"
+      content="/og-image.png"
+    />
+    <meta
+      property="og:url"
+      content="https://pmsnepal.vercel.app"
+    />
+    <meta
+      property="og:type"
+      content="website"
+    />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Property Management System (PMS)" />
+    <meta
+      name="twitter:card"
+      content="summary_large_image"
+    />
+    <meta
+      name="twitter:title"
+      content="Property Management System (PMS)"
+    />
     <meta
       name="twitter:description"
       content="PMS helps you manage, list, and rent properties with ease."
     />
-    <meta name="twitter:image" content="/og-image.png" />
+    <meta
+      name="twitter:image"
+      content="/og-image.png"
+    />
 
     <!-- Icons -->
     <link
@@ -71,7 +95,10 @@
     />
 
     <!-- Theme Color (for mobile browsers) -->
-    <meta name="theme-color" content="#0f172a" />
+    <meta
+      name="theme-color"
+      content="#0f172a"
+    />
 
     <!-- Structured Data (JSON-LD for property business) -->
     <script type="application/ld+json">
@@ -89,27 +116,26 @@
         ]
       }
     </script>
-
   </head>
   <body>
     <div id="root"></div>
     <script>
-  (function() {
-    const appLink = 'pmsnepal://open';
-    const fallbackLink = 'https://pmsnepal.vercel.app';
+      (function () {
+        const appLink = "pmsnepal://open";
+        const fallbackLink = "https://pmsnepal.vercel.app";
 
-    // Try opening the app
-    const now = Date.now();
-    window.location.href = appLink;
+        // Try opening the app
+        const now = Date.now();
+        window.location.href = appLink;
 
-    // If app not installed, fallback after 1.5 seconds
-    setTimeout(() => {
-      if (Date.now() - now < 2000) {
-        window.location.href = fallbackLink;
-      }
-    }, 1500);
-  })();
-</script>
+        // If app not installed, fallback after 1.5 seconds
+        setTimeout(() => {
+          if (Date.now() - now < 2000) {
+            window.location.href = fallbackLink;
+          }
+        }, 1500);
+      })();
+    </script>
 
     <script
       type="module"
