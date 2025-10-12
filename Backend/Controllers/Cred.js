@@ -5,17 +5,18 @@ const nodemailer = require("nodemailer");
 const JWT_SECRET = process.env.JWT_SECRET;
 require("dotenv").config();
 const PasswordResetModel = require("../Models/PasswordResetModel");
-const {UserModel} = require("../Models/UserModel");
+const { UserModel } = require("../Models/UserModel");
 exports.sendPassResetMail = async (req, res) => {
   try {
     const Data = req.body;
-    // console.log(Data);
+    console.log(Data);
     if (!Data?.email?.length > 0) {
       res.status(403).json({ message: "Email is required" });
       return;
     }
     const user = await UserModel.findOne({ email: Data.email });
     if (!user) return res.status(403).json({ message: "Invalid credential" });
+    
     const transporter = nodemailer.createTransport({
       service: "gmail",
       host: "smtp.ethereal.email",
@@ -91,6 +92,8 @@ exports.verifyCreds = async (req, res) => {
           password: hashedPassword,
         }
       );
+      
+      
       res.status(200).json({ success: true });
     }
   } catch (err) {

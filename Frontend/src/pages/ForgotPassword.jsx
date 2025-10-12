@@ -108,7 +108,10 @@ const ForgotPassword = () => {
             <AlertBox
               message={success}
               type="success"
-              onClose={() => setSuccess(null)}
+              onClose={() => {
+                setSuccess(null);
+                navigate("/signin");
+              }}
             />
           </div>
         )}

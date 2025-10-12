@@ -7,10 +7,13 @@ const {
   checkAuth,
   editProfile,
   updateFCM,
+  signout,
 } = require("../Controllers/Auth");
 
 router.post("/signup", signup);
 router.post("/signin", signin);
+router.post("/signout", signout);
+
 router.post("/signinWithGoogle", signinWithGoogle);
 router.get("/checkAuth", checkAuth);
 router.post("/edit-profile", editProfile);

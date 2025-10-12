@@ -91,7 +91,30 @@ exports.signin = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+exports.signout = async (req, res) => {
+  try {
+    const { token, fcmToken } = req.body;
+    console.log(token, fcmToken);
+    const verify = jwt.verify(token, JWT_SECRET);
+    if (!verify || !verify.id)
+      return res.status(500).json({ message: "No id found", success: false });
+    if (fcmToken.length > 0) {
+      await UserModel.findOneAndUpdate(
+        { _id: verify.id },
+        {
+          $pull: { FCMtokens: fcmToken },
+        }
+      );
+    }
 
+    res.status(201).json({
+      success: true,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 exports.signinWithGoogle = async (req, res) => {
   try {
     const { email, uuid, username, pp } = req.body;
