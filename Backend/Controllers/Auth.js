@@ -249,30 +249,35 @@ exports.checkAuth = async (req, res) => {
   try {
     const token = req.headers.authorization.split(" ")[1];
     const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded || !decoded.id)
+      return res.status(401).json({
+        success: false,
+      });
     let findUser;
     if (decoded?.type === "google") {
       findUser = await GoogleUserModel.findOne({ _id: decoded.id }).select(
-        "-password"
+        "-password -bookedProperties"
       );
     } else {
       findUser = await UserModel.findOne({ _id: decoded.id }).select(
-        "-password"
+        "-password -bookedProperties -myProperties"
       );
     }
 
     if (findUser) {
       res.status(200).json({
-        message: "User authenticated successfully.",
+        success: true,
         token,
         user: findUser,
       });
     } else {
       res.status(401).json({
-        message: "User authentication failed",
+        success: false,
       });
     }
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.log(err);
+    res.status(500).json({ serverSuccess: false });
   }
 };
 

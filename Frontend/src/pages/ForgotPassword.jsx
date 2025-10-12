@@ -15,12 +15,14 @@ const ForgotPassword = () => {
     {
       name: "New Password",
       type: "password",
+      err: "new",
       placeholder: "********",
       icon: <Lock size={20} />,
     },
     {
       name: "Confirm Password",
       type: "password",
+      err: "con",
       placeholder: "********",
       icon: <Lock size={20} />,
     },
@@ -30,7 +32,21 @@ const ForgotPassword = () => {
 
   const validate = () => {
     const newErrors = {};
-
+    if (!fieldData["New Password"]) {
+      newErrors.new = "New password is required";
+    } else if (!fieldData["Confirm Password"]) {
+      newErrors.con = "Confirm password is required";
+    } else if (fieldData["New Password"] !== fieldData["Confirm Password"]) {
+      // newErrors.new = "Passwords donot match";
+      newErrors.con = "Passwords donot match";
+    }
+    if (
+      !fieldData["New Password"].length > 7 ||
+      !fieldData["Confirm Password"].length > 7
+    ) {
+      newErrors.new = "Passwords must be greater than 8 digits";
+      newErrors.con = "Passwords must be greater than 8 digits";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -51,8 +67,10 @@ const ForgotPassword = () => {
       );
       if (res.status === 200) {
         setLoading(false);
-        setSuccess("Password reset Successfully, Now you can Signin with new Credentials");
-        navigate("/signin");
+        setSuccess(
+          "Password reset Successfully, Now you can Signin with new Credentials"
+        );
+        // navigate("/signin");
       } else {
         setLoading(false);
       }
@@ -142,7 +160,7 @@ const ForgotPassword = () => {
                     }
                   }}
                   className={`w-full py-3 pl-12 pr-4 rounded-xl border ${
-                    errors[field.name] ? "border-red-500" : "border-gray-200"
+                    errors[field.err] ? "border-red-500" : "border-gray-200"
                   } bg-white/80 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-zinc-200 focus:outline-none transition-all`}
                   placeholder={field.placeholder}
                 />
@@ -159,6 +177,11 @@ const ForgotPassword = () => {
                     className="absolute z-20  top-1/2 right-4 -translate-y-1/2 mt-2 text-gray-400 "
                     size={20}
                   />
+                )}
+                {errors[field.err] && (
+                  <p className="text-red-500 text-xs ml-1 font-medium ">
+                    {errors[field.err]}
+                  </p>
                 )}
               </div>
             ))}

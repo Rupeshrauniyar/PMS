@@ -166,9 +166,9 @@ exports.getUserProperty = async (req, res) => {
 exports.bookProperty = async (req, res) => {
   try {
     const Data = req.body;
+    // console.log(Data);
     if (!Data || !Data.token || !Data.price || !Data.date) {
-      res.status(403).json({ message: "Something went wrong." });
-      return;
+      return res.status(403).json({ message: "Something went wrong." });
     }
     // console.log(Data);
     const decode = jwt.verify(Data.token, process.env.JWT_SECRET);
@@ -219,8 +219,7 @@ exports.bookProperty = async (req, res) => {
               date: Data.date,
             },
           },
-        },
-        { new: true }
+        }
       );
     }
     // console.log(prop);
@@ -230,10 +229,12 @@ exports.bookProperty = async (req, res) => {
       const payload = {
         notification: {
           title: "Booking Confirmed",
-          body: `Your property has been Booked in rs.${Data.price}`,
+          body: `Your property has been Booked for रु.${Data.price}`,
+          image: "https://pmsnepal.vercel.app/web-app-manifest-512x512.png",
+          // sound: "default",
         },
       };
-      console.log(tokens);
+      // console.log(tokens);
       // Send to all tokens
       await admin
         .messaging()
@@ -247,7 +248,7 @@ exports.bookProperty = async (req, res) => {
       message: "Booked successfully",
     });
   } catch (err) {
-    console.error(err);
+    console.log(err);
     res.status(403).json({ message: "Something went wrong." });
   }
 };

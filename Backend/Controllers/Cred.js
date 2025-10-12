@@ -33,7 +33,7 @@ exports.sendPassResetMail = async (req, res) => {
       { expiresIn: "15m" } // set expiration time
     );
 
-    const resetURL = `${process.env.FRONTEND2}/forgot-password/${token}`;
+    const resetURL = `${process.env.FRONTEND1}/forgot-password/${token}`;
 
     const mailOptions = {
       from: "PMS",
@@ -68,7 +68,7 @@ exports.sendPassResetMail = async (req, res) => {
 
     // Send email
     await transporter.sendMail(mailOptions);
-    res.json({ message: "Token sent to yur Email, Token will be expired in 15MINS." });
+    res.json({ message: "Token sent to yur Email, EXPIRATION TIME:15MINS." });
   } catch (err) {
     console.log(err);
     res.status(403).json({ message: "Something went wrong." });

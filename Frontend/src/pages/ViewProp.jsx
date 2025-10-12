@@ -79,7 +79,7 @@ const ViewProp = () => {
       setSubmitting(true);
       const Data = {
         propId: params.id,
-        [isBar ? "barPrice" : "price"]: isBar ? barPrice : props?.price,
+        price: isBar ? barPrice : props?.price,
         userId: user?._id,
         date,
         token: localStorage.getItem("token"),
