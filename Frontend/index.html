@@ -89,9 +89,28 @@
         ]
       }
     </script>
+
   </head>
   <body>
     <div id="root"></div>
+    <script>
+  (function() {
+    const appLink = 'pmsnepal://open';
+    const fallbackLink = 'https://pmsnepal.vercel.app';
+
+    // Try opening the app
+    const now = Date.now();
+    window.location.href = appLink;
+
+    // If app not installed, fallback after 1.5 seconds
+    setTimeout(() => {
+      if (Date.now() - now < 2000) {
+        window.location.href = fallbackLink;
+      }
+    }, 1500);
+  })();
+</script>
+
     <script
       type="module"
       src="/src/main.jsx"

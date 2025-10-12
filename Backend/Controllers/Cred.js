@@ -1,26 +1,17 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
-const nodemailer = require("nodemailer");
 const JWT_SECRET = process.env.JWT_SECRET;
 require("dotenv").config();
 // const PasswordResetModel = require("../Models/PasswordResetModel");
 const { UserModel } = require("../Models/UserModel");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  host: "smtp.ethereal.email",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.PASSWORD_USER,
-  },
-});
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 exports.sendPassResetMail = async (req, res) => {
   try {
     const Data = req.body;
-    console.log(Data);
+    // console.log(Data);
     if (!Data?.email?.length > 0) {
       res.status(403).json({ message: "Email is required" });
       return;
@@ -36,8 +27,8 @@ exports.sendPassResetMail = async (req, res) => {
 
     const resetURL = `${process.env.FRONTEND2}/forgot-password/${token}`;
 
-    const mailOptions = {
-      from: "PMS",
+    const mail = {
+      from: "PMS <propertymanagementsystem.pms@gmail.com>",
       to: Data.email,
       subject: "Password Reset Request",
       html: `
@@ -66,10 +57,12 @@ exports.sendPassResetMail = async (req, res) => {
     </div >
     `,
     };
-
-    // Send email
-    await transporter.sendMail(mailOptions);
-    res.json({ message: "Token sent to yur Email, EXPIRATION TIME:15MINS." });
+    sgMail.send(mail).then(() => {
+      console.log("Email sent");
+      res
+        .status(200)
+        .json({ message: "Email sent. Token Expiration Time: 15 mins" });
+    });
   } catch (err) {
     console.log(err);
     res.status(403).json({ message: "Something went wrong." });
@@ -101,6 +94,36 @@ exports.verifyCreds = async (req, res) => {
       return res
         .status(403)
         .json({ message: "Token expired, Please send reset email again" });
+    }
+    res.status(403).json({ message: "Something went wrong." });
+  }
+};
+
+exports.verifyToken = async (req, res) => {
+  try {
+    const Data = req.body;
+    // console.log(Data);
+    if (!Data) {
+      return res.status(403).json({ message: "Invalid Credentials" });
+    }
+    const verify = jwt.verify(Data.token, JWT_SECRET);
+    if (verify) {
+      res.status(200).json({
+        success: true,
+      });
+    } else {
+      res.status(403).json({
+        success: false,
+       
+      });
+    }
+  } catch (err) {
+    console.log(err.message);
+    if (err.message === "jwt expired") {
+      return res.status(403).json({
+        
+        success: false,
+      });
     }
     res.status(403).json({ message: "Something went wrong." });
   }

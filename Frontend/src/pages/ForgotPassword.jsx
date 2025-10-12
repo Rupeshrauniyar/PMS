@@ -2,16 +2,15 @@ import React, { useContext, useEffect, useState } from "react";
 import { Loader2, Eye, EyeClosed, Lock } from "lucide-react";
 import AlertBox from "../components/AlertBox";
 import axios from "axios";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 const ForgotPassword = () => {
   const [errors, setErrors] = useState([]);
   const [backendError, setBackendError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const navigate = useNavigate();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [fields] = useState([
+  const fields = [
     {
       name: "New Password",
       type: "password",
@@ -26,9 +25,13 @@ const ForgotPassword = () => {
       placeholder: "********",
       icon: <Lock size={20} />,
     },
-  ]);
-  const params = useParams();
+  ];
+  const [pageLoad, setPageLoad] = useState(true);
+  const [verify, setVerify] = useState(false);
+
   const [fieldData, setFieldData] = useState([]);
+  const navigate = useNavigate();
+  const params = useParams();
 
   const validate = () => {
     const newErrors = {};
@@ -44,8 +47,8 @@ const ForgotPassword = () => {
       !fieldData["New Password"].length > 7 ||
       !fieldData["Confirm Password"].length > 7
     ) {
-      newErrors.new = "Passwords must be greater than 8 digits";
-      newErrors.con = "Passwords must be greater than 8 digits";
+      newErrors.new = "Passwords must be greater than 7 digits";
+      newErrors.con = "Passwords must be greater than 7 digits";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -79,16 +82,58 @@ const ForgotPassword = () => {
       setBackendError(err.response.data.message || "Something went wrong");
     }
   };
-  //   if (user?.uuid)
-  //     return (
-  //       <div className="flex">
-  //         <h2 className="text-3xl font-bold ">Your password cannot be changed</h2>
-  //       </div>
-  //     );
+
+  useEffect(() => {
+    const verify = async () => {
+      try {
+        const res = await axios.post(
+          `${import.meta.env.VITE_backendUrl}/api/cred/verify-token`,
+          {
+            token: params?.token,
+          }
+        );
+        // console.log(res.data.success === true);
+        if (res.data.success) {
+          setPageLoad(false);
+          setVerify(true);
+          return
+        }
+        setPageLoad(false);
+        setVerify(false);
+      } catch (err) {
+        setPageLoad(false);
+        setVerify(false);
+      }
+    };
+    verify();
+  }, [params]);
+
+  if (pageLoad)
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  if (!verify)
+    return (
+      <div className="max-w-2xl mx-auto h-screen flex items-center justify-center">
+        <span className="w-full flex flex-col items-center justify-center gap-1">
+          <h3 className="text-xl font-semibold">
+            Your Token has been Expired.
+          </h3>
+          <Link
+            to="/pass-reset-mail"
+            className="w-full border  text-white border-zinc-200 rounded-xl px-6 py-3 bg-black hover:bg-zinc-800 active:scale-[0.98] transition-colors flex items-center justify-center gap-3"
+          >
+            Resend Email
+          </Link>
+        </span>
+      </div>
+    );
   return (
     <div className="w-full h-screen pt-10">
       {/* Main Content */}
-      {console.log(params)}
+      {/* {console.log(params)} */}
       <div className="max-w-2xl mx-auto flex flex-col items-center justify-center h-full">
         {/* Alert Messages */}
         {backendError && (
@@ -115,7 +160,7 @@ const ForgotPassword = () => {
             />
           </div>
         )}
-        {console.log(fieldData["New Password"])}
+        
 
         {/* Edit Form */}
         <div className="w-full py-6 border-b border-zinc-200">
