@@ -12,7 +12,7 @@ import React, { useContext } from "react";
 import { AppContext } from "../contexts/AppContextx";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-// import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 
 const Settings = () => {
   const { user, setUser } = useContext(AppContext);
@@ -46,7 +46,7 @@ const Settings = () => {
   ];
 
   const handleSignOut = async () => {
-    // await GoogleAuth.signOut();
+    await GoogleAuth.signOut();
     await axios.post(`${import.meta.env.VITE_backendUrl}/api/auth/signout`, {
       token: localStorage.getItem("token"),
       fcmToken: localStorage.getItem("fcmToken"),

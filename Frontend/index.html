@@ -122,18 +122,32 @@
     <script>
       (function () {
         const appLink = "pmsnepal://open";
-        const fallbackLink = "https://pmsnepal.vercel.app";
+        const fallbackLink = "pmsnepal.vercel.app"; // or your deployed site
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        // Try opening the app
-        const now = Date.now();
-        window.location.href = appLink;
+        if (!isMobile) return;
 
-        // If app not installed, fallback after 1.5 seconds
-        setTimeout(() => {
-          if (Date.now() - now < 2000) {
-            window.location.href = fallbackLink;
-          }
-        }, 1500);
+        // check if we already attempted to open the app
+        const urlParams = new URLSearchParams(window.location.search);
+        const triedApp = urlParams.get("triedApp");
+
+        if (!triedApp) {
+          const start = Date.now();
+          // Try to open the app
+          window.location = appLink;
+
+          // Fallback if app not installed
+          setTimeout(() => {
+            const elapsed = Date.now() - start;
+            if (elapsed < 2000) {
+              // add ?triedApp=1 to URL so it won't try again
+              const separator = fallbackLink.includes("?") ? "&" : "?";
+              window.location = fallbackLink + separator + "triedApp=1";
+            }
+          }, 1500);
+        } else {
+          console.log("App open attempt already made, staying on website.");
+        }
       })();
     </script>
 
