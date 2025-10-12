@@ -4,8 +4,19 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const JWT_SECRET = process.env.JWT_SECRET;
 require("dotenv").config();
-const PasswordResetModel = require("../Models/PasswordResetModel");
+// const PasswordResetModel = require("../Models/PasswordResetModel");
 const { UserModel } = require("../Models/UserModel");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  host: "smtp.ethereal.email",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.PASSWORD_USER,
+  },
+});
 exports.sendPassResetMail = async (req, res) => {
   try {
     const Data = req.body;
@@ -16,17 +27,6 @@ exports.sendPassResetMail = async (req, res) => {
     }
     const user = await UserModel.findOne({ email: Data.email });
     if (!user) return res.status(403).json({ message: "Invalid credential" });
-    
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.PASSWORD_USER,
-      },
-    });
 
     const token = jwt.sign(
       { email: Data.email }, // payload should be an object
@@ -34,7 +34,7 @@ exports.sendPassResetMail = async (req, res) => {
       { expiresIn: "15m" } // set expiration time
     );
 
-    const resetURL = `${process.env.FRONTEND1}/forgot-password/${token}`;
+    const resetURL = `${process.env.FRONTEND2}/forgot-password/${token}`;
 
     const mailOptions = {
       from: "PMS",
@@ -92,8 +92,7 @@ exports.verifyCreds = async (req, res) => {
           password: hashedPassword,
         }
       );
-      
-      
+
       res.status(200).json({ success: true });
     }
   } catch (err) {
