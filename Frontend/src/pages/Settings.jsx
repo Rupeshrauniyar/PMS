@@ -7,6 +7,7 @@ import {
   TableProperties,
   User,
   ChevronRight,
+  Lock,
 } from "lucide-react";
 import React, { useContext } from "react";
 import { AppContext } from "../contexts/AppContextx";
@@ -31,6 +32,14 @@ const Settings = () => {
       action: () => navigate("/edit-profile"),
       section: "account",
     },
+    !user?.uuid
+      ? {
+          icon: Lock,
+          label: "Change Password",
+          action: () => navigate("/change-password"),
+          section: "account",
+        }
+      : {},
     {
       icon: Sun,
       label: "Themes",
@@ -39,7 +48,13 @@ const Settings = () => {
     },
     {
       icon: Book,
-      label: "Terms and Conditions",
+      label: "Terms & Conditions",
+      action: () => navigate("#"),
+      section: "legal",
+    },
+    {
+      icon: Book,
+      label: "Privacy & Policy",
       action: () => navigate("#"),
       section: "legal",
     },

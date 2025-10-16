@@ -2,14 +2,13 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const JWT_SECRET = process.env.JWT_SECRET;
 require("dotenv").config();
-// const PasswordResetModel = require("../Models/PasswordResetModel");
+const PasswordResetModel = require("../Models/PasswordResetModel");
 const { UserModel } = require("../Models/UserModel");
-
 const sgMail = require("@sendgrid/mail");
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 exports.sendPassResetMail = async (req, res) => {
   try {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     const Data = req.body;
     // console.log(Data);
     if (!Data?.email?.length > 0) {
@@ -18,12 +17,17 @@ exports.sendPassResetMail = async (req, res) => {
     }
     const user = await UserModel.findOne({ email: Data.email });
     if (!user) return res.status(403).json({ message: "Invalid credential" });
-
     const token = jwt.sign(
       { email: Data.email }, // payload should be an object
       JWT_SECRET, // your secret key
       { expiresIn: "15m" } // set expiration time
     );
+    const reset = await PasswordResetModel.create({
+      user:user._id,
+      UserModel: user.uuid? "googleUser":"",
+    });
+    if (!reset)
+      return res.status(403).json({ message: "Something went wrong." });
 
     const resetURL = `${process.env.FRONTEND2}/forgot-password/${token}`;
 
@@ -57,15 +61,15 @@ exports.sendPassResetMail = async (req, res) => {
     </div >
     `,
     };
-    sgMail.send(mail).then(() => {
+    await sgMail.send(mail).then(() => {
       console.log("Email sent");
-      res
+      return res
         .status(200)
         .json({ message: "Email sent. Token Expiration Time: 15 mins" });
     });
   } catch (err) {
-    console.log(err);
-    res.status(403).json({ message: "Something went wrong." });
+    console.log(err.response.body.errors);
+    return res.status(403).json({ message: "Something went wrong." });
   }
 };
 
@@ -114,14 +118,12 @@ exports.verifyToken = async (req, res) => {
     } else {
       res.status(403).json({
         success: false,
-       
       });
     }
   } catch (err) {
     console.log(err.message);
     if (err.message === "jwt expired") {
       return res.status(403).json({
-        
         success: false,
       });
     }

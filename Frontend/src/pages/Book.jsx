@@ -17,7 +17,7 @@ import Properties from "../components/Properties";
 import axios from "axios";
 import AlertBox from "../components/AlertBox";
 import EditProfile from "./EditProfile";
-const ViewProp = () => {
+const Book = () => {
   const navigate = useNavigate();
   const { user } = useContext(AppContext);
   const [props, setPropData] = useState({});
@@ -132,9 +132,9 @@ const ViewProp = () => {
       {/* {console.log(user.phone)} */}
       {editOpen ? (
         <>
-          <div className="xl:w-[60%] xl:ml-[30%] ml-0 w-[96%] h-[650px] top-0 left-2 flex flex-col fixed z-30 items-center justify-center overflow-hidden xl:mt-15 mt-10">
-            <div className=" w-full h-[80%] bg-white  px-2 rounded-3xl overflow-hidden">
-              <div className="flex items-center justify-between mt-6 mb-4">
+          <div className="xl:w-[60%] xl:ml-[30%] ml-0 w-[96%] h-[650px] top-0 left-2 flex flex-col fixed z-30 items-center justify-center overflow-hidden xl:mt-15 ">
+            <div className=" w-full h-[80%] bg-white  px-2 rounded-3xl overflow-y-auto mt-12 flex flex-col ">
+              <div className="flex items-center justify-between mt-6  ">
                 <span className="text-xl font-semibold">Edit Profile</span>
                 <X
                   size={26}
@@ -142,8 +142,10 @@ const ViewProp = () => {
                   className=" cursor-pointer"
                 />
               </div>
-
-              <EditProfile className="" />
+              <div className="mb-100">
+                <EditProfile />
+              </div>
+              <div className="pb-20"></div>
             </div>
           </div>
 
@@ -382,4 +384,4 @@ const ViewProp = () => {
   );
 };
 
-export default ViewProp;
+export default Book;

@@ -1,18 +1,20 @@
 const mongoose = require("mongoose");
-const PassResetSchema = mongoose.Schema({
-  token: {
-    type: String,
-    required: true,
+const UserModel = require("../Models/UserModel");
+const PassResetSchema = mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      refPath: UserModel,
+    },
+    userModel: {
+      type: String,
+      required: true,
+      enum: ["users", "googleUsers"], // the collections it can reference
+    },
   },
-  otp: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-  },
-});
+  { timestamps: true }
+);
 
 const PasswordResetModel = mongoose.model(
   "passwordResetModel",

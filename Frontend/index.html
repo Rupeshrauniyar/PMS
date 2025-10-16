@@ -25,7 +25,7 @@
     <!-- Author -->
     <meta
       name="author"
-      content="GMYR Pvt Ltd"
+      content="Rupesh Rauniyar"
     />
 
     <!-- Open Graph for social sharing -->
@@ -119,34 +119,42 @@
   </head>
   <body>
     <div id="root"></div>
+
     <script>
       (function () {
         const appLink = "pmsnepal://open";
-        const fallbackLink = "pmsnepal.vercel.app"; // or your deployed site
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const fallbackLink = window.location.pathname; // or your deployed site
+        try {
+          
+          const isMobile = /Android|iPhone|iPad|iPod/i.test(
+            navigator.userAgent
+          );
 
-        if (!isMobile) return;
+          if (!isMobile) return;
 
-        // check if we already attempted to open the app
-        const urlParams = new URLSearchParams(window.location.search);
-        const triedApp = urlParams.get("triedApp");
+          // check if we already attempted to open the app
+          const urlParams = new URLSearchParams(window.location.search);
+          const triedApp = urlParams.get("triedApp");
 
-        if (!triedApp) {
-          const start = Date.now();
-          // Try to open the app
-          window.location = appLink;
+          if (!triedApp) {
+            const start = Date.now();
+            // Try to open the app
+            window.location = appLink;
 
-          // Fallback if app not installed
-          setTimeout(() => {
-            const elapsed = Date.now() - start;
-            if (elapsed < 2000) {
-              // add ?triedApp=1 to URL so it won't try again
-              const separator = fallbackLink.includes("?") ? "&" : "?";
-              window.location = fallbackLink + separator + "triedApp=1";
-            }
-          }, 1500);
-        } else {
-          console.log("App open attempt already made, staying on website.");
+            // Fallback if app not installed
+            setTimeout(() => {
+              const elapsed = Date.now() - start;
+              if (elapsed < 2000) {
+                // add ?triedApp=1 to URL so it won't try again
+                const separator = fallbackLink.includes("?") ? "&" : "?";
+                window.location = fallbackLink + separator + "triedApp=1";
+              }
+            }, 1000);
+          } 
+        } catch (err) {
+          // console.log(err);
+          const separator = fallbackLink.includes("?") ? "&" : "?";
+          window.location = fallbackLink + separator + "triedApp=1";
         }
       })();
     </script>

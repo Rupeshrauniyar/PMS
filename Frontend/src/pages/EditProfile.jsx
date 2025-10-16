@@ -1,14 +1,6 @@
 import React, { useContext, useState } from "react";
 import { AppContext } from "../contexts/AppContextx";
-import {
- 
-  Loader2,
-  Mail,
-  Phone,
-  User,
- 
-  ChevronDown,
-} from "lucide-react";
+import { Loader2, Mail, Phone, User, ChevronDown } from "lucide-react";
 import AlertBox from "../components/AlertBox";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
@@ -44,7 +36,7 @@ const EditProfile = () => {
   const navigate = useNavigate();
 
   const { user, setUser } = useContext(AppContext);
- const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Extract country code and phone number
@@ -188,305 +180,222 @@ const EditProfile = () => {
   );
 
   return (
-    <div className="w-full min-h-screen pt-10">
-      {/* Header Bar
-      <div className="border-b border-zinc-200 sticky top-0 z-50 bg-white">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center justify-between h-14 ">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-zinc-700 hover:text-zinc-900 transition-colors"
-            >
-              <ArrowLeft size={20} />
-              <span className="font-medium text-sm">Back</span>
-            </button>
-            <h1 className="text-base font-semibold text-zinc-900">
-              Edit Profile
-            </h1>
-            <div className="w-16"></div>
-          </div>
+    <div className="max-w-3xl mx-auto bg-red-500 h-full flex items-center justify-center flex-col">
+     
+
+      {backendError && (
+        <div className="px-4 pt-4">
+          <AlertBox
+            message={backendError}
+            type="error"
+            onClose={() => setBackendError(null)}
+          />
         </div>
-      </div> */}
+      )}
+      {success && (
+        <div className="px-4 pt-4">
+          <AlertBox
+            message={success}
+            type="success"
+            onClose={() => setSuccess(null)}
+          />
+        </div>
+      )}
 
-      {/* Main Content */}
-      <div className="max-w-3xl mx-auto">
-        {/* Alert Messages */}
-        {backendError && (
-          <div className="px-4 pt-4">
-            <AlertBox
-              message={backendError}
-              type="error"
-              onClose={() => setBackendError(null)}
-            />
-          </div>
-        )}
-        {success && (
-          <div className="px-4 pt-4">
-            <AlertBox
-              message={success}
-              type="success"
-              onClose={() => setSuccess(null)}
-            />
-          </div>
-        )}
 
-        {/* Profile Picture Section
-        <div className=" py-6 border-b border-zinc-200">
-          <h2 className="text-sm font-semibold text-zinc-900 mb-4">
-            Profile Photo
-          </h2>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              {user?.pp ? (
-                <img
-                  src={user.pp}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
+      {/* Edit Form */}
+      <div className="w-full py-6 border-b border-zinc-200">
+        <h2 className="text-3xl font-bold ">Account Information</h2>
+
+        <form
+          onSubmit={(e) => handleSubmit(e)}
+          className="space-y-4"
+        >
+          {fields.map((field, i) => (
+            <div key={i}>
+              <label
+                htmlFor={field.name}
+                className="block text-sm font-medium text-zinc-900 mb-1.5"
+              >
+                {field.label}
+              </label>
+
+              {field.name === "phone" ? (
+                // Phone Input with Country Code
+                <div className="relative">
+                  <div className="flex gap-2">
+                    {/* Country Code Selector */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className={`h-11 px-3 flex items-center gap-2 border rounded-lg transition-all ${
+                          errors.phone
+                            ? "border-red-500"
+                            : "border-zinc-300 hover:border-zinc-400"
+                        } bg-white hover:bg-zinc-50`}
+                      >
+                        <span className="text-xl">
+                          {selectedCountryData?.flag}
+                        </span>
+                        <span className="text-sm font-medium text-zinc-900">
+                          {selectedCountry}
+                        </span>
+                        <ChevronDown
+                          size={16}
+                          className="text-zinc-500"
+                        />
+                      </button>
+
+                      {/* Dropdown */}
+                      {isDropdownOpen && (
+                        <>
+                          {/* Backdrop */}
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setIsDropdownOpen(false)}
+                          />
+
+                          {/* Dropdown Menu */}
+                          <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-zinc-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                            {countryCodes.map((country) => (
+                              <button
+                                key={country.code}
+                                type="button"
+                                onClick={() =>
+                                  handleCountryChange(country.code)
+                                }
+                                className={`w-full px-3 py-2.5 flex items-center gap-3 hover:bg-zinc-50 transition-colors ${
+                                  selectedCountry === country.code
+                                    ? "bg-blue-50"
+                                    : ""
+                                }`}
+                              >
+                                <span className="text-xl">{country.flag}</span>
+                                <div className="flex-1 text-left">
+                                  <div className="text-sm font-medium text-zinc-900">
+                                    {country.country}
+                                  </div>
+                                  <div className="text-xs text-zinc-500">
+                                    {country.code}
+                                  </div>
+                                </div>
+                                {selectedCountry === country.code && (
+                                  <div className="w-2 h-2 rounded-full bg-blue-600" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Phone Number Input */}
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={handlePhoneNumberChange}
+                      placeholder="9812345678"
+                      className={`flex-1 h-11 px-3 text-sm border rounded-lg ${
+                        errors.phone
+                          ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                          : "border-zinc-300 focus:border-black focus:ring-1 focus:ring-black"
+                      } bg-white text-zinc-900 focus:outline-none transition-all`}
+                    />
+                  </div>
+                </div>
               ) : (
-                <div className="w-20 h-20 rounded-full bg-zinc-100 flex items-center justify-center">
-                  <User
-                    size={32}
-                    className="text-zinc-400"
+                // Regular Input Fields
+                <div className="relative">
+                  <input
+                    id={field.name}
+                    name={field.name}
+                    disabled={field.name === "email"}
+                    type={field.type}
+                    value={fieldData[field.name]}
+                    autoComplete={field.type}
+                    onChange={(e) => {
+                      if (e.target.value.trim()) {
+                        setFieldData((prev) => ({
+                          ...prev,
+                          [field.name]: e.target.value,
+                        }));
+                        setErrors((prev) => ({
+                          ...prev,
+                          [field.name]: "",
+                        }));
+                      } else {
+                        setFieldData((prev) => ({
+                          ...prev,
+                          [field.name]: "",
+                        }));
+                      }
+                    }}
+                    className={`w-full h-11 px-3 text-sm border rounded-lg ${
+                      errors[field.name]
+                        ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                        : "border-zinc-300 focus:border-black focus:ring-1 focus:ring-black"
+                    } ${
+                      field.name === "email"
+                        ? "bg-zinc-50 text-zinc-500 cursor-not-allowed"
+                        : "bg-white text-zinc-900"
+                    } focus:outline-none transition-all`}
+                    placeholder={field.placeholder}
                   />
                 </div>
               )}
-              <button className="absolute bottom-0 right-0 bg-white border border-zinc-300 p-1.5 rounded-full hover:bg-zinc-50 transition-colors shadow-sm">
-                <Camera
-                  size={14}
-                  className="text-zinc-700"
-                />
-              </button>
-            </div>
-            <div>
-              <button className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
-                Change Photo
-              </button>
-              <p className="text-xs text-zinc-500 mt-1">
-                JPG, GIF or PNG. Max size of 2MB
-              </p>
-            </div>
-          </div>
-        </div> */}
 
-        {/* Edit Form */}
-        <div className=" py-6 border-b border-zinc-200">
-          <h2 className="text-3xl font-bold ">
-            Account Information
-          </h2>
-
-          <form
-            onSubmit={(e) => handleSubmit(e)}
-            className="space-y-4"
-          >
-            {fields.map((field, i) => (
-              <div key={i}>
-                <label
-                  htmlFor={field.name}
-                  className="block text-sm font-medium text-zinc-900 mb-1.5"
-                >
-                  {field.label}
-                </label>
-
-                {field.name === "phone" ? (
-                  // Phone Input with Country Code
-                  <div className="relative">
-                    <div className="flex gap-2">
-                      {/* Country Code Selector */}
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                          className={`h-11 px-3 flex items-center gap-2 border rounded-lg transition-all ${
-                            errors.phone
-                              ? "border-red-500"
-                              : "border-zinc-300 hover:border-zinc-400"
-                          } bg-white hover:bg-zinc-50`}
-                        >
-                          <span className="text-xl">
-                            {selectedCountryData?.flag}
-                          </span>
-                          <span className="text-sm font-medium text-zinc-900">
-                            {selectedCountry}
-                          </span>
-                          <ChevronDown
-                            size={16}
-                            className="text-zinc-500"
-                          />
-                        </button>
-
-                        {/* Dropdown */}
-                        {isDropdownOpen && (
-                          <>
-                            {/* Backdrop */}
-                            <div
-                              className="fixed inset-0 z-10"
-                              onClick={() => setIsDropdownOpen(false)}
-                            />
-
-                            {/* Dropdown Menu */}
-                            <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-zinc-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
-                              {countryCodes.map((country) => (
-                                <button
-                                  key={country.code}
-                                  type="button"
-                                  onClick={() =>
-                                    handleCountryChange(country.code)
-                                  }
-                                  className={`w-full px-3 py-2.5 flex items-center gap-3 hover:bg-zinc-50 transition-colors ${
-                                    selectedCountry === country.code
-                                      ? "bg-blue-50"
-                                      : ""
-                                  }`}
-                                >
-                                  <span className="text-xl">
-                                    {country.flag}
-                                  </span>
-                                  <div className="flex-1 text-left">
-                                    <div className="text-sm font-medium text-zinc-900">
-                                      {country.country}
-                                    </div>
-                                    <div className="text-xs text-zinc-500">
-                                      {country.code}
-                                    </div>
-                                  </div>
-                                  {selectedCountry === country.code && (
-                                    <div className="w-2 h-2 rounded-full bg-blue-600" />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Phone Number Input */}
-                      <input
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={handlePhoneNumberChange}
-                        placeholder="9812345678"
-                        className={`flex-1 h-11 px-3 text-sm border rounded-lg ${
-                          errors.phone
-                            ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                            : "border-zinc-300 focus:border-black focus:ring-1 focus:ring-black"
-                        } bg-white text-zinc-900 focus:outline-none transition-all`}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  // Regular Input Fields
-                  <div className="relative">
-                    <input
-                      id={field.name}
-                      name={field.name}
-                      disabled={field.name === "email"}
-                      type={field.type}
-                      value={fieldData[field.name]}
-                      autoComplete={field.type}
-                      onChange={(e) => {
-                        if (e.target.value.trim()) {
-                          setFieldData((prev) => ({
-                            ...prev,
-                            [field.name]: e.target.value,
-                          }));
-                          setErrors((prev) => ({
-                            ...prev,
-                            [field.name]: "",
-                          }));
-                        } else {
-                          setFieldData((prev) => ({
-                            ...prev,
-                            [field.name]: "",
-                          }));
-                        }
-                      }}
-                      className={`w-full h-11 px-3 text-sm border rounded-lg ${
-                        errors[field.name]
-                          ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                          : "border-zinc-300 focus:border-black focus:ring-1 focus:ring-black"
-                      } ${
-                        field.name === "email"
-                          ? "bg-zinc-50 text-zinc-500 cursor-not-allowed"
-                          : "bg-white text-zinc-900"
-                      } focus:outline-none transition-all`}
-                      placeholder={field.placeholder}
-                    />
-                  </div>
-                )}
-
-                {errors[field.name] && (
-                  <p className="text-xs text-red-600 mt-1.5">
-                    {errors[field.name]}
-                  </p>
-                )}
-                {field.name === "email" && (
-                  <p className="text-xs text-zinc-500 mt-1.5">
-                    Email cannot be changed
-                  </p>
-                )}
-              </div>
-            ))}
-          </form>
-        </div>
-
-        {/* Action Buttons */}
-        <div className=" py-4 bg-white border-t border-zinc-200 sticky bottom-0 md:static">
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="flex-1 h-10 px-4 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              disabled={loading || !hasChanges}
-              type="submit"
-              onClick={handleSubmit}
-              className={`flex-1 cursor-pointer h-10 px-4 text-sm font-medium text-white rounded-lg transition-all flex items-center justify-center gap-2 ${
-                loading || !hasChanges
-                  ? "bg-zinc-400 cursor-not-allowed"
-                  : "bg-black hover:bg-zinc-800 active:scale-[0.98]"
-              }`}
-            >
-              {loading ? (
-                <>
-                  <Loader2
-                    size={16}
-                    className="animate-spin"
-                  />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
+              {errors[field.name] && (
+                <p className="text-xs text-red-600 mt-1.5">
+                  {errors[field.name]}
+                </p>
               )}
-            </button>
-          </div>
-        </div>
+              {field.name === "email" && (
+                <p className="text-xs text-zinc-500 mt-1.5">
+                  Email cannot be changed
+                </p>
+              )}
+            </div>
+          ))}
+        </form>
+      </div>
 
-        {/* Additional Settings Section */}
-        <div className=" py-6 border-t border-zinc-200">
-          <h2 className="text-sm font-semibold text-zinc-900 mb-3">
-            Account Settings
-          </h2>
-          <div className="space-y-1">
-            <Link to={ "/change-password"} className="w-full flex items-center justify-between py-3 text-sm text-zinc-700 hover:bg-zinc-50 rounded-lg px-3 -mx-3 transition-colors">
-              <span>Change Password</span>
-              <span className="text-zinc-400">→</span>
-            </Link>
-            <button className="w-full flex items-center justify-between py-3 text-sm text-zinc-700 hover:bg-zinc-50 rounded-lg px-3 -mx-3 transition-colors">
-              <span>Privacy Settings</span>
-              <span className="text-zinc-400">→</span>
-            </button>
-            <button className="w-full flex items-center justify-between py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg px-3 -mx-3 transition-colors">
-              <span>Delete Account</span>
-              <span className="text-red-400">→</span>
-            </button>
-          </div>
+      {/* Action Buttons */}
+      <div className="w-full py-4 bg-white border-t border-zinc-200 sticky bottom-0 md:static">
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex-1 h-10 px-4 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={loading || !hasChanges}
+            type="submit"
+            onClick={handleSubmit}
+            className={`flex-1 cursor-pointer h-10 px-4 text-sm font-medium text-white rounded-lg transition-all flex items-center justify-center gap-2 ${
+              loading || !hasChanges
+                ? "bg-zinc-400 cursor-not-allowed"
+                : "bg-black hover:bg-zinc-800 active:scale-[0.98]"
+            }`}
+          >
+            {loading ? (
+              <>
+                <Loader2
+                  size={16}
+                  className="animate-spin"
+                />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
+          </button>
         </div>
       </div>
+
+      {/* Additional Settings Section */}
     </div>
   );
 };

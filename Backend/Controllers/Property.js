@@ -3,21 +3,18 @@ const PropertyModel = require("../Models/PropertyModel");
 const jwt = require("jsonwebtoken");
 const { UserModel, GoogleUserModel } = require("../Models/UserModel");
 require("dotenv").config();
-
 const admin = require("firebase-admin");
-
 var serviceAccount = require("../serviceAccountKey.json");
-
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
-cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET,
-});
 exports.addProperty = async (req, res) => {
   try {
+    cloudinary.config({
+      cloud_name: process.env.CLOUD_NAME,
+      api_key: process.env.API_KEY,
+      api_secret: process.env.API_SECRET,
+    });
     const {
       title,
       sellingType,
@@ -250,5 +247,61 @@ exports.bookProperty = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(403).json({ message: "Something went wrong." });
+  }
+};
+exports.searchProperty = async (req, res) => {
+  try {
+    const { value } = req.body;
+    if (!value)
+      return res.status(403).json({ message: "Something went wrong." });
+
+    const query = value.toLowerCase().trim();
+    let filters = {};
+    let orFilters = [];
+
+    // 1️⃣ Detect price number
+    const priceMatch = query.match(/\d+/);
+    if (priceMatch) {
+      const price = parseInt(priceMatch[0]);
+      if (
+        query.includes("under") ||
+        query.includes("below") ||
+        query.includes("less than")
+      ) {
+        filters.price = { $lte: price };
+      } else if (
+        query.includes("above") ||
+        query.includes("over") ||
+        query.includes("more than")
+      ) {
+        filters.price = { $gte: price };
+      } else {
+        // If only number mentioned, show around that number (±20%)
+        filters.price = { $gte: price * 0.8, $lte: price * 1.2 };
+      }
+    }
+
+    // 2️⃣ Text search on multiple fields
+    orFilters.push({ title: { $regex: query, $options: "i" } });
+    orFilters.push({ description: { $regex: query, $options: "i" } });
+    orFilters.push({ propertyType: { $regex: query, $options: "i" } });
+    orFilters.push({ location: { $regex: query, $options: "i" } });
+
+    // 3️⃣ Build final query
+    let finalQuery = {};
+    if (Object.keys(filters).length > 0) {
+      finalQuery = {
+        $and: [{ ...filters }, { $or: orFilters }],
+      };
+    } else {
+      finalQuery = { $or: orFilters };
+    }
+
+    // 4️⃣ Execute query
+    const props = await PropertyModel.find(finalQuery);
+    res.status(200).json({ props });
+  } catch (err) {
+    console.log(err);
+    res.status(403).json({ message: "Something went wrong.", error: err });
   }
 };

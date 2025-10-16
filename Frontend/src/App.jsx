@@ -13,7 +13,7 @@ const App = () => {
       <AppProvider>
         <Router>
           <Navbar />
-          <div className="p-2 z-5">
+          <div className="p-2 z-5 w-full h-full">
             <Index />
           </div>
         </Router>

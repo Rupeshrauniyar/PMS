@@ -1,8 +1,8 @@
 import { Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-const SearchBar = () => {
+const SearchBar = (props) => {
   const [show, setShow] = useState(true);
   const [scrollY, setScrollY] = useState(0);
   useEffect(() => {
@@ -19,6 +19,7 @@ const SearchBar = () => {
   }, [scrollY]);
   return (
     <>
+      {/* {console.log(props)} */}
       <div
         className={`fixed left-0 right-0 ${
           show ? "top-20" : "top-2"
@@ -32,13 +33,16 @@ const SearchBar = () => {
             />
             <input
               type="text"
+              value={props.value}
+              readOnly={props.dis ? true : false}
               className="w-full py-3 pl-12 pr-4 rounded-full bg-transparent focus:outline-none text-zinc-800 placeholder-zinc-400"
               placeholder="Search for houses, rooms, plots…"
             />
           </div>
         </div>
       </div>
-      <div className="pb-28"></div>
+
+      {/* <div className="pb-28"></div> */}
     </>
   );
 };

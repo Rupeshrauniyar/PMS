@@ -4,6 +4,7 @@ import { DoorOpen, LandPlot, Home as HomeIcon, Building2 } from "lucide-react";
 import Properties from "../components/Properties";
 import axios from "axios";
 import SearchBar from "../components/SearchBar";
+import { Link } from "react-router-dom";
 const Home = () => {
   const [activeTab, setActiveTab] = useState("Room");
   const tabs = [
@@ -37,15 +38,17 @@ const Home = () => {
     getProperty();
   }, [activeTab]);
   return (
-    <div className="w-full min-h-screen font-sans pb-12 ">
+    <div className="w-full min-h-screen font-sans pb-18 pt-28 ">
       {/* Hero Section */}
-      <SearchBar />
+      <Link to="/search">
+        <SearchBar dis={true} />
+      </Link>
       <div className="pt-4"></div>
       <div className="container   ">
         <SwiperComp />
       </div>
       <div className="pb-4"></div>
-      
+
       {/* Modern Tab Navigation */}
       <div className="container  flex items-center justify-center ">
         <div className="relative flex justify-center items-center w-4xl p-2 bg-white/70 backdrop-blur-xl border border-zinc-200/60 rounded-full shadow-lg overflow-hidden">

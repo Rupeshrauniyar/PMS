@@ -64,12 +64,13 @@ const EditProfile = () => {
   };
   if (user?.uuid)
     return (
-      <div className="flex">
-        <h2 className="text-3xl font-bold ">Your password cannot be changed</h2>
+      <div className="flex flex-col items-center justify-center w-full h-screen">
+        <h2 className="text-xl font-bold ">Your password cannot be changed</h2>
+        <p className="text-center">Since you are signed in with Google account, you can't change your password :(</p>
       </div>
     );
   return (
-    <div className="w-full h-screen pt-10">
+    <div className="w-full h-screen pt-20">
       {/* Main Content */}
       <div className="max-w-2xl mx-auto flex flex-col items-center justify-center h-full">
         {/* Alert Messages */}

@@ -19,7 +19,7 @@ const Navbar = () => {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [scrollY]);
+  });
 
   const location = useLocation();
 
@@ -117,9 +117,7 @@ const Navbar = () => {
       </div>
       {/* Mobile bottombar*/}
       <div
-        className={`block xl:hidden fixed bottom-0 left-0 right-0 z-5 transition-transform duration-300 ${
-          show ? "translate-y-0" : "translate-y-full"
-        }`}
+        className={`block xl:hidden fixed bottom-0 left-0 right-0 z-5 transition-transform duration-300 `}
       >
         {/* {console.log(user.displayName)} */}
         <div className="max-w-6xl ">

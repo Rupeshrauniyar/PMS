@@ -11,14 +11,14 @@ const Home = lazy(() => import("./pages/Home"));
 const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const PassResetMail = lazy(() => import("./pages/PassResetMail"));
-
+const Search = lazy(() => import("./pages/Search"));
 const EditProfile = lazy(() => import("./pages/EditProfile"));
 const Signin = lazy(() => import("./pages/Signin"));
 const Signup = lazy(() => import("./pages/Signup"));
 const AddProperty = lazy(() => import("./pages/AddProperty"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
-const ViewProp = lazy(() => import("./pages/ViewProp"));
+const Book = lazy(() => import("./pages/Book"));
 const AuthUser = lazy(() => import("./middlewares/AuthUser"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -68,7 +68,7 @@ const Index = () => {
   //     console.log("No token available");
   //   }
   // }, [user]);
- 
+
   const location = useLocation();
   return (
     <div
@@ -76,7 +76,7 @@ const Index = () => {
         location.pathname === "/signin" || location.pathname === "/signup"
           ? "w-full"
           : "xl:w-[80%] xl:ml-[20%] ml-0"
-      } h-full text-black`}
+      } min-h-screen text-black`}
     >
       <Suspense>
         <Routes>
@@ -103,6 +103,10 @@ const Index = () => {
             element={<Home />}
           />
           <Route
+            path="/search"
+            element={<Search />}
+          />
+          <Route
             path="/forgot-password/:token"
             element={<ForgotPassword />}
           />
@@ -112,7 +116,7 @@ const Index = () => {
           />
           <Route
             path="/view/:id"
-            element={<ViewProp />}
+            element={<Book />}
           />
           <Route
             path="/settings"
