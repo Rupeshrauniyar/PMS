@@ -288,9 +288,12 @@ exports.checkAuth = async (req, res) => {
     }
 
     if (findUser) {
+      const newToken = jwt.sign({ id: findUser._id }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
       res.status(200).json({
         success: true,
-        token,
+        token: newToken,
         user: findUser,
       });
     } else {

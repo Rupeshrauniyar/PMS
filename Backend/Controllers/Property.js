@@ -103,13 +103,13 @@ exports.addProperty = async (req, res) => {
 
           res.status(200).json({ success: true, property });
         } else {
-          res.status(501).json({ error: "Something went wrong." });
+          res.status(500).json({ error: "Something went wrong." });
         }
       }
     }
   } catch (err) {
     console.log(err);
-    res.status(501).json({ error: "Something went wrong." });
+    res.status(500).json({ error: "Something went wrong." });
   }
 };
 exports.getProperty = async (req, res) => {
@@ -117,25 +117,29 @@ exports.getProperty = async (req, res) => {
     const Data = req.body;
     // console.log(Data);
     if (Data?.type) {
-      const Properties = await PropertyModel.find({ propertyType: Data.type });
-      res.status(200).json(Properties);
-    } else if (Data?._id) {
-      const Property = await PropertyModel.findOne({ _id: Data._id }).populate(
-        "owner"
-      );
-      res.status(200).json({ Property });
+      const Properties = await PropertyModel.find({
+        propertyType: Data.type,
+      }).select("-owner -bookers -ownerModel");
+      if (Properties?.length > 0) {
+        res.status(200).json({ Properties, success: true });
+      } else {
+        res.status(200).json({
+          message: "No posts available yet",
+          Properties: [],
+        });
+      }
     } else {
-      res.status(501).json({ error: "Something went wrong." });
+      res.status(500).json({ error: "Something went wrong." });
     }
   } catch (err) {
-    res.status(501).json({ error: "Something went wrong." });
+    res.status(500).json({ error: "Something went wrong." });
   }
 };
 exports.getUserProperty = async (req, res) => {
   try {
     const Data = req.body;
     if (!Data) {
-      res.status(501).json({ error: "Something went wrong." });
+      res.status(500).json({ error: "Something went wrong." });
     }
     let prop;
     const decoded = jwt.verify(Data.token, process.env.JWT_SECRET);
@@ -143,21 +147,24 @@ exports.getUserProperty = async (req, res) => {
     if (decoded.type === "google") {
       prop = await GoogleUserModel.findOne({ _id: decoded.id })
         .populate("myProperties")
-        .select("-_id -email -username -password -phone");
+        .select("-bookers");
     } else {
       prop = await UserModel.findOne({ _id: decoded.id })
         .populate("myProperties")
-        .select("-_id -email -username -password -phone");
+        .select("-_id -email -username -password -phone -bookers");
     }
     // console.log(prop);
+
     if (prop) {
+      console.log(prop.myProperties);
+      // prop.myProperties.bookers = prop.myProperties.bookers.length;
       res.status(200).json({ prop: prop.myProperties });
     } else {
       res.status(200).json({ prop: prop.myProperties });
     }
   } catch (err) {
     console.error(err);
-    res.status(501).json({ error: "Something went wrong." });
+    res.status(500).json({ error: "Something went wrong." });
   }
 };
 exports.bookProperty = async (req, res) => {

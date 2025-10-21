@@ -8,6 +8,7 @@ const compression = require("compression");
 const cors = require("cors");
 const connectDB = require("./DB/db");
 const port = process.env.PORT || 3000;
+const axios = require("axios");
 require("dotenv").config();
 // Middlewares
 app.use(helmet());
@@ -32,6 +33,17 @@ const propertyRoutes = require("./Routes/Property");
 const emailRoutes = require("./Routes/Cred");
 // DB Connection
 connectDB();
+// Server Inactive
+const makeActive = async () => {
+  try {
+    await axios.get(`${process.env.BACKEND}`).then((resp) => {
+      console.log("Reloaded",resp.data);
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+setInterval(makeActive, 300000);
 // Routes
 app.get("/", async (req, res) => {
   res.send(
