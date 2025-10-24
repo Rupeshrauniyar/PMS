@@ -1,5 +1,6 @@
 const cloudinary = require("cloudinary").v2;
 const PropertyModel = require("../Models/PropertyModel");
+// const BookingModel = require("../Models/BookingModel");
 const jwt = require("jsonwebtoken");
 const { UserModel, GoogleUserModel } = require("../Models/UserModel");
 require("dotenv").config();
@@ -101,7 +102,7 @@ exports.addProperty = async (req, res) => {
             );
           }
 
-          res.status(200).json({ success: true, property });
+          res.status(200).json({ success: true, property: property._id });
         } else {
           res.status(500).json({ error: "Something went wrong." });
         }
@@ -128,8 +129,20 @@ exports.getProperty = async (req, res) => {
           Properties: [],
         });
       }
+    } else if (Data._id) {
+      const Property = await PropertyModel.findOne({
+        _id: Data._id,
+      }).select("-owner  -ownerModel");
+      if (Property) {
+        res.status(200).json({ Property, success: true });
+      } else {
+        res.status(200).json({
+          message: "No properties available yet",
+          Property: [],
+        });
+      }
     } else {
-      res.status(500).json({ error: "Something went wrong." });
+      res.status(404).json({ error: "No data found" });
     }
   } catch (err) {
     res.status(500).json({ error: "Something went wrong." });
@@ -156,7 +169,7 @@ exports.getUserProperty = async (req, res) => {
     // console.log(prop);
 
     if (prop) {
-      console.log(prop.myProperties);
+      // console.log(prop.myProperties);
       // prop.myProperties.bookers = prop.myProperties.bookers.length;
       res.status(200).json({ prop: prop.myProperties });
     } else {
@@ -234,7 +247,7 @@ exports.bookProperty = async (req, res) => {
         notification: {
           title: "Booking Confirmed",
           body: `Your property has been Booked for रु.${Data.price}`,
-          image: "https://pmsnepal.vercel.app/web-app-manifest-512x512.png",
+          // image: "https://pmsnepal.vercel.app/web-app-manifest-512x512.png",
           // sound: "default",
         },
       };

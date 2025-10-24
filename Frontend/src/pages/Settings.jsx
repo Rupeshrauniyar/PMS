@@ -69,7 +69,7 @@ const Settings = () => {
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/");
+    navigate("/signup");
   };
 
   return (

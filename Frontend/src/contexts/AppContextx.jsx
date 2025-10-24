@@ -37,7 +37,7 @@ export const AppProvider = ({ children }) => {
     } catch (err) {
       setLoading(false);
       setUser(null);
-      if (err?.response?.data) {
+      if (err.response?.data?.success === false) {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
       }

@@ -180,7 +180,7 @@ const EditProfile = () => {
   );
 
   return (
-    <div className="max-w-3xl mx-auto bg-red-500 h-full flex items-center justify-center flex-col">
+    <div className="max-w-3xl mx-auto   flex items-center justify-center flex-col">
      
 
       {backendError && (

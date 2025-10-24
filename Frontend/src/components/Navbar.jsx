@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { Home, HousePlus, Search, Settings, User2 } from "lucide-react";
+import { Home, HousePlus, Plus, Search, Settings, User2 } from "lucide-react";
 import { AppContext } from "../contexts/AppContextx";
 
 const Navbar = () => {
@@ -37,7 +37,7 @@ const Navbar = () => {
     {
       path: "/add-property",
       name: "Add property",
-      icon: HousePlus,
+      icon: Plus,
     },
     {
       path: "/profile",
@@ -51,7 +51,7 @@ const Navbar = () => {
     <>
       {/* Top Nav */}
       <div
-        className={`w-full fixed top-0  right-0 z-100 transition-transform duration-300 ${
+        className={`w-full fixed top-0  right-0 z-90 transition-transform duration-300 ${
           show ? "translate-y-0" : "-translate-y-full"
         }`}
       >
@@ -126,6 +126,7 @@ const Navbar = () => {
             {navLinks.map((navLink, index) => (
               <NavLink
                 key={index}
+                state={{ from: location.pathname}}
                 to={navLink.path}
                 className={({ isActive }) => `
                 flex items-center justify-center px-5 py-4  rounded-xl transition-all duration-200

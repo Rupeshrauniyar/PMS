@@ -35,16 +35,24 @@ const AlertBox = ({ message, type, onClose }) => {
   if (!message) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+    <>
+      <div className="fixed inset-0  w-full h-full z-50  bg-black/80"></div>
       <motion.div
-        initial={{ top: "1000px", opacity: 0 }}
-        animate={{ top:"410px", opacity: 1 }}
-        className={`relative w-full h-100 py-6 px-3 shadow-2xl rounded-t-3xl  bg-white flex flex-col `}
+        initial={{ bottom: "-100px", opacity: 0 }}
+        animate={{ bottom: "0px", opacity: 1, pathLength: 0.1 }}
+        transition={{
+          duration: 0.3,
+          type: "tween",
+          ease: ["easeIn", "easeOut"],
+        }}
+        className={`fixed z-50 bottom-0 left-0 w-full h-30  py-6 px-3 shadow-2xl rounded-t-3xl  bg-white flex flex-col `}
         role="alert"
       >
         <div className="flex items-center">
           {getIcon()}
-          <span className={`block sm:inline font-semibold  ml-2 text-sm ${getColors()}`}>
+          <span
+            className={`block sm:inline font-semibold  ml-2 text-sm ${getColors()}`}
+          >
             {message}
           </span>
         </div>
@@ -57,7 +65,7 @@ const AlertBox = ({ message, type, onClose }) => {
           </button>
         )}
       </motion.div>
-    </div>
+    </>
   );
 };
 

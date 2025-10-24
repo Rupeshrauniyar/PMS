@@ -33,7 +33,7 @@ const SwiperComp = ({ title, images = [] }) => {
       : defaultImages;
 
   return (
-    <div className="relative w-full  overflow-hidden shadow-xl rounded-3xl">
+    <div className="relative w-full h-full overflow-hidden shadow-xl ">
       <Swiper
         autoplay={
           images.length > 0
@@ -53,26 +53,25 @@ const SwiperComp = ({ title, images = [] }) => {
         loop={imagesToDisplay.length > 1 ? true : false}
         pagination={{
           clickable: true,
+          className:"bg-black",
           bulletClass:
-            "swiper-pagination-bullet bg-white/60 rounded-full transition-all duration-300 ease-in-out",
+            "swiper-pagination-bullet bg-black rounded-full transition-all duration-300 ease-in-out",
           bulletActiveClass:
             "swiper-pagination-bullet-active bg-white w-6 rounded-full",
         }}
-        thumbs={{ swiper: thumbsSwiper }}
-        modules={[Autoplay, FreeMode, Thumbs, Pagination, EffectFade]}
-        className="mySwiper2"
+        // thumbs={{ swiper: thumbsSwiper }}
+        modules={[Autoplay, Pagination, EffectFade]}
+        className="mySwiper2 flex flex-col items-center justify-center"
       >
         {imagesToDisplay.map((item, index) => (
           <SwiperSlide key={index}>
             <div
-              className={`relative w-full h-[220px] sm:h-[300px] ${
-                images.length > 0 ? "xl:h-[280px]" : "xl:h-[390px]"
-              } group flex flex-col items-center`}
+         className="flex items-center justify-center w-full h-full"
             >
               <img
                 src={item.src}
                 alt={item.alt}
-                className="xl:w-[50%] w-full h-full object-cover  transform  transition-transform duration-700 ease-in-out"
+                className=" w-full h-[280px] object-cover  transform  transition-transform duration-700 ease-in-out"
               />
               {/* Blurred Background */}
               <div
@@ -80,10 +79,10 @@ const SwiperComp = ({ title, images = [] }) => {
                 style={{ backgroundImage: `url(${item.src})` }}
               ></div>
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+              {/* <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div> */}
               {/* Caption (Optional) */}
 
-              <div className="absolute bottom-5 left-4 text-white text-lg font-semibold drop-shadow-lg">
+              <div className="absolute bottom-2 left-4 text-white text-lg font-semibold drop-shadow-lg">
                 {title}
               </div>
             </div>

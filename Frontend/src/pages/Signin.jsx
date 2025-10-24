@@ -1,6 +1,6 @@
 import { Eye, EyeClosed, Loader2, Lock, Mail } from "lucide-react";
 import React, { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AppContext } from "../contexts/AppContextx";
 import axios from "axios";
 
@@ -15,7 +15,7 @@ import { auth } from "../contexts/Firebase";
 //   grantOfflineAccess: true,
 // });
 const Signin = () => {
-  const { setUser,  } = useContext(AppContext);
+  const { setUser } = useContext(AppContext);
   const [showPass, setShowPass] = useState(false);
   const [fields, setFields] = useState([
     {
@@ -31,6 +31,8 @@ const Signin = () => {
       icon: <Lock size={20} />,
     },
   ]);
+  const location = useLocation();
+  const from = location.state.from || "/";
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [fieldData, setFieldData] = useState([]);
@@ -79,11 +81,11 @@ const Signin = () => {
           .then((res) => {
             // console.log(res);
             setGoogleLoading(false);
-            
+
             setUser(res.data.user);
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.user));
-            navigate("/");
+            navigate(from);
           })
           .catch((err) => {
             setGoogleLoading(false);
@@ -122,7 +124,6 @@ const Signin = () => {
   //       .then((res) => {
   //         setGoogleLoading(false);
 
-          
   //         setUser(res.data.user);
   //         localStorage.setItem("token", res.data.token);
   //         localStorage.setItem("user", JSON.stringify(res.data.user));
@@ -156,11 +157,11 @@ const Signin = () => {
         // console.log(res);
         if (res.status === 201) {
           setLoading(false);
-          
+
           setUser(res.data.user);
           localStorage.setItem("user", JSON.stringify(res.data.user));
           localStorage.setItem("token", res.data.token);
-          navigate("/");
+          navigate(from);
         } else {
           setLoading(false);
           setBackendError(response?.data?.message || "Sign-in failed.");
@@ -179,6 +180,7 @@ const Signin = () => {
         <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold text-zinc-900">
+              {/* {console.log(from)} */}
               Welcome back
             </h1>
             <p className="text-sm text-zinc-500 mt-1">Sign in to continue</p>
@@ -363,12 +365,14 @@ const Signin = () => {
 
           <div className="text-center text-sm text-zinc-600">
             <span>Create an account? </span>
-            <Link
-              to="/signup"
+            <button
+              onClick={() => {
+                navigate("/signup", { state: { from } });
+              }}
               className="text-zinc-900 font-medium hover:underline"
             >
               Signup
-            </Link>
+            </button>
           </div>
         </div>
       </div>

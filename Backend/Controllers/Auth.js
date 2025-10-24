@@ -4,7 +4,14 @@ const { UserModel, GoogleUserModel } = require("../Models/UserModel");
 // const crypto = require("crypto");
 // const nodemailer = require("nodemailer");
 const JWT_SECRET = process.env.JWT_SECRET;
+function sanitizeUser(user) {
+  if (!user) return null;
 
+  const { password, FCMtokens, ...safeUser } = user.toObject
+    ? user.toObject()
+    : user;
+  return safeUser;
+}
 // SIGNUP
 exports.signup = async (req, res) => {
   try {
@@ -41,11 +48,7 @@ exports.signup = async (req, res) => {
     res.status(201).json({
       message: "User registered successfully.",
       token,
-      user: {
-        email: newUser.email,
-        username: newUser.username,
-        _id: newUser._id,
-      },
+      user: sanitizeUser(newUser),
     });
   } catch (err) {
     console.log(err);
@@ -80,11 +83,7 @@ exports.signin = async (req, res) => {
     res.status(201).json({
       message: "Signed in successfully.",
       token,
-      user: {
-        email: user.email,
-        username: user.username,
-        _id: user._id,
-      },
+      user: sanitizeUser(user),
     });
   } catch (err) {
     console.log(err);
@@ -98,7 +97,7 @@ exports.signout = async (req, res) => {
     const verify = jwt.verify(token, JWT_SECRET);
     if (!verify || !verify.id)
       return res.status(500).json({ message: "No id found", success: false });
-    if (fcmToken.length > 0) {
+    if (fcmToken?.length > 0) {
       await UserModel.findOneAndUpdate(
         { _id: verify.id },
         {
@@ -119,7 +118,9 @@ exports.signinWithGoogle = async (req, res) => {
   try {
     const { email, uuid, username, pp } = req.body;
     // console.log(FCMtoken, device);
-    const existingUser = await GoogleUserModel.findOne({ uuid });
+    const existingUser = await GoogleUserModel.findOne({ uuid }).select(
+      "-FCMtokens"
+    );
     if (existingUser) {
       const existingUserToken = jwt.sign(
         { id: existingUser._id, type: "google" },
@@ -135,14 +136,13 @@ exports.signinWithGoogle = async (req, res) => {
         user: existingUser,
       });
     } else {
-      const newUser = new GoogleUserModel({
+      const newUser = await GoogleUserModel.create({
         email,
         uuid,
         username,
         pp,
+        FCMtokens: [],
       });
-
-      await newUser.save();
       const newUserToken = jwt.sign(
         { id: newUser._id, type: "google" },
         JWT_SECRET,
@@ -213,7 +213,7 @@ exports.editProfile = async (req, res) => {
     }
     const verify = jwt.verify(Data.token, process.env.JWT_SECRET);
 
-    console.log(Data, verify);
+    // console.log(Data, verify);
     if (Data.currentPassword && verify.type !== "google") {
       const user = await UserModel.findOne({ _id: verify.id });
       if (user) {
@@ -245,7 +245,7 @@ exports.editProfile = async (req, res) => {
           phone: Data.phone,
         },
         { new: true }
-      ).select("-password");
+      ).select("-FCMtokens");
     } else {
       updateUser = await UserModel.findOneAndUpdate(
         { _id: Data._id },
@@ -254,7 +254,7 @@ exports.editProfile = async (req, res) => {
           phone: Data.phone,
         },
         { new: true }
-      ).select("-password");
+      ).select("-password -FCMtokens");
     }
     // console.log(updateUser);
     if (updateUser) {
@@ -279,18 +279,22 @@ exports.checkAuth = async (req, res) => {
     let findUser;
     if (decoded?.type === "google") {
       findUser = await GoogleUserModel.findOne({ _id: decoded.id }).select(
-        "-password -bookedProperties"
+        "-password   -FCMtokens "
       );
     } else {
       findUser = await UserModel.findOne({ _id: decoded.id }).select(
-        "-password -bookedProperties -myProperties"
+        "-password -FCMtokens "
       );
     }
 
     if (findUser) {
-      const newToken = jwt.sign({ id: findUser._id }, JWT_SECRET, {
-        expiresIn: "7d",
-      });
+      const newToken = jwt.sign(
+        { id: findUser._id, type: decoded.type },
+        JWT_SECRET,
+        {
+          expiresIn: "7d",
+        }
+      );
       res.status(200).json({
         success: true,
         token: newToken,

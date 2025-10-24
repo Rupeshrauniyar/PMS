@@ -17,15 +17,16 @@ exports.sendPassResetMail = async (req, res) => {
     }
     const user = await UserModel.findOne({ email: Data.email });
     if (!user) return res.status(403).json({ message: "Invalid credential" });
+
+    const reset = await PasswordResetModel.create({
+      user: user._id,
+      userModel: user.uuid ? "googleUser" : "users",
+    });
     const token = jwt.sign(
-      { email: Data.email }, // payload should be an object
+      { email: Data.email, _id: reset._id }, // payload should be an object
       JWT_SECRET, // your secret key
       { expiresIn: "15m" } // set expiration time
     );
-    const reset = await PasswordResetModel.create({
-      user:user._id,
-      UserModel: user.uuid? "googleUser":"",
-    });
     if (!reset)
       return res.status(403).json({ message: "Something went wrong." });
 
@@ -68,6 +69,7 @@ exports.sendPassResetMail = async (req, res) => {
         .json({ message: "Email sent. Token Expiration Time: 15 mins" });
     });
   } catch (err) {
+    console.log(err);
     console.log(err.response.body.errors);
     return res.status(403).json({ message: "Something went wrong." });
   }
@@ -112,6 +114,8 @@ exports.verifyToken = async (req, res) => {
     }
     const verify = jwt.verify(Data.token, JWT_SECRET);
     if (verify) {
+      const check = await PasswordResetModel.findOne({ _id: verify._id });
+      if (!check) return res.status(403).json({ message: "Invalid token" });
       res.status(200).json({
         success: true,
       });

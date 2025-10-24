@@ -43,8 +43,8 @@ const Profile = () => {
         <div className="absolute inset-0 bg-black/10"></div>
       </div> */}
 
-      {/* Main Content Container */}
-      <div className="container mx-auto  pb-8">
+      {/* Main Content  */}
+      <div className=" mx-auto  pb-8">
         {/* Profile Card */}
         <div className="   mb-6">
           {/* Profile Header */}
@@ -183,7 +183,7 @@ const Profile = () => {
           </div>
         </div>
 
-        <div className="w-full  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+        <div className="w-full  grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3 pb-12">
           {myProp.length > 0 ? (
             myProp.map((item, index) => (
               <Properties

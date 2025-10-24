@@ -9,7 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import React, { useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { AppContext } from "../contexts/AppContextx";
 import axios from "axios";
@@ -33,6 +33,8 @@ const Signup = () => {
   const [errors, setErrors] = useState({});
   const [showPass, setShowPass] = useState(false);
   const [backendError, setBackendError] = useState(null);
+  const location = useLocation();
+  const from = location?.state?.from || "/";
 
   const handleGoogleAuth = async () => {
     const provider = new GoogleAuthProvider();
@@ -57,7 +59,7 @@ const Signup = () => {
             setUser(res.data.user);
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.user));
-            navigate("/");
+            navigate(from);
           })
           .catch((err) => {
             setGoogleLoading(false);
@@ -200,7 +202,7 @@ const Signup = () => {
           setUser(res.data.user);
           localStorage.setItem("user", JSON.stringify(res.data.user));
           localStorage.setItem("token", res.data.token);
-          navigate("/");
+          navigate(from);
         } else {
           setLoading(false);
         }
@@ -215,6 +217,8 @@ const Signup = () => {
     <>
       <div className="w-full min-h-screen flex items-center justify-center xl:bg-gradient-to-br from-zinc-50 to-zinc-100 xl:px-4 px:2">
         <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
+          {console.log(from)}
+
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold text-zinc-900">
               Welcome back
@@ -386,12 +390,14 @@ const Signup = () => {
 
           <div className="text-center text-sm text-zinc-600">
             <span>Already have an account? </span>
-            <Link
-              to="/signin"
+            <button
+              onClick={() => {
+                navigate("/signin", { state: { from } });
+              }}
               className="text-zinc-900 font-medium hover:underline"
             >
               Signin
-            </Link>
+            </button>
           </div>
         </div>
       </div>

@@ -215,7 +215,7 @@ const AddProperty = () => {
         List your property for rent or sale. Fill in the details below to reach
         potential buyers or tenants.
       </p>
-      <div className="container grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className=" grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="w-full mb-8">
           <div className="w-full flex items-center justify-center">
             <div className="w-full bg-white/80 backdrop-blur-xl border rounded-3xl border-zinc-200/60 shadow-lg overflow-hidden transform hover:scale-[1.01] hover:shadow-2xl transition-all duration-300">
@@ -331,7 +331,7 @@ const AddProperty = () => {
           </div>
         </div>
         <form
-          className="container space-y-6"
+          className=" space-y-6 pb-15"
           onSubmit={handleAddProp}
         >
           <div>
@@ -478,7 +478,11 @@ const AddProperty = () => {
               )}
             </div>
           </div>
-          <div className={`${propertyDetails.propertyType !== "Room" ? "grid grid-cols-2":""} gap-6`}>
+          <div
+            className={`${
+              propertyDetails.propertyType !== "Room" ? "grid grid-cols-2" : ""
+            } gap-6`}
+          >
             {propertyDetails.propertyType !== "Room" ? (
               <div>
                 <label
@@ -565,20 +569,21 @@ const AddProperty = () => {
               <p className="text-red-500 text-xs mt-1">{errors.location}</p>
             )}
           </div>
-
-          <button
-            type="submit"
-            className={`w-full  bg-zinc-900 hover:bg-zinc-800 text-white font-medium px-6 py-3 rounded-xl transition-colors flex items-center justify-center`}
-          >
-            {loading ? (
-              <Loader2
-                size={18}
-                className="animate-spin ml-1"
-              />
-            ) : (
-              <>Add property</>
-            )}
-          </button>
+          <div className="fixed bottom-14 xl:w-[80%] xl:left-[20%] xl:bottom-0 w-full left-0 transition-all bg-white border-t border-zinc-200 p-2">
+            <button
+              type="submit"
+              className={`w-full cursor-pointer bg-black hover:bg-zinc-800 text-white font-medium px-6 py-3 rounded-xl transition-colors flex items-center justify-center`}
+            >
+              {loading ? (
+                <Loader2
+                  size={18}
+                  className="animate-spin ml-1"
+                />
+              ) : (
+                <>Add property</>
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </div>

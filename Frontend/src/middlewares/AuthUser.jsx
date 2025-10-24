@@ -1,17 +1,23 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Navigate, Outlet, useNavigate } from "react-router-dom";
+import React, { useContext } from "react";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AppContext } from "../contexts/AppContextx";
-import Signup from "../pages/Signup";
 
 const AuthUser = () => {
-  const navigate = useNavigate();
   const { user, loading } = useContext(AppContext);
-  useEffect(() => {
-    if (!loading && !user?._id) {
-      navigate("/signup", { replace: true });
-    }
-  }, [loading, user]);
-  return <>{loading ? null : user ? <Outlet /> : null}</>;
+  const location = useLocation();
+  return (
+    <>
+      {loading ? null : user ? (
+        <Outlet />
+      ) : (
+        <Navigate
+          to="/signup"
+          state={{ from: location }}
+          replace
+        />
+      )}
+    </>
+  );
 };
 
 export default AuthUser;

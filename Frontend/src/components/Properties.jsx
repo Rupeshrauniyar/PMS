@@ -9,7 +9,7 @@ const Properties = (props) => {
       to={`/view/${props.prop._id}`}
       className="block"
     >
-      <div className="bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group h-full">
+      <div className="bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group ">
         {/* Image Section */}
         <div className="relative overflow-hidden aspect-video bg-zinc-100">
           <SwiperComp
@@ -35,7 +35,7 @@ const Properties = (props) => {
           </h3> */}
 
           {/* Description */}
-          <p className="text-zinc-600 text-sm mb-3 line-clamp-2">
+          <p className="text-zinc-600 text-sm mb-3 line-clamp-2 truncate">
             {props.prop.description}
           </p>
 

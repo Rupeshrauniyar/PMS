@@ -24,9 +24,10 @@ const Home = () => {
             type: activeTab,
           }
         );
+        // console.log(response.data)
         if (response?.status === 200) {
           setLoading(false);
-          setPropData(response.data);
+          setPropData(response.data.Properties);
         } else {
           setLoading(false);
           setPropData([]);
@@ -44,13 +45,13 @@ const Home = () => {
         <SearchBar dis={true} />
       </Link>
       <div className="pt-4"></div>
-      <div className="container   ">
+      <div className="   ">
         <SwiperComp />
       </div>
       <div className="pb-4"></div>
 
       {/* Modern Tab Navigation */}
-      <div className="container  flex items-center justify-center ">
+      <div className="   flex items-center justify-center ">
         <div className="relative flex justify-center items-center w-4xl p-2 bg-white/70 backdrop-blur-xl border border-zinc-200/60 rounded-full shadow-lg overflow-hidden">
           {/* Animated Indicator */}
 
@@ -73,15 +74,15 @@ const Home = () => {
         </div>
       </div>
       {/* Property Display Section */}
-      <div className="w-full container  ">
+      <div className="w-full   ">
         {/* <h2 className="text-3xl font-extrabold  mb-2 text-zinc-800">
           Featured {activeTab}'s
         </h2> */}
 
         {/* {console.log(propData)} */}
-        <div className="w-full  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+        <div className="w-full   mt-3">
           {loading ? (
-            <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[{}, {}, {}].map((p, i) => (
                 <div
                   key={i}
@@ -119,14 +120,16 @@ const Home = () => {
                   </div>
                 </div>
               ))}
-            </>
+            </div>
           ) : propData.length > 0 ? (
-            propData.map((item, index) => (
-              <Properties
-                prop={item}
-                key={index}
-              />
-            ))
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {propData.map((item, index) => (
+                <Properties
+                  prop={item}
+                  key={index}
+                />
+              ))}
+            </div>
           ) : (
             <div className="xl:w-[80vw]  flex items-center justify-center flex-col  p-12 text-center">
               <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
