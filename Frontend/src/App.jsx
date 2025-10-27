@@ -3,13 +3,13 @@ import { BrowserRouter as Router } from "react-router-dom";
 import Index from "./Index";
 import Navbar from "./components/Navbar";
 import { AppProvider } from "./contexts/AppContextx";
-import { Analytics } from "@vercel/analytics/next";
+// import { Analytics } from "@vercel/analytics/next";
 
 const App = () => {
   return (
     <div className=" w-full min-h-screen text-black bg-white overflow-x-hidden">
       {/* FCM:{FCM} */}
-      <Analytics />
+      {/* <Analytics /> */}
       <AppProvider>
         <Router>
           <Navbar />
