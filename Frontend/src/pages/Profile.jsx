@@ -9,6 +9,7 @@ import {
   Calendar,
   Edit2,
   Building2,
+  Plus,
 } from "lucide-react";
 import Properties from "../components/Properties";
 import axios from "axios";
@@ -16,26 +17,42 @@ import axios from "axios";
 const Profile = () => {
   const { user } = useContext(AppContext);
   const [myProp, setMyProp] = useState([]);
+  const [Type, setType] = useState(null);
+  const btnMap = [
+    {
+      type: "myProperties",
+      text: "My Prop",
+    },
+    {
+      type: "bookedProperties",
+      text: "Booked Prop",
+    },
+    ,
+    {
+      type: "saved",
+      text: "Saved",
+    },
+  ];
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const getMyProps = async () => {
-      if (user?.myProperties?.length < 1) return;
-      const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/get-user-property`,
-        {
-          token: localStorage.getItem("token"),
-          id: user.id,
-        }
-      );
-      console.log(res.data);
-      if (res.status === 200) {
-        setMyProp(res.data.prop);
+  const HandleType = async (e) => {
+    setType(e);
+    if (user[e].length < 1) return setMyProp([]);
+    // console.log(user[e]);
+    const res = await axios.post(
+      `${import.meta.env.VITE_backendUrl}/api/get-user-property`,
+      {
+        token: localStorage.getItem("token"),
+        Type: e,
       }
-    };
-    getMyProps();
-  }, [user]);
-
+    );
+    // console.log(res.data.properties);
+    if (res.status === 200) {
+      setMyProp(res.data.properties);
+    } else {
+      setMyProp([]);
+    }
+  };
   return (
     <div className="w-full min-h-screen pt-20 ">
       {/* Cover Photo Section */}
@@ -153,8 +170,10 @@ const Profile = () => {
                   <p className="text-sm text-zinc-900 font-medium">
                     {user?.createdAt
                       ? new Date(user.createdAt).toLocaleDateString("en-US", {
-                          month: "long",
-                          year: "numeric",
+                        month: "long",
+                        day:"2-digit",
+                        year: "numeric",
+                          
                         })
                       : "Recently joined"}
                   </p>
@@ -162,32 +181,28 @@ const Profile = () => {
               </div>
 
               {/* Total Properties */}
-              <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-xl border border-zinc-200">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
-                  <Building2
-                    size={20}
-                    className="text-orange-600"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">
-                    Properties Listed
-                  </p>
-                  <p className="text-sm text-zinc-900 font-medium">
-                    {myProp?.length || 0}{" "}
-                    {myProp?.length === 1 ? "Property" : "Properties"}
-                  </p>
-                </div>
-              </div>
+            
             </div>
           </div>
         </div>
-
+        <div className="flex items-center justify-between w-full h-10">
+          {btnMap.map((btn, i) => (
+            <button
+              className={`${
+                btn.type === Type ? "bg-black" : "bg-neutral-600"
+              } rounded-xl text-white p-2`}
+              onClick={() => HandleType(btn.type)}
+              key={i}
+            >
+              {btn.text}
+            </button>
+          ))}
+        </div>
         <div className="w-full  grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3 pb-12">
           {myProp.length > 0 ? (
             myProp.map((item, index) => (
               <Properties
-                prop={item}
+                prop={item.propId}
                 key={index}
               />
             ))
@@ -209,7 +224,7 @@ const Profile = () => {
                 onClick={() => navigate("/add-property")}
                 className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium px-6 py-3 rounded-xl transition-all inline-flex items-center gap-2"
               >
-                <Building2 size={18} />
+                <Plus size={18} />
                 Add Property
               </button>
             </div>

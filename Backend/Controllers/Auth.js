@@ -1,102 +1,104 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { UserModel, GoogleUserModel } = require("../Models/UserModel");
-// const crypto = require("crypto");
-// const nodemailer = require("nodemailer");
+const UserModel = require("../Models/UserModel");
 const JWT_SECRET = process.env.JWT_SECRET;
-function sanitizeUser(user) {
-  if (!user) return null;
 
-  const { password, FCMtokens, ...safeUser } = user.toObject
-    ? user.toObject()
-    : user;
+function sanitizeUser(user) {
+  const { password, FCMtokens, ...safeUser } = user.toObject();
   return safeUser;
 }
+
 // SIGNUP
 exports.signup = async (req, res) => {
   try {
     const { email, password, username } = req.body;
-    if (!email || !password) {
+    if (!email || !password)
       return res
         .status(400)
         .json({ message: "Email and password are required." });
-    }
-    let existingUser;
-    existingUser = await UserModel.findOne({ email });
-    if (existingUser) {
+
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser)
       return res.status(409).json({ message: "User already exists." });
-    } else {
-      existingUser = await GoogleUserModel.findOne({ email });
-      if (existingUser) {
-        return res.status(409).json({ message: "User already exists." });
-      }
-    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new UserModel({
+    const newUser = await UserModel.create({
       email,
       username,
       password: hashedPassword,
+      authProvider: "local",
     });
-
-    await newUser.save();
 
     const token = jwt.sign({ id: newUser._id }, JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "7d",
     });
-
     res.status(201).json({
       message: "User registered successfully.",
       token,
       user: sanitizeUser(newUser),
     });
   } catch (err) {
-    console.log(err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 // SIGNIN
 exports.signin = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
+    if (!email || !password)
       return res
         .status(400)
         .json({ message: "Email and password are required." });
-    }
 
-    const user = await UserModel.findOne({ email });
-    if (!user) {
+    const user = await UserModel.findOne({ email, authProvider: "local" });
+    if (!user)
       return res.status(401).json({ message: "Invalid email or password." });
-    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    if (!isMatch)
       return res.status(401).json({ message: "Invalid email or password." });
-    }
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    res.status(201).json({
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+    res.status(200).json({
       message: "Signed in successfully.",
       token,
       user: sanitizeUser(user),
     });
   } catch (err) {
-    console.log(err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+// SIGNIN WITH GOOGLE
+exports.signinWithGoogle = async (req, res) => {
+  try {
+    const { email, uuid, username, pp } = req.body;
+    let user = await UserModel.findOne({ uuid, authProvider: "google" });
+    if (!user) {
+      user = await UserModel.create({
+        email,
+        uuid,
+        username,
+        pp,
+        authProvider: "google",
+      });
+    }
+
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+    res.status(200).json({ message: "Signed in successfully.", token, user });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 exports.signout = async (req, res) => {
   try {
     const { token, fcmToken } = req.body;
-    console.log(token, fcmToken);
     const verify = jwt.verify(token, JWT_SECRET);
     if (!verify || !verify.id)
       return res.status(500).json({ message: "No id found", success: false });
+
     if (fcmToken?.length > 0) {
       await UserModel.findOneAndUpdate(
         { _id: verify.id },
@@ -114,94 +116,6 @@ exports.signout = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-exports.signinWithGoogle = async (req, res) => {
-  try {
-    const { email, uuid, username, pp } = req.body;
-    // console.log(FCMtoken, device);
-    const existingUser = await GoogleUserModel.findOne({ uuid }).select(
-      "-FCMtokens"
-    );
-    if (existingUser) {
-      const existingUserToken = jwt.sign(
-        { id: existingUser._id, type: "google" },
-        JWT_SECRET,
-        {
-          expiresIn: "7d",
-        }
-      );
-
-      return res.status(201).json({
-        message: "User signedin successfully.",
-        token: existingUserToken,
-        user: existingUser,
-      });
-    } else {
-      const newUser = await GoogleUserModel.create({
-        email,
-        uuid,
-        username,
-        pp,
-        FCMtokens: [],
-      });
-      const newUserToken = jwt.sign(
-        { id: newUser._id, type: "google" },
-        JWT_SECRET,
-        {
-          expiresIn: "7d",
-        }
-      );
-      //   const transporter = nodemailer.createTransport({
-      //     service: "gmail",
-      //     host: "smtp.ethereal.email",
-      //     port: 587,
-      //     secure: false,
-      //     auth: {
-      //       user: process.env.EMAIL_USER,
-      //       pass: process.env.EMAIL_PASSWORD,
-      //     },
-      //   });
-      //   const mailOptions = {
-      //     from: process.env.EMAIL_USER,
-      //     to: email,
-      //     subject: "Password Reset Request",
-      //     html: `
-      //            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; text-align: center;">
-      //   <div>
-      //     <h2 style="color: #333; font-size: 28px; font-weight: bold;">Reset Your Password</h2>
-      //   </div>
-      //   <p>Hello,</p>
-      //   <p>We received a request to reset your password. Click the button below to proceed:</p>
-      //   <div style="margin: 30px 0;">
-      //     <a
-
-      //     style = "background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-size: 16px; font-weight: bold;"
-      //     href="${resetURL}"
-      //         >
-      //         Reset Password
-      //     </a >
-      //   </div >
-      //   <p>If you didn't request this, you can safely ignore this email.</p>
-      //   <p>This link will expire in 15 minutes.</p>
-      //   <hr style="border: 1px solid #eee; margin: 20px 0;" />
-      //   <p style="color: #666; font-size: 12px;">
-      //     This is an automated message. Please do not reply.
-      //   </p>
-      // </div >
-      // `,
-      //   };
-      //   // Send email
-      //   await transporter.sendMail(mailOptions);
-      res.status(201).json({
-        message: "User registered successfully.",
-        token: newUserToken,
-        user: newUser,
-      });
-    }
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-};
 
 exports.editProfile = async (req, res) => {
   try {
@@ -214,7 +128,7 @@ exports.editProfile = async (req, res) => {
     const verify = jwt.verify(Data.token, process.env.JWT_SECRET);
 
     // console.log(Data, verify);
-    if (Data.currentPassword && verify.type !== "google") {
+    if (Data.currentPassword?.length > 0 && verify.type !== "google") {
       const user = await UserModel.findOne({ _id: verify.id });
       if (user) {
         const result = await bcrypt.compare(
@@ -235,19 +149,8 @@ exports.editProfile = async (req, res) => {
         }
       }
       return;
-    }
-    let updateUser;
-    if (verify.type === "google") {
-      updateUser = await GoogleUserModel.findOneAndUpdate(
-        { _id: Data._id },
-        {
-          username: Data.username,
-          phone: Data.phone,
-        },
-        { new: true }
-      ).select("-FCMtokens");
     } else {
-      updateUser = await UserModel.findOneAndUpdate(
+      const updateUser = await UserModel.findOneAndUpdate(
         { _id: Data._id },
         {
           username: Data.username,
@@ -255,15 +158,19 @@ exports.editProfile = async (req, res) => {
         },
         { new: true }
       ).select("-password -FCMtokens");
-    }
-    // console.log(updateUser);
-    if (updateUser) {
-      res.status(200).json({ user: updateUser, success: true });
-    } else {
-      res.status(403).json({ message: "Something went wrong user." });
+
+      // console.log(updateUser);
+      if (updateUser) {
+        res.status(200).json({ user: updateUser, success: true });
+      } else {
+        res.status(403).json({ message: "Something went wrong user." });
+      }
     }
   } catch (err) {
-    console.log(err);
+    if (err.code === 11000) {
+      return res.status(403).json({ message: "Phone Number already Exists." });
+    }
+    console.log(err.message);
     res.status(403).json({ message: "Something went wrong." });
   }
 };
@@ -276,17 +183,7 @@ exports.checkAuth = async (req, res) => {
       return res.status(401).json({
         success: false,
       });
-    let findUser;
-    if (decoded?.type === "google") {
-      findUser = await GoogleUserModel.findOne({ _id: decoded.id }).select(
-        "-password   -FCMtokens "
-      );
-    } else {
-      findUser = await UserModel.findOne({ _id: decoded.id }).select(
-        "-password -FCMtokens "
-      );
-    }
-
+    const findUser = await UserModel.findOne({ _id: decoded.id });
     if (findUser) {
       const newToken = jwt.sign(
         { id: findUser._id, type: decoded.type },
@@ -317,29 +214,14 @@ exports.updateFCM = async (req, res) => {
     // console.log(fcmToken, device, token);
     const decode = jwt.verify(token, process.env.JWT_SECRET);
     // console.log(decode);
-    if (decode.type === "google") {
-      await GoogleUserModel.findOneAndUpdate(
-        { _id: decode.id },
-        {
-          $push: {
-            FCMtokens: [fcmToken],
-          },
-        }
-      ).then(() => {
-        res.json({ success: true });
-      });
-    } else {
-      await UserModel.findOneAndUpdate(
-        { _id: decode.id },
-        {
-          $push: {
-            FCMtokens: [fcmToken],
-          },
-        }
-      ).then(() => {
-        res.json({ success: true });
-      });
-    }
+    await UserModel.findOneAndUpdate(
+      { _id: decode.id },
+      {
+        $addToSet: {
+          FCMtokens: fcmToken,
+        },
+      }
+    );
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Server error", error: err.message });

@@ -73,10 +73,10 @@ const Settings = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-white pt-16">
+    <div className="w-full min-h-screen bg-white py-16">
       {/* Header */}
       <div className="border-b border-zinc-200 bg-white sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+        <div className="max-w-3xl mx-auto  py-4">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-zinc-700 hover:text-zinc-900 transition-colors mb-3"
@@ -94,7 +94,7 @@ const Settings = () => {
       {/* Main Content */}
       <div className="max-w-3xl mx-auto">
         {/* Account Section */}
-        <div className="px-4 py-6 border-b border-zinc-200">
+        <div className=" py-6 border-b border-zinc-200">
           <h2 className="text-sm font-semibold text-zinc-900 mb-3">Account</h2>
           <div className="space-y-1">
             {settingsItems
@@ -124,7 +124,7 @@ const Settings = () => {
         </div>
 
         {/* Preferences Section */}
-        <div className="px-4 py-6 border-b border-zinc-200">
+        <div className=" py-6 border-b border-zinc-200">
           <h2 className="text-sm font-semibold text-zinc-900 mb-3">
             Preferences
           </h2>
@@ -156,7 +156,7 @@ const Settings = () => {
         </div>
 
         {/* Legal Section */}
-        <div className="px-4 py-6 border-b border-zinc-200">
+        <div className=" py-6 border-b border-zinc-200">
           <h2 className="text-sm font-semibold text-zinc-900 mb-3">Legal</h2>
           <div className="space-y-1">
             {settingsItems
@@ -187,7 +187,7 @@ const Settings = () => {
 
         {/* Sign Out Section */}
         {user?._id && (
-          <div className="px-4 py-6">
+          <div className=" py-6">
             <button
               onClick={handleSignOut}
               className="w-full flex items-center justify-between py-3 px-3 -mx-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors group"
@@ -211,9 +211,9 @@ const Settings = () => {
 
         {/* App Info */}
         <div className="px-4 py-6 text-center border-t border-zinc-200">
-          <p className="text-xs text-zinc-500">Version 1.0.0</p>
+          {/* <p className="text-xs text-zinc-500">Version 1.0.0</p> */}
           <p className="text-xs text-zinc-400 mt-1">
-            © 2024 Property Management System
+            © 2025 Property Management System
           </p>
         </div>
       </div>

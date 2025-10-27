@@ -2,132 +2,45 @@ const mongoose = require("mongoose");
 
 const userSchema = mongoose.Schema(
   {
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    username: {
-      type: String,
-      required: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
+    email: { type: String, required: true, unique: true },
+    username: { type: String, required: true },
+    password: { type: String }, // optional if using Google
+    uuid: { type: String }, // optional, used for Google OAuth
+    authProvider: { type: String, default: "local" }, // 'local' or 'google'
     phone: {
       type: String,
-      required: false,
       unique: true,
       trim: true,
+      sparse: true,
       match: [/^\+?[1-9]\d{7,14}$/, "Please enter a valid phone number"],
-      default: "",
     },
-    address: {
-      type: String,
-    },
+    address: { type: String },
+    pp: { type: String }, // profile picture
     myProperties: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "property",
+        propId: { type: mongoose.Schema.Types.ObjectId, ref: "property" },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
     bookedProperties: [
       {
-        propId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "property",
-        },
-
-        price: {
-          type: Number,
-          required: true,
-        },
-
-        date: {
-          type: String,
-          required: true,
-        },
+        propId: { type: mongoose.Schema.Types.ObjectId, ref: "property" },
+        price: { type: Number, required: true },
+        date: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
     saved: [
       {
-        propId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "property",
-        },
+        propId: { type: mongoose.Schema.Types.ObjectId, ref: "property" },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
-    FCMtokens: [{ type: String, unique: true }],
+    FCMtokens: [{ type: String }],
   },
   { timestamps: true }
 );
-const googleUserSchema = mongoose.Schema(
-  {
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    username: {
-      type: String,
-      required: true,
-    },
-    uuid: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    phone: {
-      type: String,
-      required: false,
-      unique: true,
-      trim: true,
-      match: [/^\+?[1-9]\d{7,14}$/, "Please enter a valid phone number"],
-      default: "",
-    },
-    address: {
-      type: String,
-    },
-    pp: {
-      type: String,
-    },
-    myProperties: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "property",
-      },
-    ],
-    bookedProperties: [
-      {
-        propId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "property",
-        },
 
-        price: {
-          type: Number,
-          required: true,
-        },
-
-        date: {
-          type: String,
-          required: true,
-        },
-      },
-    ],
-    saved: [
-      {
-        propId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "property",
-        },
-      },
-    ],
-    FCMtokens: [{ type: String, unique: true }],
-  },
-  { timestamps: true }
-);
 const UserModel = mongoose.model("users", userSchema);
-const GoogleUserModel = mongoose.model("googleUsers", googleUserSchema);
-module.exports = { UserModel, GoogleUserModel };
+
+module.exports = UserModel;

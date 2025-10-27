@@ -135,7 +135,7 @@ const EditProfile = () => {
       }
     } catch (err) {
       setLoading(false);
-      setBackendError(err.message);
+      setBackendError(err.response.data.message||"Something went wrong, Please try again.");
     }
   };
 
@@ -181,8 +181,6 @@ const EditProfile = () => {
 
   return (
     <div className="max-w-3xl mx-auto   flex items-center justify-center flex-col">
-     
-
       {backendError && (
         <div className="px-4 pt-4">
           <AlertBox
@@ -201,7 +199,6 @@ const EditProfile = () => {
           />
         </div>
       )}
-
 
       {/* Edit Form */}
       <div className="w-full py-6 border-b border-zinc-200">

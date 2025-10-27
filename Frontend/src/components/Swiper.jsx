@@ -12,14 +12,11 @@ import "swiper/css/effect-fade";
 // Modules
 import {
   Autoplay,
-  FreeMode,
-  Thumbs,
   Pagination,
   EffectFade,
 } from "swiper/modules";
 
 const SwiperComp = ({ title, images = [] }) => {
-  const [thumbsSwiper, setThumbsSwiper] = useState(null);
 
   const defaultImages = [
     { src: "./Room.webp", alt: "Room" },
@@ -53,7 +50,8 @@ const SwiperComp = ({ title, images = [] }) => {
         loop={imagesToDisplay.length > 1 ? true : false}
         pagination={{
           clickable: true,
-          className:"bg-black",
+          className: "bg-black",
+          
           bulletClass:
             "swiper-pagination-bullet bg-black rounded-full transition-all duration-300 ease-in-out",
           bulletActiveClass:
@@ -71,7 +69,7 @@ const SwiperComp = ({ title, images = [] }) => {
               <img
                 src={item.src}
                 alt={item.alt}
-                className=" w-full h-[280px] object-cover  transform  transition-transform duration-700 ease-in-out"
+                className=" w-full h-[280px] object-cover xl:object-contain  transform  transition-transform duration-700 ease-in-out"
               />
               {/* Blurred Background */}
               <div
@@ -82,7 +80,7 @@ const SwiperComp = ({ title, images = [] }) => {
               {/* <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div> */}
               {/* Caption (Optional) */}
 
-              <div className="absolute bottom-2 left-4 text-white text-lg font-semibold drop-shadow-lg">
+              <div className="absolute bottom-6 left-4 text-white text-lg font-semibold drop-shadow-lg">
                 {title}
               </div>
             </div>

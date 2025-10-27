@@ -1,23 +1,25 @@
 const mongoose = require("mongoose");
-const UserModel = require("../Models/UserModel");
+const { UserModel } = require("../Models/UserModel");
+
 const PassResetSchema = mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      refPath: UserModel,
+      ref: "users", // single User collection
     },
-    userModel: {
+    token: {
       type: String,
-      required: true,
-      enum: ["users", "googleUsers"], // the collections it can reference
+      required: true, // reset token
+    },
+    expiresAt: {
+      type: Date,
+      required: true, // token expiration
     },
   },
   { timestamps: true }
 );
 
-const PasswordResetModel = mongoose.model(
-  "passwordResetModel",
-  PassResetSchema
-);
+const PasswordResetModel = mongoose.model("passwordResets", PassResetSchema);
+
 module.exports = PasswordResetModel;

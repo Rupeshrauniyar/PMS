@@ -19,7 +19,7 @@ const Properties = (props) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
           {/* Selling Type Badge */}
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-3 left-3 z-50">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-black/80 backdrop-blur-sm text-white text-xs font-medium rounded-md">
               <Tag size={12} />
               {props.prop.sellingType}

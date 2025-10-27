@@ -1,6 +1,5 @@
 import { Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
 
 const SearchBar = (props) => {
   const [show, setShow] = useState(true);

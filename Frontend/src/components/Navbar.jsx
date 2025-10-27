@@ -89,7 +89,7 @@ const Navbar = () => {
                         <User2 size={20} />
                       )}
 
-                      <span className="font-semibold w-28 truncate">
+                      <span className="font-semibold  truncate">
                         {user.username}
                       </span>
                     </button>

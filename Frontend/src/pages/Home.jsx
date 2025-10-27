@@ -45,7 +45,7 @@ const Home = () => {
         <SearchBar dis={true} />
       </Link>
       <div className="pt-4"></div>
-      <div className="   ">
+      <div className="overflow-hidden rounded-3xl  ">
         <SwiperComp />
       </div>
       <div className="pb-4"></div>

@@ -8,10 +8,15 @@ const compression = require("compression");
 const cors = require("cors");
 const connectDB = require("./DB/db");
 const port = process.env.PORT || 3000;
-const axios = require("axios");
+const fetch = require("node-fetch");
 require("dotenv").config();
 // Middlewares
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy:
+      process.env.NODE_ENV === "production" ? undefined : false,
+  })
+);
 app.use(compression());
 const allowedOrigins = [
   process.env.FRONTEND1, // example: local dev
@@ -20,8 +25,11 @@ const allowedOrigins = [
 ];
 app.use(
   cors({
-    origin: allowedOrigins,
-    // credentials: true, // if you need cookies / auth headers
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.includes(origin)) cb(null, true);
+      else cb(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
   })
 );
 app.use(express.urlencoded({ extended: true }));
@@ -33,17 +41,21 @@ const propertyRoutes = require("./Routes/Property");
 const emailRoutes = require("./Routes/Cred");
 // DB Connection
 connectDB();
+
 // Server Inactive
+
 const makeActive = async () => {
   try {
-    await axios.get(`${process.env.BACKEND}`).then((resp) => {
-      console.log("Reloaded",resp.data);
-    });
+    const resp = await fetch(process.env.BACKEND);
+    if (resp.ok)
+      console.log("Server reloaded:", new Date().toLocaleTimeString());
   } catch (err) {
-    console.log(err);
+    console.error("Keep-alive failed:", err.message);
   }
 };
-setInterval(makeActive, 300000);
+
+setInterval(makeActive, 300_000); // every 5 minutes
+
 // Routes
 app.get("/", async (req, res) => {
   res.send(

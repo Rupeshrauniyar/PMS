@@ -17,11 +17,11 @@ const PropertySchema = mongoose.Schema(
       required: true,
     },
     rooms: {
-      type: Number,
+      type: String,
       required: true,
     },
     washrooms: {
-      type: Number,
+      type: String,
       required: true,
     },
     sellingType: {
@@ -35,7 +35,7 @@ const PropertySchema = mongoose.Schema(
       enum: ["House", "Room", "Plot"],
     },
     price: {
-      type: Number,
+      type: String,
       required: true,
     },
     location: {
@@ -43,38 +43,32 @@ const PropertySchema = mongoose.Schema(
       required: true,
     },
     area: {
-      type: Number,
+      type: String,
       required: false,
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      refPath: "ownerModel", // tells mongoose which collection to use
-    },
-    ownerModel: {
-      type: String,
-      required: true,
-      enum: ["users", "googleUsers"], // the collections it can reference
+      ref: "users", // single User collection
     },
     bookers: [
       {
         price: {
-          type: Number,
+          type: String,
           required: true,
         },
         userId: {
           type: mongoose.Schema.Types.ObjectId,
           required: true,
-          refPath: UserModel,
-        },
-        userModel: {
-          type: String,
-          required: true,
-          enum: ["users", "googleUsers"], // the collections it can reference
+          ref: "users", // single User collection
         },
         date: {
           type: String,
           required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
         },
       },
     ],

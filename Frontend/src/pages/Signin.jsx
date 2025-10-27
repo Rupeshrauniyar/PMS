@@ -1,12 +1,16 @@
-import { Eye, EyeClosed, Loader2, Lock, Mail } from "lucide-react";
+import { Eye, EyeClosed, Loader2, Lock, Mail, Phone } from "lucide-react";
 import React, { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AppContext } from "../contexts/AppContextx";
 import axios from "axios";
-
 import AlertBox from "../components/AlertBox";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import {
+  signInWithPopup,
+  GoogleAuthProvider
+} from "firebase/auth";
 import { auth } from "../contexts/Firebase";
+
+
 // import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 // GoogleAuth.initialize({
 //   clientId:
@@ -17,7 +21,7 @@ import { auth } from "../contexts/Firebase";
 const Signin = () => {
   const { setUser } = useContext(AppContext);
   const [showPass, setShowPass] = useState(false);
-  const [fields, setFields] = useState([
+  const fields = [
     {
       name: "Email",
       type: "email",
@@ -30,7 +34,7 @@ const Signin = () => {
       placeholder: "********",
       icon: <Lock size={20} />,
     },
-  ]);
+  ];
   const location = useLocation();
   const from = location.state.from || "/";
   const [loading, setLoading] = useState(false);
@@ -62,7 +66,6 @@ const Signin = () => {
 
   const handleGoogleAuth = async () => {
     const provider = new GoogleAuthProvider();
-    const auth = getAuth();
     setGoogleLoading(true);
     signInWithPopup(auth, provider)
       .then(async (result) => {
@@ -137,9 +140,41 @@ const Signin = () => {
   //         // alert("Signin failed");
   //       });
   //   } catch (err) {
+  //     console.log(err)
   //     setGoogleLoading(false);
   //     setBackendError("Google sign-in failed.");
   //   }
+  // };
+
+  // const handleGoogleAuth = async () => {
+
+  //   if (!window.recaptchaVerifier) {
+  //     window.recaptchaVerifier = new RecaptchaVerifier(
+  //       auth,
+  //       "recaptcha-container",
+  //       {
+  //         size: "invisible", // or "normal" if you want visible reCAPTCHA
+  //         callback: (response) => {
+  //           // reCAPTCHA solved
+  //         },
+  //       }
+  //     );
+  //   }
+  //   const phoneNumber = "+977 9816356725";
+  //   const appVerifier = window.recaptchaVerifier;
+  //   signInWithPhoneNumber(auth, phoneNumber, appVerifier)
+  //     .then((confirmationResult) => {
+  //       // SMS sent. Prompt user to type the code from the message, then sign the
+  //       // user in with confirmationResult.confirm(code).
+  //       window.confirmationResult = confirmationResult;
+  //       console.log(confirmationResult);
+  //       // ...
+  //     })
+  //     .catch((error) => {
+  //       console.log(error);
+  //       // Error; SMS not sent
+  //       // ...
+  //     });
   // };
 
   const handleSubmit = async (e) => {
@@ -177,6 +212,8 @@ const Signin = () => {
   return (
     <>
       <div className="w-full min-h-screen flex items-center justify-center xl:bg-gradient-to-br from-zinc-50 to-zinc-100 xl:px-4 px:2">
+        <div id="recaptcha-container"></div>
+
         <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold text-zinc-900">
@@ -362,7 +399,7 @@ const Signin = () => {
               </>
             )}
           </button>
-
+       
           <div className="text-center text-sm text-zinc-600">
             <span>Create an account? </span>
             <button
