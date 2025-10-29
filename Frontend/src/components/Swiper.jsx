@@ -10,27 +10,27 @@ import "swiper/css/pagination";
 import "swiper/css/effect-fade";
 
 // Modules
-import {
-  Autoplay,
-  Pagination,
-  EffectFade,
-} from "swiper/modules";
+import { Autoplay, Pagination, EffectFade } from "swiper/modules";
 
 const SwiperComp = ({ title, images = [] }) => {
-
-  const defaultImages = [
-    { src: "./Room.webp", alt: "Room" },
-    { src: "./House.webp", alt: "House" },
-    { src: "./Plot.webp", alt: "Plot" },
-  ];
-
-  const imagesToDisplay =
-    images.length > 0
-      ? images.map((src) => ({ src, alt: "Property Image" }))
-      : defaultImages;
+  if (images.length < 1) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full bg-gray-50 p-6 rounded-lg shadow-md">
+        <h3 className="text-lg font-semibold text-gray-800 text-center ">
+          Image(s) are being processed
+        </h3>
+        <p className="text-sm text-gray-500 text-center ">
+          Please check back in a few moments.
+        </p>
+        
+      </div>
+    );
+  }
+  const imagesToDisplay = images.map((src) => ({ src, alt: "Property Image" }));
 
   return (
     <div className="relative w-full h-full overflow-hidden shadow-xl ">
+      {/* {console.log(images)} */}
       <Swiper
         autoplay={
           images.length > 0
@@ -51,7 +51,7 @@ const SwiperComp = ({ title, images = [] }) => {
         pagination={{
           clickable: true,
           className: "bg-black",
-          
+
           bulletClass:
             "swiper-pagination-bullet bg-black rounded-full transition-all duration-300 ease-in-out",
           bulletActiveClass:
@@ -63,9 +63,7 @@ const SwiperComp = ({ title, images = [] }) => {
       >
         {imagesToDisplay.map((item, index) => (
           <SwiperSlide key={index}>
-            <div
-         className="flex items-center justify-center w-full h-full"
-            >
+            <div className="flex items-center justify-center w-full h-full">
               <img
                 src={item.src}
                 alt={item.alt}

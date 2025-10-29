@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import SwiperComp from "../components/Swiper";
 import {
   Banknote,
@@ -23,7 +23,9 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
 import AlertBox from "../components/AlertBox";
+import { AppContext } from "../contexts/AppContextx";
 const AddProperty = () => {
+  const { setUser } = useContext(AppContext);
   const navigate = useNavigate();
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -176,6 +178,13 @@ const AddProperty = () => {
       if (response.status === 200) {
         setLoading(false);
         setSuccess("Property added successfully");
+        setUser((prev) => ({
+          ...prev,
+          myProperties: [
+            ...prev.myProperties,
+            { propId: response.data.property },
+          ],
+        }));
         // alert("Property added successfully!");
         // Optionally navigate or reset form
       } else {

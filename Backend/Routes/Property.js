@@ -7,6 +7,7 @@ const {
   bookProperty,
   searchProperty,
   saveProperty,
+  deleteProperty,
 } = require("../Controllers/Property");
 const multer = require("multer");
 const storage = multer.memoryStorage();
@@ -17,5 +18,6 @@ router.post("/get-user-property", getUserProperty);
 router.post("/book", bookProperty);
 router.post("/search", searchProperty);
 router.post("/save-property", saveProperty);
+router.post("/delete-property", deleteProperty);
 
 module.exports = router;

@@ -1,17 +1,31 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import { Tag, Bed, Bath, Ruler, MapPin } from "lucide-react";
 import SwiperComp from "./Swiper";
+import { AppContext } from "../contexts/AppContextx";
 
 const Properties = (props) => {
+  let nav = `/view/${props.prop?._id}`;
+  const {user} = useContext(AppContext);
+  if (user?.myProperties?.some((myProp) => myProp.propId === props.prop._id)) {
+
+    nav = `/my/${props.prop?._id}`;
+  } else if (
+    user?.bookedProperties?.some(
+      (bookProp) => bookProp.propId === props.prop._id
+    )
+  ) {
+ 
+    nav = `/booked/${props.prop?._id}`;
+  }
   return (
     <Link
-      to={`/view/${props.prop._id}`}
+      to={nav}
       className="block"
     >
       <div className="bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group ">
         {/* Image Section */}
-        <div className="relative overflow-hidden aspect-video bg-zinc-100">
+        <div className="relative overflow-hidden aspect-video bg-zinc-100 z-5">
           <SwiperComp
             title={props.prop.title}
             images={props.prop.images}
@@ -19,7 +33,7 @@ const Properties = (props) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
           {/* Selling Type Badge */}
-          <div className="absolute top-3 left-3 z-50">
+          <div className="absolute top-3 left-3 z-10">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-black/80 backdrop-blur-sm text-white text-xs font-medium rounded-md">
               <Tag size={12} />
               {props.prop.sellingType}

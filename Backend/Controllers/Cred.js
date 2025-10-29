@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const { UserModel } = require("../Models/UserModel");
+const  UserModel  = require("../Models/UserModel");
 const PasswordResetModel = require("../Models/PasswordResetModel");
 const sgMail = require("@sendgrid/mail");
 const JWT_SECRET = process.env.JWT_SECRET;

@@ -1,13 +1,15 @@
-const cloudinary = require("cloudinary").v2;
 const PropertyModel = require("../Models/PropertyModel");
 const jwt = require("jsonwebtoken");
 const UserModel = require("../Models/UserModel");
 require("dotenv").config();
 const admin = require("firebase-admin");
 var serviceAccount = require("../serviceAccountKey.json");
+const { client } = require("../DB/Redis");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
+const imageQueue = require("../Services/ImageQueue");
+
 exports.addProperty = async (req, res) => {
   try {
     const {
@@ -36,28 +38,8 @@ exports.addProperty = async (req, res) => {
     ) {
       return res.status(400).json({ message: "All fields are required." });
     }
-    cloudinary.config({
-      cloud_name: process.env.CLOUD_NAME,
-      api_key: process.env.API_KEY,
-      api_secret: process.env.API_SECRET,
-    });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const imageUrls = await Promise.all(
-      req.files.map(
-        (file) =>
-          new Promise((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
-              { folder: "PMS_PROPERTIES" },
-              (err, uploaded) => {
-                if (err) return reject(err);
-                resolve(uploaded.secure_url);
-              }
-            );
-            stream.end(file.buffer);
-          })
-      )
-    );
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const property = await PropertyModel.create({
       title,
@@ -71,14 +53,47 @@ exports.addProperty = async (req, res) => {
       description,
       owner: decoded.id,
       ownerModel: decoded.type === "google" ? "googleUsers" : "users",
-      images: imageUrls,
+      images: [],
     });
-
+    await imageQueue.add("ADD", {
+      files: req.files,
+      propertyId: property.id,
+    });
+    const propertySafe = {
+      _id: property._id,
+      title: property.title,
+      sellingType: property.sellingType,
+      propertyType: property.propertyType,
+      location: property.location,
+      price: property.price,
+      area: property.area,
+      washrooms: property.washrooms,
+      rooms: property.rooms,
+      description: property.description,
+      images: property.images,
+      createdAt: property.createdAt,
+    };
+    await client.sendCommand([
+      "JSON.ARRINSERT",
+      `property:${propertyType}`,
+      ".",
+      "0",
+      JSON.stringify(propertySafe),
+    ]);
+    await client.sendCommand([
+      "JSON.ARRTRIM",
+      `property:${propertyType}`,
+      ".",
+      "0",
+      "4",
+    ]);
+    // await client.lTrim(`property:${propertyType}`, 0, 5); // indexes are 0-based
     await UserModel.findByIdAndUpdate(decoded.id, {
       $push: { myProperties: { propId: property._id } },
     });
 
     res.status(200).json({ success: true, property: property._id });
+    // res.status(500).json({ success: false });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Something went wrong." });
@@ -87,21 +102,56 @@ exports.addProperty = async (req, res) => {
 
 exports.getProperty = async (req, res) => {
   try {
-    const { type, _id } = req.body; // or req.query if using GET
-
-    if (type) {
-      const Properties = await PropertyModel.find({
-        propertyType: type,
-      }).select("-owner -bookers -ownerModel");
+    const Data = req.body; // or req.query if using GET
+    if (!Data) {
+      const Properties = await PropertyModel.find()
+        .select("-owner -bookers -ownerModel")
+        .lean()
+        .limit(10) // max 50 results
+        .sort({ createdAt: -1 }); // latest first;
       return res.status(200).json({
         Properties: Properties || [],
         success: Properties?.length > 0,
         message: Properties?.length ? undefined : "No posts available yet",
       });
     }
-
-    if (_id) {
-      const Property = await PropertyModel.findById(_id)
+    if (Data.type) {
+      const rawProps = await client.sendCommand([
+        "JSON.GET",
+        `property:${Data.type}`,
+        ".",
+      ]);
+      // console.log(rawProps);
+      if (rawProps && rawProps.length > 0) {
+        // console.log(redisData);
+        return res.status(200).json({
+          Properties: JSON.parse(rawProps),
+          success: rawProps?.length > 0,
+          message: rawProps?.length ? undefined : "No properties available yet",
+          redis: true,
+        });
+      } else {
+        const Properties = await PropertyModel.find({
+          propertyType: Data.type,
+        })
+          .select("-owner -bookers -ownerModel")
+          .lean()
+          .limit(10) // max 50 results
+          .sort({ createdAt: -1 }); // latest first;
+        await client.sendCommand([
+          "JSON.SET",
+          `property:${Data.type}`,
+          ".",
+          JSON.stringify(Properties),
+        ]);
+        return res.status(200).json({
+          Properties: Properties || [],
+          success: Properties?.length > 0,
+          message: Properties?.length ? undefined : "No posts available yet",
+        });
+      }
+    } else if (Data._id) {
+      const Property = await PropertyModel.findById(Data._id)
         .select("-owner -ownerModel ")
         .lean();
       Property.bookers = Property.bookers.length;
@@ -112,9 +162,20 @@ exports.getProperty = async (req, res) => {
         success: !!Property,
         message: Property ? undefined : "No properties available yet",
       });
+    } else if (Data.filter) {
+      const Properties = await PropertyModel.find({
+        _id: { $ne: Data.filter },
+      })
+        .select("-owner -bookers -ownerModel")
+        .lean()
+        .limit(10) // max 50 results
+        .sort({ createdAt: -1 }); // latest first;
+      return res.status(200).json({
+        Properties: Properties || [],
+        success: Properties?.length > 0,
+        message: Properties?.length ? undefined : "No posts available yet",
+      });
     }
-
-    res.status(404).json({ error: "No data found" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Something went wrong." });
@@ -360,9 +421,6 @@ exports.searchProperty = async (req, res) => {
       );
     });
 
-    // ========================================
-    // 5️⃣ TEXT SEARCH (with higher priority)
-    // ========================================
     const searchTerms = locationQuery
       .replace(/\d+/g, "") // Remove numbers
       .replace(/[^\w\s]/g, "") // Remove special chars
@@ -441,6 +499,41 @@ exports.searchProperty = async (req, res) => {
       message: "An error occurred while searching properties.",
       error: process.env.NODE_ENV === "development" ? err.message : undefined,
       props: [],
+    });
+  }
+};
+
+exports.deleteProperty = async (req, res) => {
+  try {
+    const Data = req.body;
+    console.log(Data);
+    if (!Data) {
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while deleting property, Insufficient Data",
+      });
+    }
+    const decode = jwt.verify(Data.token, process.env.JWT_SECRET);
+    const update = await UserModel.findOneAndUpdate(
+      { _id: decode.id },
+      {
+        $pull: { myProperties: { propId: Data._id } },
+      }
+    );
+    if (!update._id) {
+      res.status(500).json({
+        success: false,
+        message: "An error occurred while deleting property.",
+      });
+    } else {
+      await PropertyModel.findOneAndDelete({ _id: Data._id });
+      res.status(200).json({ success: true });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while deleting property.",
     });
   }
 };

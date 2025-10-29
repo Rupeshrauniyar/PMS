@@ -8,10 +8,6 @@ const PassResetSchema = mongoose.Schema(
       required: true,
       ref: "users", // single User collection
     },
-    token: {
-      type: String,
-      required: true, // reset token
-    },
     expiresAt: {
       type: Date,
       required: true, // token expiration

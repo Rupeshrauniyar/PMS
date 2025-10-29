@@ -4,12 +4,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AppContext } from "../contexts/AppContextx";
 import axios from "axios";
 import AlertBox from "../components/AlertBox";
-import {
-  signInWithPopup,
-  GoogleAuthProvider
-} from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../contexts/Firebase";
-
 
 // import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 // GoogleAuth.initialize({
@@ -18,7 +14,7 @@ import { auth } from "../contexts/Firebase";
 //   scopes: ["profile", "email"],
 //   grantOfflineAccess: true,
 // });
-const Signin = () => {
+const Signin = (props) => {
   const { setUser } = useContext(AppContext);
   const [showPass, setShowPass] = useState(false);
   const fields = [
@@ -36,7 +32,7 @@ const Signin = () => {
     },
   ];
   const location = useLocation();
-  const from = location.state.from || "/";
+  const from = props?.from ? props.from : location?.state?.from || "/";
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [fieldData, setFieldData] = useState([]);
@@ -211,7 +207,7 @@ const Signin = () => {
   };
   return (
     <>
-      <div className="w-full min-h-screen flex items-center justify-center xl:bg-gradient-to-br from-zinc-50 to-zinc-100 xl:px-4 px:2">
+      <div className="w-full min-h-screen flex items-center justify-center  xl:px-4 px:2">
         <div id="recaptcha-container"></div>
 
         <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
@@ -399,7 +395,7 @@ const Signin = () => {
               </>
             )}
           </button>
-       
+
           <div className="text-center text-sm text-zinc-600">
             <span>Create an account? </span>
             <button

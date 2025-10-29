@@ -29,7 +29,7 @@ const countryCodes = [
   { code: "+63", country: "Philippines", flag: "🇵🇭" },
 ];
 
-const EditProfile = () => {
+const EditProfile = (props) => {
   const [errors, setErrors] = useState([]);
   const [backendError, setBackendError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -135,7 +135,9 @@ const EditProfile = () => {
       }
     } catch (err) {
       setLoading(false);
-      setBackendError(err.response.data.message||"Something went wrong, Please try again.");
+      setBackendError(
+        err.response.data.message || "Something went wrong, Please try again."
+      );
     }
   };
 
@@ -180,7 +182,7 @@ const EditProfile = () => {
   );
 
   return (
-    <div className="max-w-3xl mx-auto   flex items-center justify-center flex-col">
+    <div className="max-w-7xl mx-auto  mt-16 flex items-center justify-center flex-col">
       {backendError && (
         <div className="px-4 pt-4">
           <AlertBox
@@ -219,88 +221,100 @@ const EditProfile = () => {
 
               {field.name === "phone" ? (
                 // Phone Input with Country Code
-                <div className="relative">
-                  <div className="flex gap-2">
-                    {/* Country Code Selector */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className={`h-11 px-3 flex items-center gap-2 border rounded-lg transition-all ${
-                          errors.phone
-                            ? "border-red-500"
-                            : "border-zinc-300 hover:border-zinc-400"
-                        } bg-white hover:bg-zinc-50`}
-                      >
-                        <span className="text-xl">
-                          {selectedCountryData?.flag}
-                        </span>
-                        <span className="text-sm font-medium text-zinc-900">
-                          {selectedCountry}
-                        </span>
-                        <ChevronDown
-                          size={16}
-                          className="text-zinc-500"
-                        />
-                      </button>
-
-                      {/* Dropdown */}
-                      {isDropdownOpen && (
-                        <>
-                          {/* Backdrop */}
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setIsDropdownOpen(false)}
+                <>
+                  <div className="relative">
+                    <div className="flex gap-2">
+                      {/* Country Code Selector */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                          className={`h-11 px-3 flex items-center gap-2 border rounded-lg transition-all ${
+                            props.error
+                              ? "border-red-500"
+                              : "border-zinc-300 hover:border-zinc-400"
+                          } bg-white hover:bg-zinc-50`}
+                        >
+                          <span className="text-xl">
+                            {selectedCountryData?.flag}
+                          </span>
+                          <span className="text-sm font-medium text-zinc-900">
+                            {selectedCountry}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className="text-zinc-500"
                           />
+                        </button>
 
-                          {/* Dropdown Menu */}
-                          <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-zinc-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
-                            {countryCodes.map((country) => (
-                              <button
-                                key={country.code}
-                                type="button"
-                                onClick={() =>
-                                  handleCountryChange(country.code)
-                                }
-                                className={`w-full px-3 py-2.5 flex items-center gap-3 hover:bg-zinc-50 transition-colors ${
-                                  selectedCountry === country.code
-                                    ? "bg-blue-50"
-                                    : ""
-                                }`}
-                              >
-                                <span className="text-xl">{country.flag}</span>
-                                <div className="flex-1 text-left">
-                                  <div className="text-sm font-medium text-zinc-900">
-                                    {country.country}
+                        {/* Dropdown */}
+                        {isDropdownOpen && (
+                          <>
+                            {/* Backdrop */}
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setIsDropdownOpen(false)}
+                            />
+
+                            {/* Dropdown Menu */}
+                            <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-zinc-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                              {countryCodes.map((country) => (
+                                <button
+                                  key={country.code}
+                                  type="button"
+                                  onClick={() =>
+                                    handleCountryChange(country.code)
+                                  }
+                                  className={`w-full px-3 py-2.5 flex items-center gap-3 hover:bg-zinc-50 transition-colors ${
+                                    selectedCountry === country.code
+                                      ? "bg-blue-50"
+                                      : ""
+                                  }`}
+                                >
+                                  <span className="text-xl">
+                                    {country.flag}
+                                  </span>
+                                  <div className="flex-1 text-left">
+                                    <div className="text-sm font-medium text-zinc-900">
+                                      {country.country}
+                                    </div>
+                                    <div className="text-xs text-zinc-500">
+                                      {country.code}
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-zinc-500">
-                                    {country.code}
-                                  </div>
-                                </div>
-                                {selectedCountry === country.code && (
-                                  <div className="w-2 h-2 rounded-full bg-blue-600" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </>
-                      )}
+                                  {selectedCountry === country.code && (
+                                    <div className="w-2 h-2 rounded-full bg-blue-600" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Phone Number Input */}
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={handlePhoneNumberChange}
+                        placeholder="9812345678"
+                        className={`flex-1 h-11 px-3 text-sm border rounded-lg ${
+                          props.error
+                            ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                            : "border-zinc-300 focus:border-black focus:ring-1 focus:ring-black"
+                        } bg-white text-zinc-900 focus:outline-none transition-all`}
+                      />
                     </div>
-
-                    {/* Phone Number Input */}
-                    <input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={handlePhoneNumberChange}
-                      placeholder="9812345678"
-                      className={`flex-1 h-11 px-3 text-sm border rounded-lg ${
-                        errors.phone
-                          ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                          : "border-zinc-300 focus:border-black focus:ring-1 focus:ring-black"
-                      } bg-white text-zinc-900 focus:outline-none transition-all`}
-                    />
                   </div>
-                </div>
+                  {props.error ? (
+                    <>
+                      <p className="text-red-500 text-xs mt-2 flex items-center animate-bounce ">
+                        <span className="w-1 h-1 bg-red-500 rounded-full mr-1 "></span>
+                        {props.error}
+                      </p>
+                    </>
+                  ) : null}
+                </>
               ) : (
                 // Regular Input Fields
                 <div className="relative">
@@ -360,13 +374,6 @@ const EditProfile = () => {
       {/* Action Buttons */}
       <div className="w-full py-4 bg-white border-t border-zinc-200 sticky bottom-0 md:static">
         <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex-1 h-10 px-4 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors"
-          >
-            Cancel
-          </button>
           <button
             disabled={loading || !hasChanges}
             type="submit"

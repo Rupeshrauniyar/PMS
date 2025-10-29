@@ -24,7 +24,7 @@ import { auth } from "../contexts/Firebase";
 //   scopes: ["profile", "email"],
 //   grantOfflineAccess: true,
 // });
-const Signup = () => {
+const Signup = (props) => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -34,7 +34,7 @@ const Signup = () => {
   const [showPass, setShowPass] = useState(false);
   const [backendError, setBackendError] = useState(null);
   const location = useLocation();
-  const from = location?.state?.from || "/";
+  const from = props?.from ? props.from : location?.state?.from || "/";
 
   const handleGoogleAuth = async () => {
     const provider = new GoogleAuthProvider();
@@ -215,7 +215,7 @@ const Signup = () => {
   };
   return (
     <>
-      <div className="w-full min-h-screen flex items-center justify-center xl:bg-gradient-to-br from-zinc-50 to-zinc-100 xl:px-4 px:2">
+      <div className="w-full min-h-screen flex items-center justify-center  xl:px-4 px:2">
         <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
           {console.log(from)}
 

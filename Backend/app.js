@@ -1,26 +1,34 @@
 // Server Setup
 const express = require("express");
-const app = express();
-// Required Packages
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const compression = require("compression");
 const cors = require("cors");
-const connectDB = require("./DB/db");
-const port = process.env.PORT || 3000;
 const fetch = require("node-fetch");
+const cluster = require("node:cluster");
+const os = require("node:os");
 require("dotenv").config();
-// Middlewares
-app.use(
-  helmet({
-    contentSecurityPolicy:
-      process.env.NODE_ENV === "production" ? undefined : false,
-  })
-);
+
+const numCPUs = os.availableParallelism();
+
+// Import services
+const { connectDB, disconnectDB } = require("./DB/db");
+const { connectRedis, disconnectRedis } = require("./DB/Redis");
+
+// Express app setup
+const app = express();
+const port = process.env.PORT || 3000;
+
+// --- Middlewares ---
+app.use(helmet());
 app.use(compression());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(cookieParser());
+
 const allowedOrigins = [
-  process.env.FRONTEND1, // example: local dev
-  process.env.FRONTEND2, // replace with your actual URLs
+  process.env.FRONTEND1,
+  process.env.FRONTEND2,
   process.env.FRONTEND3,
 ];
 app.use(
@@ -32,18 +40,13 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(cookieParser());
-// RequireRoutes
+
+// --- Routes ---
 const authRoutes = require("./Routes/Auth");
 const propertyRoutes = require("./Routes/Property");
 const emailRoutes = require("./Routes/Cred");
-// DB Connection
-connectDB();
 
-// Server Inactive
-
+// --- Keep Alive Function ---
 const makeActive = async () => {
   try {
     const resp = await fetch(process.env.BACKEND);
@@ -53,20 +56,54 @@ const makeActive = async () => {
     console.error("Keep-alive failed:", err.message);
   }
 };
-
 setInterval(makeActive, 300_000); // every 5 minutes
 
-// Routes
-app.get("/", async (req, res) => {
-  res.send(
-    "<title>PMS Server</title><style>body{background-color: #000000;color: #ffffff;}</style><h4>Welcome to PMS Server</h4>"
-  );
-});
-app.use("/api/auth", authRoutes);
-app.use("/api/cred", emailRoutes);
-app.use("/api", propertyRoutes);
+// --- Cluster Setup ---
+if (cluster.isPrimary) {
+  console.log(`Primary ${process.pid} is running`);
 
-// Server Initiator
-app.listen(port, () => {
-  console.log(`Server listening on ${port}`);
-});
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  cluster.on("exit", (worker) => {
+    console.log(`Worker ${worker.process.pid} died. Restarting...`);
+    cluster.fork(); // auto-restart dead workers
+  });
+} else {
+  // Each worker connects separately to DB + Redis
+  (async () => {
+    try {
+      await connectDB(); // MongoDB connection
+      await connectRedis(); // Redis connection
+      process.on("SIGTERM", async () => {
+        await disconnectDB();
+        await disconnectRedis();
+        process.exit(0);
+      });
+
+      process.on("SIGINT", async () => {
+        await disconnectDB();
+        await disconnectRedis();
+        process.exit(0);
+      });
+
+      // --- Express setup ---
+      app.get("/", (req, res) => {
+        res.json(`Welcome to PMS. Served by worker #${process.pid}`);
+      });
+
+      app.use("/api/auth", authRoutes);
+      app.use("/api/cred", emailRoutes);
+      app.use("/api", propertyRoutes);
+
+      // Start server
+      app.listen(port, () => {
+        console.log(`Worker ${process.pid} listening on port ${port}`);
+      });
+    } catch (err) {
+      console.error(`Worker ${process.pid} failed to start:`, err);
+      process.exit(1);
+    }
+  })();
+}

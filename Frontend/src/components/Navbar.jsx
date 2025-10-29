@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useParams } from "react-router-dom";
 import { Home, HousePlus, Plus, Search, Settings, User2 } from "lucide-react";
 import { AppContext } from "../contexts/AppContextx";
 
@@ -45,7 +45,6 @@ const Navbar = () => {
       icon: User2,
     },
   ];
-
   return location.pathname === "/signup" ||
     location.pathname === "/signin" ? null : (
     <>
@@ -117,7 +116,7 @@ const Navbar = () => {
       </div>
       {/* Mobile bottombar*/}
       <div
-        className={`block xl:hidden fixed bottom-0 left-0 right-0 z-5 transition-transform duration-300 `}
+        className={`block xl:hidden fixed bottom-0 left-0 right-0 z-35 transition-transform duration-300 `}
       >
         {/* {console.log(user.displayName)} */}
         <div className="max-w-6xl ">
@@ -126,7 +125,7 @@ const Navbar = () => {
             {navLinks.map((navLink, index) => (
               <NavLink
                 key={index}
-                state={{ from: location.pathname}}
+                state={{ from: location.pathname }}
                 to={navLink.path}
                 className={({ isActive }) => `
                 flex items-center justify-center px-5 py-4  rounded-xl transition-all duration-200
@@ -158,8 +157,13 @@ const Navbar = () => {
         </div>
       </div>
       {/* Desktop sidebar*/}
-      <div className="hidden xl:block fixed left-0 top-0 h-full w-[20%]  text-black bg-white shadow-md z-40 pt-16">
-        <div className="flex flex-col h-full p-2">
+      <div className="hidden xl:block fixed left-0 top-0 h-full w-[20%]  text-black bg-white shadow-md z-40 ">
+        <div className="w-full p-2 border-b-2 border-zinc-200">
+          <h3 className="font-bold text-3xl  ">Sidebar</h3>
+          <p>Navigate through pages.</p>
+        </div>
+
+        <div className="flex flex-col h-full px-2 ">
           {navLinks.map((navLink, index) => (
             <NavLink
               key={index}

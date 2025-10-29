@@ -18,7 +18,10 @@ const Signup = lazy(() => import("./pages/Signup"));
 const AddProperty = lazy(() => import("./pages/AddProperty"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
+const View = lazy(() => import("./pages/View"));
 const Book = lazy(() => import("./pages/Book"));
+const MyProp = lazy(() => import("./pages/MyProp"));
+const BookedProp = lazy(() => import("./pages/BookedProp"));
 const AuthUser = lazy(() => import("./middlewares/AuthUser"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -94,6 +97,14 @@ const Index = () => {
               element={<EditProfile />}
             />
             <Route
+              path="/my/:id"
+              element={<MyProp />}
+            />
+            <Route
+              path="/booked/:id"
+              element={<BookedProp />}
+            />
+            <Route
               path="/change-password"
               element={<ChangePassword />}
             />
@@ -116,6 +127,10 @@ const Index = () => {
           />
           <Route
             path="/view/:id"
+            element={<View />}
+          />
+          <Route
+            path="/book/:id/:price"
             element={<Book />}
           />
           <Route

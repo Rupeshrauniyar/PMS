@@ -7,13 +7,13 @@ import { AppProvider } from "./contexts/AppContextx";
 
 const App = () => {
   return (
-    <div className=" w-full min-h-screen text-black bg-white overflow-x-hidden">
+    <div className=" w-full  text-black bg-white overflow-x-hidden">
       {/* FCM:{FCM} */}
       {/* <Analytics /> */}
       <AppProvider>
         <Router>
           <Navbar />
-          <div className="p-2 z-5 w-full h-full">
+          <div className="px-2 z-5 w-full h-full">
             <Index />
           </div>
         </Router>

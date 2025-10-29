@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import SwiperComp from "../components/Swiper";
 import { DoorOpen, LandPlot, Home as HomeIcon, Building2 } from "lucide-react";
 import Properties from "../components/Properties";
@@ -14,6 +14,7 @@ const Home = () => {
   ];
   const [propData, setPropData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const defaultImages = ["./Room.webp", "./House.webp", "./Plot.webp"];
   useEffect(() => {
     const getProperty = async () => {
       try {
@@ -46,7 +47,7 @@ const Home = () => {
       </Link>
       <div className="pt-4"></div>
       <div className="overflow-hidden rounded-3xl  ">
-        <SwiperComp />
+        <SwiperComp images={defaultImages} />
       </div>
       <div className="pb-4"></div>
 
@@ -131,7 +132,7 @@ const Home = () => {
               ))}
             </div>
           ) : (
-            <div className="xl:w-[80vw]  flex items-center justify-center flex-col  p-12 text-center">
+            <div className="xl:w-[80vw] h-[400px] flex items-center justify-center flex-col  p-12 text-center">
               <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
                 <Building2
                   size={32}
