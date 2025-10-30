@@ -100,13 +100,7 @@ exports.addProperty = async (req, res) => {
       "0",
       JSON.stringify(propertySafe),
     ]);
-    await client.sendCommand([
-      "JSON.ARRTRIM",
-      `property:${propertyType}`,
-      ".",
-      "0",
-      "4",
-    ]);
+
     // await client.lTrim(`property:${propertyType}`, 0, 5); // indexes are 0-based
     await UserModel.findByIdAndUpdate(decoded.id, {
       $push: { myProperties: { propId: property._id } },
@@ -174,6 +168,7 @@ exports.getProperty = async (req, res) => {
       const Property = await PropertyModel.findById(Data._id)
         .select("-owner -ownerModel ")
         .lean();
+        if(!Property) return res.status(200).json({message:"No property found."})
       Property.bookers = Property.bookers.length;
       // console.log(Property.bookers);
 
@@ -540,32 +535,39 @@ exports.deleteProperty = async (req, res) => {
         $pull: { myProperties: { propId: Data._id } },
       }
     );
-    // 1. Get the array
-    const arr = await client.sendCommand([
-      "JSON.GET",
-      `property:${update.propertyType}`,
-      ".",
-    ]);
-    const array = JSON.parse(arr);
-
-    // 2. Remove object by property (example: id)
-    const newArray = array.filter((item) => item.id !== propertyIdToRemove);
-
-    await client.sendCommand([
-      "JSON.SET",
-      `property:${update.propertyType}`,
-      ".",
-      JSON.stringify(newArray),
-    ]);
     if (!update._id) {
       res.status(500).json({
         success: false,
         message: "An error occurred while deleting property.",
       });
     } else {
+       const arr = await client.sendCommand([
+      "JSON.GET",
+      `property:${Data.propertyType}`,
+      ".",
+    ]);
+    console.log(arr)
+
+    if(!arr.length >0){
+           await PropertyModel.findOneAndDelete({ _id: Data._id });
+      res.status(200).json({ success: true });
+    }
+    const array = JSON.parse(arr);
+    // 2. Remove object by property (example: id)
+    const newArray = array.filter((item) => item._id !== Data._id);
+
+    await client.sendCommand([
+      "JSON.SET",
+      `property:${Data.propertyType}`,
+      ".",
+      JSON.stringify(newArray),
+    ]);
       await PropertyModel.findOneAndDelete({ _id: Data._id });
       res.status(200).json({ success: true });
     }
+    // 1. Get the array
+   
+
   } catch (err) {
     console.log(err);
     res.status(500).json({

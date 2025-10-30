@@ -28,7 +28,7 @@ const MyProp = () => {
           changed, or is temporarily unavailable.
         </p>
         <Link
-          to={`/my/${params.id}`}
+          to={`/view/${params.id}`}
           className="inline-block bg-black hover:bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
         >
           Go to Correct Page
@@ -92,6 +92,7 @@ const MyProp = () => {
         `${import.meta.env.VITE_backendUrl}/api/delete-property`,
         {
           _id: params?.id,
+          propertyType:props.propertyType,
           token: localStorage.getItem("token"),
         }
       );

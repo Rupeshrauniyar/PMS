@@ -217,7 +217,7 @@ const Signup = (props) => {
     <>
       <div className="w-full min-h-screen flex items-center justify-center  xl:px-4 px:2">
         <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
-          {console.log(from)}
+          {/* {console.log(from)} */}
 
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold text-zinc-900">

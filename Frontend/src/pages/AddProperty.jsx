@@ -47,8 +47,8 @@ const AddProperty = () => {
 
     if (!propertyDetails.title.trim()) {
       newErrors.title = "Property title is required";
-    } else if (propertyDetails.title.trim().length < 10) {
-      newErrors.title = "Property title must be at least 10 characters long";
+    } else if (propertyDetails.title.trim().length < 3) {
+      newErrors.title = "Property title must be at least 3 characters long";
     }
 
     if (!propertyDetails.description.trim()) {
