@@ -59,18 +59,18 @@ const makeActive = async () => {
 setInterval(makeActive, 300_000); // every 5 minutes
 
 // --- Cluster Setup ---
-// if (cluster.isPrimary) {
-//   console.log(`Primary ${process.pid} is running`);
+if (cluster.isPrimary) {
+  console.log(`Primary ${process.pid} is running`);
 
-//   for (let i = 0; i < numCPUs; i++) {
-//     cluster.fork();
-//   }
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
 
-//   cluster.on("exit", (worker) => {
-//     console.log(`Worker ${worker.process.pid} died. Restarting...`);
-//     cluster.fork(); // auto-restart dead workers
-//   });
-// } else {
+  cluster.on("exit", (worker) => {
+    console.log(`Worker ${worker.process.pid} died. Restarting...`);
+    cluster.fork(); // auto-restart dead workers
+  });
+} else {
   // Each worker connects separately to DB + Redis
   (async () => {
     try {
@@ -106,4 +106,4 @@ setInterval(makeActive, 300_000); // every 5 minutes
       process.exit(1);
     }
   })();
-// }
+}

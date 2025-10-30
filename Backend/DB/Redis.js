@@ -1,8 +1,11 @@
-const Redis = require("ioredis");
+const { createClient } = require("redis");
 require("dotenv").config();
 
-const client = new Redis(process.env.REDIS_HOST, {
-  maxRetriesPerRequest: null,
+const client = createClient({
+  username: process.env.RED_USER,
+  password: process.env.RED_PASS,
+  socket: { host: process.env.RED_HOST, port: 13389 },
+  maxRetriesPerRequest: null, // required for BullMQ
 });
 
 client.on("connect", () =>
@@ -11,10 +14,15 @@ client.on("connect", () =>
 client.on("error", (err) => console.error("Redis Client Error:", err));
 
 async function connectRedis() {
+  if (!client.isOpen) {
+    await client.connect();
+    // await client.flushAll()
+  }
   return client;
 }
 
 // Duplicate lightweight connection for BullMQa
+
 
 async function disconnectRedis() {
   if (client.isOpen) await client.quit();

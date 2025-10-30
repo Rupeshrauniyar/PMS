@@ -8,8 +8,12 @@ const { client } = require("../DB/Redis");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
-const imageQueue = require("../Services/ImageQueue");
-
+const cloudinary = require("cloudinary").v2;
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
 exports.addProperty = async (req, res) => {
   try {
     const {
@@ -40,7 +44,26 @@ exports.addProperty = async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const pLimit = require("p-limit");
+    const limit = pLimit(3); // optional: limit concurrent uploads
 
+    const imageUrls = await Promise.all(
+      req.files.map((file) =>
+        limit(
+          () =>
+            new Promise((resolve, reject) => {
+              const stream = cloudinary.uploader.upload_stream(
+                { folder: "PMS_PROPERTIES" },
+                (err, uploaded) => {
+                  if (err) return reject(err);
+                  resolve(uploaded.secure_url);
+                }
+              );
+              stream.end(file.buffer);
+            })
+        )
+      )
+    );
     const property = await PropertyModel.create({
       title,
       sellingType,
@@ -53,12 +76,9 @@ exports.addProperty = async (req, res) => {
       description,
       owner: decoded.id,
       ownerModel: decoded.type === "google" ? "googleUsers" : "users",
-      images: [],
+      images: imageUrls,
     });
-    await imageQueue.add("ADD", {
-      files: req.files,
-      propertyId: property.id,
-    });
+
     const propertySafe = {
       _id: property._id,
       title: property.title,
@@ -520,6 +540,23 @@ exports.deleteProperty = async (req, res) => {
         $pull: { myProperties: { propId: Data._id } },
       }
     );
+    // 1. Get the array
+    const arr = await client.sendCommand([
+      "JSON.GET",
+      `property:${update.propertyType}`,
+      ".",
+    ]);
+    const array = JSON.parse(arr);
+
+    // 2. Remove object by property (example: id)
+    const newArray = array.filter((item) => item.id !== propertyIdToRemove);
+
+    await client.sendCommand([
+      "JSON.SET",
+      `property:${update.propertyType}`,
+      ".",
+      JSON.stringify(newArray),
+    ]);
     if (!update._id) {
       res.status(500).json({
         success: false,
