@@ -32,7 +32,7 @@ exports.signup = async (req, res) => {
     const token = jwt.sign({ id: newUser._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
-    res.status(201).json({
+    res.status(200).json({
       message: "User registered successfully.",
       token,
       user: sanitizeUser(newUser),
@@ -211,7 +211,7 @@ exports.checkAuth = async (req, res) => {
 exports.updateFCM = async (req, res) => {
   try {
     const { fcmToken, token } = req.body;
-    // console.log(fcmToken, device, token);
+    console.log(fcmToken, token);
     const decode = jwt.verify(token, process.env.JWT_SECRET);
     // console.log(decode);
     await UserModel.findOneAndUpdate(
