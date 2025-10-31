@@ -2,7 +2,7 @@ const PropertyModel = require("../Models/PropertyModel");
 const jwt = require("jsonwebtoken");
 const UserModel = require("../Models/UserModel");
 require("dotenv").config();
-
+const { client } = require("../DB/Redis");
 const cloudinary = require("cloudinary").v2;
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
