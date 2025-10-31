@@ -12,10 +12,7 @@ const App = () => {
       {/* <Analytics /> */}
       <AppProvider>
         <Router>
-          <Navbar />
-          <div className="px-2 z-5 w-full h-full">
-            <Index />
-          </div>
+          <Index />
         </Router>
       </AppProvider>
     </div>

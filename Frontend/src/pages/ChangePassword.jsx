@@ -92,7 +92,7 @@ const EditProfile = () => {
             />
           </div>
         )}
-        {console.log(fieldData["Current Password"])}
+        {/* {console.log(fieldData["Current Password"])} */}
 
         {/* Edit Form */}
         <div className="w-full py-6 border-b border-zinc-200">

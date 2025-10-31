@@ -40,7 +40,7 @@ const Profile = () => {
     if (user[e].length < 1) return setMyProp([]);
     // console.log(user[e]);
     const res = await axios.post(
-      `${import.meta.env.VITE_backendUrl}/api/get-user-property`,
+      `${import.meta.env.VITE_backendUrl}/api/fetching/get-user-property`,
       {
         token: localStorage.getItem("token"),
         Type: e,

@@ -5,6 +5,10 @@ import SwiperComp from "./Swiper";
 import { AppContext } from "../contexts/AppContextx";
 
 const Properties = (props) => {
+
+  if (!props.prop) {
+    return <></>
+  }
   let nav = `/view/${props.prop?._id}`;
   const {user} = useContext(AppContext);
   if (user?.myProperties?.some((myProp) => myProp.propId === props.prop._id)) {

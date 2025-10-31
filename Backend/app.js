@@ -5,11 +5,8 @@ const helmet = require("helmet");
 const compression = require("compression");
 const cors = require("cors");
 const fetch = require("node-fetch");
-const cluster = require("node:cluster");
-const os = require("node:os");
-require("dotenv").config();
 
-const numCPUs = os.availableParallelism();
+require("dotenv").config();
 
 // Import services
 const { connectDB, disconnectDB } = require("./DB/db");
@@ -44,8 +41,11 @@ app.use(
 // --- Routes ---
 const authRoutes = require("./Routes/Auth");
 const propertyRoutes = require("./Routes/Property");
-const emailRoutes = require("./Routes/Cred");
+const bookingRoutes = require("./Routes/Booking");
+const fetchPropertyRoutes = require("./Routes/FetchingProperty");
 
+const emailRoutes = require("./Routes/Cred");
+const androidRoutes = require("./Routes/Android");
 // --- Keep Alive Function ---
 const makeActive = async () => {
   try {
@@ -58,52 +58,40 @@ const makeActive = async () => {
 };
 setInterval(makeActive, 300_000); // every 5 minutes
 
-// --- Cluster Setup ---
-if (cluster.isPrimary) {
-  console.log(`Primary ${process.pid} is running`);
+(async () => {
+  try {
+    await connectDB(); // MongoDB connection
+    await connectRedis(); // Redis connection
+    process.on("SIGTERM", async () => {
+      await disconnectDB();
+      await disconnectRedis();
+      process.exit(0);
+    });
 
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
+    process.on("SIGINT", async () => {
+      await disconnectDB();
+      await disconnectRedis();
+      process.exit(0);
+    });
+
+    // --- Express setup ---
+    app.get("/", (req, res) => {
+      res.json(`Welcome to PMS. Served by worker #${process.pid}`);
+    });
+
+    app.use("/api/auth", authRoutes);
+    app.use("/api/android", androidRoutes);
+    app.use("/api/cred", emailRoutes);
+    app.use("/api/property", propertyRoutes);
+    app.use("/api/booking", bookingRoutes);
+    app.use("/api/fetching", fetchPropertyRoutes);
+
+    // Start server
+    app.listen(port, () => {
+      console.log(`Worker ${process.pid} listening on port ${port}`);
+    });
+  } catch (err) {
+    console.error(`Worker ${process.pid} failed to start:`, err);
+    process.exit(1);
   }
-
-  cluster.on("exit", (worker) => {
-    console.log(`Worker ${worker.process.pid} died. Restarting...`);
-    cluster.fork(); // auto-restart dead workers
-  });
-} else {
-  // Each worker connects separately to DB + Redis
-  (async () => {
-    try {
-      await connectDB(); // MongoDB connection
-      await connectRedis(); // Redis connection
-      process.on("SIGTERM", async () => {
-        await disconnectDB();
-        await disconnectRedis();
-        process.exit(0);
-      });
-
-      process.on("SIGINT", async () => {
-        await disconnectDB();
-        await disconnectRedis();
-        process.exit(0);
-      });
-
-      // --- Express setup ---
-      app.get("/", (req, res) => {
-        res.json(`Welcome to PMS. Served by worker #${process.pid}`);
-      });
-
-      app.use("/api/auth", authRoutes);
-      app.use("/api/cred", emailRoutes);
-      app.use("/api", propertyRoutes);
-
-      // Start server
-      app.listen(port, () => {
-        console.log(`Worker ${process.pid} listening on port ${port}`);
-      });
-    } catch (err) {
-      console.error(`Worker ${process.pid} failed to start:`, err);
-      process.exit(1);
-    }
-  })();
-}
+})();

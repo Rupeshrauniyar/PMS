@@ -25,8 +25,22 @@ const userSchema = mongoose.Schema(
     bookedProperties: [
       {
         propId: { type: mongoose.Schema.Types.ObjectId, ref: "property" },
-        price: { type: Number, required: true },
-        date: { type: String, required: true },
+        price: { type: String, required: true },
+        date: {
+          type: String,
+        },
+        note: {
+          type: String,
+        },
+        bType: {
+          type: String,
+          enum: ["pay", "visit"],
+          required: true,
+        },
+        status: {
+          type: Boolean,
+          default: false,
+        },
         createdAt: { type: Date, default: Date.now },
       },
     ],

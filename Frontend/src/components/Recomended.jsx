@@ -10,12 +10,20 @@ const Recommend = (prop) => {
     const getProperty = async () => {
       try {
         setLoading(true);
-        const response = await axios.post(
-          `${import.meta.env.VITE_backendUrl}/api/get-property`,
-          {
-            filter: prop.id,
-          }
-        );
+        let response;
+        if (prop.id) {
+          response = await axios.post(
+            `${import.meta.env.VITE_backendUrl}/api/fetching/get-property`,
+            {
+              filter: prop.id,
+            }
+          );
+        } else {
+          response = await axios.post(
+            `${import.meta.env.VITE_backendUrl}/api/fetching/get-property`
+          );
+        }
+
         // console.log(response.data)
         if (response?.status === 200) {
           setLoading(false);

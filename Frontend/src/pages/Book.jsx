@@ -26,6 +26,8 @@ import {
   Bath,
   Maximize,
   ImageIcon,
+  TypeIcon,
+  CircleSlash,
 } from "lucide-react";
 import axios from "axios";
 import AlertBox from "../components/AlertBox";
@@ -39,6 +41,9 @@ const Book = () => {
 
   const [submitting, setSubmitting] = useState(false);
   const [date, setDate] = useState("");
+  const [select, setSelect] = useState("pay");
+  const [note, setNote] = useState("pay");
+
   const params = useParams();
   const [barPrice, setBarPrice] = useState("");
   const [isBar, setIsBar] = useState(false);
@@ -52,12 +57,20 @@ const Book = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!date || date.length === 0) {
-      newErrors.date = "Appointment date is required";
-    }
-    if (!params.price || !barPrice || params.price === 0 || barPrice === 0) {
+
+    if ((!params.price && !barPrice) || params.price === 0) {
       newErrors.price = "Invalid price of a property";
     }
+    if (barPrice === 0 || !barPrice || barPrice==="00") {
+      newErrors.price = "Invalid price of a property";
+    }
+    if (select !== "pay" && !date) {
+      newErrors.date = "Invalid date for Visit";
+    }
+    // console.log(barPrice);
+    // if (barPrice && !barPrice > 0) {
+    //   newErrors.price = "Invalid price of a property";
+    // }
     if (!user?.phone || user?.phone.length === 0) {
       newErrors.contact = "Please provide your contact number.";
     }
@@ -77,19 +90,25 @@ const Book = () => {
         price: isBar ? barPrice : params.price,
         userId: user?._id,
         date,
+        note,
+        bType: select,
         token: localStorage.getItem("token"),
       };
       const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/book`,
+        `${import.meta.env.VITE_backendUrl}/api/booking/book`,
         Data
       );
       if (res.status === 200) {
         setUser((prev) => ({
           ...prev,
-          bookedProperties: [...prev.bookedProperties, { propId: params.id }],
+          bookedProperties: [
+            ...prev.bookedProperties,
+            { propId: params.id, price: barPrice ? barPrice : params.price },
+          ],
         }));
         setSubmitting(false);
         setSuccess(res.data.message);
+        navigate(`/booked/${params.id}`);
       } else {
         setSubmitting(false);
       }
@@ -200,29 +219,48 @@ const Book = () => {
         className="max-w-7xl animate-[slideUp_0.5s_ease-out] flex items-center justify-center"
       >
         <div className="pb-8 space-y-2 mt-4 xl:w-[40%] w-full">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Appointment Date
-            </label>
-            <input
-              type="date"
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold"></span>
+            <select
               onChange={(e) => {
-                setErrors((prev) => ({ ...prev, date: "" }));
-                setDate(e.target.value);
+                setErrors((prev) => ({ ...prev, select: "" }));
+                setSelect(e.target.value);
               }}
-              className={`w-full p-3 border-2 ${
-                errors.date ? "border-red-500" : "border-gray-200"
-              } rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
-              min={new Date().toISOString().split("T")[0]}
-              required
-            />
-            {errors.date && (
-              <p className="text-red-500 text-xs mt-2 flex items-center animate-bounce ">
-                <span className="w-1 h-1 bg-red-500 rounded-full mr-1 "></span>
-                {errors.date}
-              </p>
-            )}
+              className={`w-full px-2 py-3 border-2 ${
+                errors.select ? "border-red-500" : "border-gray-200"
+              } rounded-xl font-mono text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
+            >
+              <option value={"pay"}>Pay Now</option>
+              <option value={"visit"}>Visit property</option>
+            </select>
           </div>
+          {select !== "pay" ? (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Appointment Date
+              </label>
+              <input
+                type="date"
+                onChange={(e) => {
+                  setErrors((prev) => ({ ...prev, date: "" }));
+                  setDate(e.target.value);
+                }}
+                className={`w-full p-3 border-2 ${
+                  errors.date ? "border-red-500" : "border-gray-200"
+                } rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
+                min={new Date().toISOString().split("T")[0]}
+                required
+              />
+              {errors.date && (
+                <p className="text-red-500 text-xs mt-2 flex items-center animate-bounce ">
+                  <span className="w-1 h-1 bg-red-500 rounded-full mr-1 "></span>
+                  {errors.date}
+                </p>
+              )}
+            </div>
+          ) : (
+            <></>
+          )}
 
           <div>
             <label className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
@@ -269,7 +307,21 @@ const Book = () => {
               </p>
             )}
           </div>
-
+          <div className="relative">
+            <label className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+              Note (optional)
+            </label>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold"></span>
+            <input
+              onChange={(e) => {
+                // setErrors((prev) => ({ ...prev, select: "" }));
+                setNote(e.target.value);
+              }}
+              className={`w-full px-2 py-3 border-2 
+              "border-red-500
+               rounded-xl font-mono text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
+            />
+          </div>
           <div
             className="bookingButtons z-10  flex items-center justify-between gap-2 xl:px-30 px-2  w-full  transition-all bg-white border-t border-zinc-200 p-2"
             onClick={() => {

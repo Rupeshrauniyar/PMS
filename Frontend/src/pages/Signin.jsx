@@ -128,6 +128,9 @@ const Signin = (props) => {
   //         navigate("/");
   //       })
   //       .catch((err) => {
+  //         alert(err.message);
+
+  //         console.log(err);
   //         setGoogleLoading(false);
   //         setBackendError("Google sign-in failed.");
 
@@ -154,7 +157,7 @@ const Signin = (props) => {
       })
       .then((res) => {
         // console.log(res);
-        if (res.status === 201) {
+        if (res.status === 200) {
           setLoading(false);
 
           setUser(res.data.user);
@@ -163,20 +166,19 @@ const Signin = (props) => {
           navigate(from);
         } else {
           setLoading(false);
-          setBackendError(response?.data?.message || "Sign-in failed.");
+          setBackendError(res?.data?.message || "Sign-in failed.");
         }
       })
       .catch((err) => {
         console.log(err);
         setLoading(false);
-        setBackendError(err.response?.data?.message || "Sign-in failed.");
+        setBackendError(err?.response?.data?.message || "Sign-in failed.");
         // navigate("/signin");
       });
   };
   return (
     <>
       <div className="w-full min-h-screen flex items-center justify-center  xl:px-4 px:2">
-
         <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold text-zinc-900">

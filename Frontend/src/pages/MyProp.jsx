@@ -40,7 +40,7 @@ const MyProp = () => {
     const getProperty = async () => {
       try {
         const response = await axios.post(
-          `${import.meta.env.VITE_backendUrl}/api/get-property`,
+          `${import.meta.env.VITE_backendUrl}/api/fetching/get-my-prop`,
           { _id: params.id }
         );
         if (response?.status === 200 && response.data.Property?._id) {
@@ -89,10 +89,10 @@ const MyProp = () => {
   const HandleDelete = async () => {
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/delete-property`,
+        `${import.meta.env.VITE_backendUrl}/api/property/delete-property`,
         {
           _id: params?.id,
-          propertyType:props.propertyType,
+          propertyType: props.propertyType,
           token: localStorage.getItem("token"),
         }
       );
@@ -104,6 +104,25 @@ const MyProp = () => {
       setBackendError("Unable to delete property.");
     }
   };
+  const handleConfirm = async (userId) => {
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_backendUrl}/api/booking/confirm-booking`,
+        {
+          _id: params?.id,
+          userId,
+          token: localStorage.getItem("token"),
+        }
+      );
+      if (res.status === 200) {
+        setSuccess("Your property booker has been confirmed successfully.");
+      }
+    } catch (err) {
+      setBackendError("Unable to confirm booker.");
+    }
+  };
+  const activeBooker = props.bookers.find((booker) => booker.status);
+
   return (
     <div className="w-full min-h-screen overflow-hidden  pt-20 pb-18">
       {/* Edit Profile Modal */}
@@ -134,7 +153,6 @@ const MyProp = () => {
           type="success"
           onClose={() => {
             setSuccess(null);
-            navigate("/profile");
           }}
         />
       )}
@@ -155,6 +173,106 @@ const MyProp = () => {
         </button>
       </span>
       <Properties prop={props} />
+      {props.bookers.length > 0 ? (
+        <>
+          {activeBooker ? (
+            <>
+              <h3 className=" text-xl font-bold">Active Booker(s)</h3>
+
+              <div className="flex flex-col bg-zinc-200 p-4 rounded-md ">
+                <div className="flex items-center justify-between">
+                  <span>{activeBooker.userId.username}</span>
+                  <span className="flex items-center gap-2">
+                    <p>
+                      ₹
+                      {activeBooker.price
+                        ? new Intl.NumberFormat("en-IN").format(
+                            activeBooker.price
+                          )
+                        : "N/A"}
+                    </p>
+                  </span>
+                </div>
+                <span>Note:{activeBooker.note}</span>
+                <span>Type:{activeBooker.bType}</span>
+                <div className="flex items-center justify-between">
+                  <span></span>
+                  <button className="bg-blue-500 text-white px-4 py-2 rounded-md">
+                    Confirmed
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <></>
+          )}
+          <h3 className=" text-xl font-bold">Bookers</h3>
+          {props.bookers
+            .filter((item) => !item.status)
+            .map((booker, i) =>
+              booker.status ? (
+                <>
+                  <div
+                    className="flex flex-col bg-zinc-200 p-4 rounded-md "
+                    key={i}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>{booker.userId.username}</span>
+                      <span className="flex items-center gap-2">
+                        <p>
+                          ₹
+                          {booker.price
+                            ? new Intl.NumberFormat("en-IN").format(
+                                booker.price
+                              )
+                            : "N/A"}
+                        </p>
+                      </span>
+                    </div>
+                    <span>Note:{booker.note}</span>
+                    <span>Type:{booker.bType}</span>
+                    <div className="flex items-center justify-between">
+                      <span></span>
+                      <button className="bg-blue-500 text-white px-4 py-2 rounded-md">
+                        Confirmed
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div
+                  className="flex flex-col bg-zinc-200 p-4 rounded-md "
+                  key={i}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>{booker.userId.username}</span>
+                    <span className="flex items-center gap-2">
+                      <p>
+                        ₹
+                        {booker.price
+                          ? new Intl.NumberFormat("en-IN").format(booker.price)
+                          : "N/A"}
+                      </p>
+                    </span>
+                  </div>
+                  <span>Note:{booker.note}</span>
+                  <span>Type:{booker.bType}</span>
+                  <div className="flex items-center justify-between">
+                    <span></span>
+                    <button
+                      className="bg-green-500 text-white px-4 py-2 rounded-md"
+                      onClick={() => handleConfirm(booker.userId._id)}
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              )
+            )}
+        </>
+      ) : (
+        <></>
+      )}
     </div>
   );
 };

@@ -11,7 +11,7 @@ const Search = () => {
       setLoading(true);
       setValue(e.target.value);
       const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/search`,
+        `${import.meta.env.VITE_backendUrl}/api/fetching/search`,
         {
           value: e.target.value,
         }

@@ -46,6 +46,10 @@ const PropertySchema = mongoose.Schema(
       type: String,
       required: false,
     },
+    status: {
+      type: Boolean,
+      default: false,
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
@@ -64,7 +68,17 @@ const PropertySchema = mongoose.Schema(
         },
         date: {
           type: String,
-          required: true,
+        },
+        note: {
+          type: String,
+        },
+        bType: {
+          type: String,
+          enum: ["pay", "visit"],
+        },
+        status: {
+          type: Boolean,
+          default: false,
         },
         createdAt: {
           type: Date,

@@ -101,6 +101,8 @@ const Signup = (props) => {
   //         navigate("/");
   //       })
   //       .catch((err) => {
+  //         console.log(err);
+  //         alert(err.message);
   //         setGoogleLoading(false);
   //         setBackendError("Google sign-up failed.");
 
@@ -196,7 +198,7 @@ const Signup = (props) => {
         phone: fieldData.Phone,
       })
       .then((res) => {
-        if (res.status === 201) {
+        if (res.status === 200) {
           setLoading(false);
 
           setUser(res.data.user);
@@ -208,8 +210,9 @@ const Signup = (props) => {
         }
       })
       .catch((err) => {
+        console.log(err);
         setLoading(false);
-        setBackendError(err.response?.data?.message || "Sign-up failed.");
+        setBackendError(err?.response?.data?.message || "Sign-up failed.");
         // navigate("/signup");
       });
   };

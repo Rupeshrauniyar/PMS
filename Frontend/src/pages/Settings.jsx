@@ -14,7 +14,12 @@ import { AppContext } from "../contexts/AppContextx";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 // import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
-
+// GoogleAuth.initialize({
+//   clientId:
+//     "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
+//   scopes: ["profile", "email"],
+//   grantOfflineAccess: true,
+// });
 const Settings = () => {
   const { user, setUser } = useContext(AppContext);
   const navigate = useNavigate();
@@ -61,7 +66,12 @@ const Settings = () => {
   ];
 
   const handleSignOut = async () => {
-    // await GoogleAuth.signOut();
+    try {
+      // await GoogleAuth.signOut();
+      // console.log("Google sign-out successful");
+    } catch (err) {
+      console.warn("Google sign-out skipped or failed:", err.message);
+    }
     await axios.post(`${import.meta.env.VITE_backendUrl}/api/auth/signout`, {
       token: localStorage.getItem("token"),
       fcmToken: localStorage.getItem("fcmToken"),

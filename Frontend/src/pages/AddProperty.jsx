@@ -171,7 +171,7 @@ const AddProperty = () => {
 
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/add-property`,
+        `${import.meta.env.VITE_backendUrl}/api/property/add-property`,
         formData
       );
 
