@@ -59,6 +59,10 @@ const Book = () => {
 
   const validate = () => {
     const newErrors = {};
+    if (!user?.phone || user?.phone.length === 0) {
+      newErrors.contact = "Please provide your contact number.";
+      setOpen(true);
+    }
     if (!params.price || params.price === 0) {
       newErrors.price = "Invalid price of a property";
     }
@@ -73,9 +77,7 @@ const Book = () => {
     // if (barPrice && !barPrice > 0) {
     //   newErrors.price = "Invalid price of a property";
     // }
-    if (!user?.phone || user?.phone.length === 0) {
-      newErrors.contact = "Please provide your contact number.";
-    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -178,7 +180,7 @@ const Book = () => {
     );
   }
   return (
-    <div className="w-full min-h-screen overflow-hidden xl:pt-16 pt-24 pb-26">
+    <div className="w-full min-h-screen overflow-hidden xl:pt-20 pt-24 pb-26">
       {/* Alerts */}
       {success && (
         <AlertBox
@@ -203,7 +205,14 @@ const Book = () => {
             className="w-full bg-black text-white px-2 py-4 rounded-xl flex items-center justify-between"
             onClick={() => {
               if (open) {
-                setOpen(false);
+                if (!user?.phone || user?.phone.length === 0) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    contact: "Please provide your contact number.",
+                  }));
+                } else {
+                  setOpen(false);
+                }
               } else {
                 setOpen(true);
               }
@@ -221,7 +230,9 @@ const Book = () => {
           </div>
           <div
             id="edit"
-            className={`w-full overflow-hidden  ${open ? "h-full" : "h-0"}`}
+            className={`w-full overflow-hidden transition-all ${
+              open ? "h-full" : "h-0"
+            }`}
           >
             <EditProfile
               error={errors?.contact ? errors?.contact : null}
@@ -229,7 +240,17 @@ const Book = () => {
             />
             <button
               className="bg-black text-white rounded-xl w-full p-3 "
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                if (!user?.phone || user?.phone.length === 0) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    contact: "Please provide your contact number.",
+                  }));
+                } else {
+                  errors.contact = null;
+                  setOpen(false);
+                }
+              }}
             >
               <span className="flex gap-1 text-center items-center justify-center">
                 Continue <ChevronRight />
@@ -281,7 +302,7 @@ const Book = () => {
         </div>
         {user ? (
           <div
-            className={` space-y-2 xl:w-[40%] w-full mt-4 ${
+            className={` space-y-2  w-full mt-4 ${
               !open ? "h-full" : "h-0"
             } overflow-hidden`}
           >
@@ -356,6 +377,8 @@ const Book = () => {
                       if (!isNaN(rawValue)) {
                         setBarPrice(rawValue);
                       }
+                    } else {
+                      setBarPrice("0");
                     }
                   }}
                   className={`w-full pl-8 p-3 border-2 ${

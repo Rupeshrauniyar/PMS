@@ -1,6 +1,6 @@
 git add .
 git init
-git commit -m 'Fixed BUGS'
+git commit -m 'Updated'
 git branch -M main
 git remote add origin https://github.com/Rupeshrauniyar/PMS.git
 git push -u origin main

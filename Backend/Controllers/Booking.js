@@ -71,15 +71,19 @@ exports.bookProperty = async (req, res) => {
     if (prop.owner?.FCMtokens?.length > 0) {
       const payload = {
         notification: {
-          title: "Booking Confirmed ✅",
-          body: `Your property has been booked for रु.${new Intl.NumberFormat(
+          title: "Property Booking",
+          body: `Your property has been booked for Rs. ${new Intl.NumberFormat(
             "en-IN"
-          ).format(price)}`,
+          ).format(price)}.00`,
+          // icon: "splash", // ✅ logo for notification
         },
       };
-      await admin
-        .messaging()
-        .sendEachForMulticast({ tokens: prop.owner.FCMtokens, ...payload });
+
+      await admin.messaging().sendEachForMulticast({
+        tokens: prop.owner.FCMtokens,
+        ...payload,
+      });
+      console.log("SENT.");
     }
 
     res.status(200).json({ success: true, message: "Booked successfully" });
@@ -112,8 +116,9 @@ exports.canclePropertyBooking = async (req, res) => {
       if (prop.owner?.FCMtokens?.length > 0) {
         const payload = {
           notification: {
-            title: "Booking Canceled ❌",
-            body: `Booking canceled by the user.`,
+            title: "Property Booking",
+            body: `Booking canceled by the buyer.`,
+            // icon: "splash",
           },
           data: {
             click_action: "FLUTTER_NOTIFICATION_CLICK", // required for Android
