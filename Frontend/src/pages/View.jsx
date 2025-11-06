@@ -168,7 +168,7 @@ const View = () => {
       )}
 
       <ExtendedProperty props={props} />
-      <div className="bookingButtons bg-white flex items-center justify-between gap-2 xl:px-30 px-2 xl:ml-[20%] xl:w-[80%] shadow-xl fixed xl:bottom-0 bottom-14 left-0 w-full border-t border-zinc-200 p-2">
+      <div className="bookingButtons bg-white/70 backdrop-blur-xl  flex items-center justify-between gap-2 xl:px-30 px-2 xl:ml-[20%] xl:w-[80%] fixed z-[998] xl:bottom-0 bottom-14 left-0 w-full border-t border-zinc-200 p-2">
         <button
           className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center bg-black hover:bg-gray-800 transition-all"
           onClick={handleSave}
@@ -196,8 +196,9 @@ const View = () => {
           </button>
         </Link>
       </div>
-      <div className="max-w-7xl mx-auto mt-4 border-t-2 border-zinc-200">
-        <Reccomended id={params.id} />
+      <div className="max-w-7xl mx-auto mt-4 border-t-2 border-zinc-200 z-[1] pb-24">
+        <Reccomended id={props._id} />
+        <p className="text-center mt-2">End of recommendations.</p>
       </div>
     </div>
   );

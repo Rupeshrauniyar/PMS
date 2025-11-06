@@ -36,7 +36,7 @@ const AlertBox = ({ message, type, onClose }) => {
 
   return (
     <>
-      <div className="fixed inset-0  w-full h-full z-50  bg-black/80"></div>
+      <div className="fixed inset-0  w-full h-full z-[1000]  bg-black/80"></div>
       <motion.div
         initial={{ bottom: "-100px", opacity: 0 }}
         animate={{ bottom: "0px", opacity: 1, pathLength: 0.1 }}
@@ -45,7 +45,7 @@ const AlertBox = ({ message, type, onClose }) => {
           type: "tween",
           ease: ["easeIn", "easeOut"],
         }}
-        className={`fixed z-50 bottom-0 left-0 w-full h-30  py-6 px-3 shadow-2xl rounded-t-3xl  bg-white flex flex-col `}
+        className={`fixed z-[1001] bottom-0 left-0 w-full h-30  py-6 px-3 shadow-2xl rounded-t-3xl  bg-white flex flex-col `}
         role="alert"
       >
         <div className="flex items-center">

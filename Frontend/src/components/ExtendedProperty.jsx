@@ -49,7 +49,7 @@ const ExtendedProperty = (props) => {
                 <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
               </div>
             )}
-
+            {console.log(currentImageIndex)}
             <img
               src={
                 props.props.images?.[currentImageIndex] ||
@@ -65,7 +65,7 @@ const ExtendedProperty = (props) => {
 
             {/* Background Blur */}
             <div
-              className="absolute inset-0 bg-no-repeat bg-center bg-cover filter blur-lg transform scale-110 z-10"
+              className="absolute inset-0 bg-no-repeat bg-center bg-cover filter blur-lg transform scale-110 z-5"
               style={{
                 backgroundImage: `url(${
                   props.props.images?.[currentImageIndex] ||
@@ -106,8 +106,10 @@ const ExtendedProperty = (props) => {
                 <button
                   key={index}
                   onClick={() => {
-                    setImageLoading(true);
-                    setCurrentImageIndex(index);
+                    if (currentImageIndex !== index) {
+                      setImageLoading(true);
+                      setCurrentImageIndex(index);
+                    }
                   }}
                   className={`flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${
                     currentImageIndex === index

@@ -54,7 +54,7 @@ const Search = () => {
       </div>
       <div className="pt-3 w-full  ">
         {value.length < 1 ? (
-          <div className="xl:w-[80vw]  flex items-center justify-center flex-col  p-12 text-center">
+          <div className="w-full  flex items-center justify-center flex-col  py-12 text-center">
             <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
               <SearchIcon
                 size={32}
@@ -104,7 +104,7 @@ const Search = () => {
             </div>
           ))
         ) : props?.length > 0 ? (
-          <span className="pb-20 grid xl:grid-cols-3 grid-cols-1 gap-3">
+          <span className="pb-20 grid  grid-cols-1 gap-3">
             {props.map((prop, i) => (
               <Properties
                 prop={prop}
@@ -113,7 +113,7 @@ const Search = () => {
             ))}
           </span>
         ) : (
-          <div className="xl:w-[80vw]  flex items-center justify-center flex-col  p-12 text-center">
+          <div className="w-full  flex items-center justify-center flex-col  p-12 text-center">
             <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
               <Building2
                 size={32}

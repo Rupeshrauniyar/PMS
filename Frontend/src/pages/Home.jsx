@@ -42,38 +42,40 @@ const Home = () => {
   return (
     <div className="w-full min-h-screen font-sans pb-18 pt-28 ">
       {/* Hero Section */}
-      <Link to="/search">
-        <SearchBar dis={true} />
-      </Link>
-      <div className="pt-4"></div>
+
+      <SearchBar dis={true} />
+
+      <div className="pt-8"></div>
       <div className="overflow-hidden rounded-3xl  ">
         <SwiperComp images={defaultImages} />
       </div>
       <div className="pb-4"></div>
 
       {/* Modern Tab Navigation */}
-      <div className="   flex items-center justify-center ">
-        <div className="relative flex justify-center items-center w-4xl p-2 bg-white/70 backdrop-blur-xl border border-zinc-200/60 rounded-full shadow-lg overflow-hidden">
-          {/* Animated Indicator */}
 
-          {tabs.map((tab) => (
-            <button
-              key={tab.label}
-              onClick={() => {
-                setActiveTab(tab.label);
-              }}
-              className={`cursor-pointer flex items-center justify-center px-3 sm:px-4 py-3 space-x-2 text-lg font-medium rounded-full transition-all duration-300 ease-in-out ${
-                activeTab === tab.label
-                  ? "text-zinc-900 bg-white shadow-2xl"
-                  : "text-zinc-600 hover:text-zinc-800"
-              }`}
-            >
+      <div className="max-w-4xl mx-auto relative flex justify-center items-center  py-2 bg-white/70 backdrop-blur-xl border border-zinc-200/60 rounded-full shadow-lg overflow-hidden">
+        {/* Animated Indicator */}
+
+        {tabs.map((tab) => (
+          <button
+            key={tab.label}
+            onClick={() => {
+              setActiveTab(tab.label);
+            }}
+            className={`cursor-pointer flex items-center justify-between px-3 sm:px-4 py-3 space-x-5 text-lg font-medium rounded-3xl transition-all duration-300 ease-in-out ${
+              activeTab === tab.label
+                ? "text-zinc-900 bg-zinc-100 shadow-xl"
+                : "text-zinc-600 hover:text-zinc-800"
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
               <tab.icon className="w-5 h-5" />
-              <span className="text-sm sm:text-xl">{tab.label}</span>
-            </button>
-          ))}
-        </div>
+              <h3 className="text-sm sm:text-xl">{tab.label}</h3>
+            </span>
+          </button>
+        ))}
       </div>
+
       {/* Property Display Section */}
       <div className="w-full   ">
         {/* <h2 className="text-3xl font-extrabold  mb-2 text-zinc-800">
@@ -83,7 +85,7 @@ const Home = () => {
         {/* {console.log(propData)} */}
         <div className="w-full   mt-3">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {[{}, {}, {}].map((p, i) => (
                 <div
                   key={i}
@@ -123,7 +125,7 @@ const Home = () => {
               ))}
             </div>
           ) : propData.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1  gap-3">
               {propData.map((item, index) => (
                 <Properties
                   prop={item}
@@ -132,7 +134,7 @@ const Home = () => {
               ))}
             </div>
           ) : (
-            <div className="xl:w-[80vw] h-[400px] flex items-center justify-center flex-col  p-12 text-center">
+            <div className="xl:w-full h-[400px] flex items-center justify-center flex-col  p-12 text-center">
               <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
                 <Building2
                   size={32}

@@ -182,7 +182,7 @@ const EditProfile = (props) => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto  mt-16 flex items-center justify-center flex-col">
+    <div className="max-w-7xl mx-auto h-full  flex items-center justify-center flex-col">
       {backendError && (
         <div className="px-4 pt-4">
           <AlertBox

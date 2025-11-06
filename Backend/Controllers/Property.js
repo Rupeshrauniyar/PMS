@@ -120,7 +120,7 @@ exports.deleteProperty = async (req, res) => {
       });
     }
     const decode = jwt.verify(Data.token, process.env.JWT_SECRET);
-    const update = await UserModel.findOneAndUpdate(
+    const update = await UserModel.updateOne(
       { _id: decode.id },
       {
         $pull: { myProperties: { propId: Data._id } },

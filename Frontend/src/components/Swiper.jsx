@@ -22,14 +22,13 @@ const SwiperComp = ({ title, images = [] }) => {
         <p className="text-sm text-gray-500 text-center ">
           Please check back in a few moments.
         </p>
-        
       </div>
     );
   }
   const imagesToDisplay = images.map((src) => ({ src, alt: "Property Image" }));
 
   return (
-    <div className="relative w-full h-full overflow-hidden shadow-xl ">
+    <div className="relative w-full h-full overflow-hidden shadow-xl z-10">
       {/* {console.log(images)} */}
       <Swiper
         autoplay={
@@ -59,25 +58,21 @@ const SwiperComp = ({ title, images = [] }) => {
         }}
         // thumbs={{ swiper: thumbsSwiper }}
         modules={[Autoplay, Pagination, EffectFade]}
-        className="mySwiper2 flex flex-col items-center justify-center"
+        className="mySwiper2 flex flex-col items-center justify-center z-[1]"
       >
         {imagesToDisplay.map((item, index) => (
           <SwiperSlide key={index}>
-            <div className="flex items-center justify-center w-full h-full">
+            <div className="flex items-center justify-center w-full h-full aspect-[16/9] relative z-[1]">
               <img
                 src={item.src}
                 alt={item.alt}
-                className=" w-full h-[280px] object-cover xl:object-contain  transform  transition-transform duration-700 ease-in-out"
+                className="  object-cover   transform  transition-transform duration-700 ease-in-out z-[1]"
               />
               {/* Blurred Background */}
               <div
                 className="absolute inset-0 bg-no-repeat bg-center bg-cover filter blur-lg transform scale-110 -z-10"
                 style={{ backgroundImage: `url(${item.src})` }}
               ></div>
-              {/* Gradient Overlay */}
-              {/* <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div> */}
-              {/* Caption (Optional) */}
-
               <div className="absolute bottom-6 left-4 text-white text-lg font-semibold drop-shadow-lg">
                 {title}
               </div>

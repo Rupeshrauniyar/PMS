@@ -10,6 +10,7 @@ import {
   Edit2,
   Building2,
   Plus,
+  ChevronDown,
 } from "lucide-react";
 import Properties from "../components/Properties";
 import axios from "axios";
@@ -21,11 +22,11 @@ const Profile = () => {
   const btnMap = [
     {
       type: "myProperties",
-      text: "My Prop",
+      text: "My Properties",
     },
     {
       type: "bookedProperties",
-      text: "Booked Prop",
+      text: "Booked Properties",
     },
     ,
     {
@@ -170,10 +171,9 @@ const Profile = () => {
                   <p className="text-sm text-zinc-900 font-medium">
                     {user?.createdAt
                       ? new Date(user.createdAt).toLocaleDateString("en-US", {
-                        month: "long",
-                        day:"2-digit",
-                        year: "numeric",
-                          
+                          month: "long",
+                          day: "2-digit",
+                          year: "numeric",
                         })
                       : "Recently joined"}
                   </p>
@@ -181,51 +181,56 @@ const Profile = () => {
               </div>
 
               {/* Total Properties */}
-            
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-between w-full h-10">
+        <div className="flex gap-3 min-w-full overflow-x-auto no-scrollbar py-2 px-1">
           {btnMap.map((btn, i) => (
             <button
-              className={`${
-                btn.type === Type ? "bg-black" : "bg-neutral-600"
-              } rounded-xl text-white p-2`}
-              onClick={() => HandleType(btn.type)}
               key={i}
+              onClick={() => HandleType(btn.type)}
+              className={`px-5 py-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border 
+        ${
+          btn.type === Type
+            ? "bg-black text-white border-black shadow-md scale-105"
+            : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 hover:border-gray-400"
+        }`}
             >
               {btn.text}
             </button>
           ))}
         </div>
-        <div className="w-full  grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3 pb-12">
-          {myProp.length > 0 ? (
-            myProp.map((item, index) => (
-              <Properties
-                prop={item.propId}
-                key={index}
-              />
-            ))
-          ) : (
-            <div className="   p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
-                <Building2
-                  size={32}
-                  className="text-zinc-400"
+
+        <div className="w-full  grid grid-cols-1  gap-3 mt-3 pb-12">
+          {Type ? (
+            myProp.length > 0 ? (
+              myProp.map((item, index) => (
+                <Properties
+                  prop={item.propId}
+                  key={index}
                 />
+              ))
+            ) : (
+              <div className="   p-12 text-center">
+                <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
+                  <Building2
+                    size={32}
+                    className="text-zinc-400"
+                  />
+                </div>
+                <h3 className="text-xl font-semibold text-zinc-900 mb-2">
+                  No Properties available
+                </h3>
               </div>
-              <h3 className="text-xl font-semibold text-zinc-900 mb-2">
-                No Properties Yet
-              </h3>
-              <p className="text-zinc-600 mb-6">
-                Start by adding your first property listing
-              </p>
+            )
+          ) : (
+            <div className="flex items-center justify-center">
               <button
-                onClick={() => navigate("/add-property")}
-                className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium px-6 py-3 rounded-xl transition-all inline-flex items-center gap-2"
+                className="flex items-center justify-center cursor-pointer group"
+                onClick={() => HandleType("myProperties")}
               >
-                <Plus size={18} />
-                Add Property
+                <ChevronDown className="mr-1"/>
+                <h3>Load Properties</h3>
               </button>
             </div>
           )}

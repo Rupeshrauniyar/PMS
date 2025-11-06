@@ -37,9 +37,10 @@ const Recommend = (prop) => {
       }
     };
     getProperty();
-  }, []);
+  }, [prop.id]);
   return (
-    <div className="w-full">
+    <div className="w-full mt-4">
+      {console.log(prop)}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[{}, {}, {}].map((p, i) => (
@@ -81,7 +82,7 @@ const Recommend = (prop) => {
           ))}
         </div>
       ) : propData.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {propData.map((item, index) => (
             <Properties
               prop={item}

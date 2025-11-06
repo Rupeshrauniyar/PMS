@@ -76,7 +76,7 @@ const Navbar = () => {
               {user ? (
                 <>
                   <Link to="/profile">
-                    <button className=" rounded-full hover:bg-zinc-100 transition-colors flex gap-1 items-center justify-center">
+                    <button className=" rounded-full hover:bg-zinc-100 transition-colors flex gap-1 items-center justify-center p-2 cursor-pointer">
                       {user?.pp?.length > 0 ? (
                         <img
                           className="w-6 h-6 object-cover rounded-full"
@@ -120,7 +120,7 @@ const Navbar = () => {
       >
         {/* {console.log(user.displayName)} */}
         <div className="max-w-6xl ">
-          <div className="h-15  bg-white/70 backdrop-blur-xl border border-zinc-200/60  shadow-lg  flex items-center justify-around">
+          <div className="h-15  bg-white/70 backdrop-blur-xl border border-zinc-200/60  shadow-lg  flex items-center justify-between px-3">
             {/* Left: Menu + Logo */}
             {navLinks.map((navLink, index) => (
               <NavLink
@@ -128,11 +128,11 @@ const Navbar = () => {
                 state={{ from: location.pathname }}
                 to={navLink.path}
                 className={({ isActive }) => `
-                flex items-center justify-center px-5 py-4  rounded-xl transition-all duration-200
+               transition-all duration-200
                 ${
                   isActive
-                    ? " bg-black text-white   hover:bg-zinc-900"
-                    : " text-gray-700  hover:bg-gray-100"
+                    ? "  text-black font-extrabold    hover:text-zinc-900"
+                    : " text-gray-600  hover:text-gray-800"
                 }
               `}
               >
@@ -143,11 +143,11 @@ const Navbar = () => {
             <NavLink
               to="settings"
               className={({ isActive }) => `
-                flex items-center justify-center px-5 py-4  rounded-xl transition-all duration-200
+                   transition-all duration-200
                 ${
                   isActive
-                    ? " bg-black text-white   hover:bg-zinc-900"
-                    : " text-gray-700  hover:bg-gray-100"
+                    ? " font-extrabold text-black    hover:text-zinc-900"
+                    : " text-gray-600  hover:text-gray-800"
                 }
               `}
             >
@@ -157,7 +157,7 @@ const Navbar = () => {
         </div>
       </div>
       {/* Desktop sidebar*/}
-      <div className="hidden xl:block fixed left-0 top-0 h-full w-[20%]  text-black bg-white shadow-md z-40 ">
+      <div className="hidden xl:block fixed left-0 top-0 h-full w-[25%]  text-black bg-white shadow-md z-40 ">
         <div className="w-full p-2 border-b-2 border-zinc-200">
           <h3 className="font-bold text-3xl  ">Sidebar</h3>
           <p>Navigate through pages.</p>

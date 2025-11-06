@@ -27,9 +27,9 @@ const Properties = (props) => {
       to={nav}
       className="block"
     >
-      <div className="bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group ">
+      <div className="w-full h-full bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group ">
         {/* Image Section */}
-        <div className="relative overflow-hidden aspect-video bg-zinc-100 z-5">
+        <div className=" relative overflow-hidden aspect-[16/9] bg-zinc-100 ">
           <SwiperComp
             title={props.prop.title}
             images={props.prop.images}

@@ -116,14 +116,21 @@ const Index = () => {
   if (location.pathname === "/landing") {
     return <Landing />;
   }
+  function useScrollTop() {
+    const { pathname } = useLocation();
+    useEffect(() => {
+      window.scrollTo(0, 0);
+    }, [pathname]);
+  }
+  useScrollTop();
   return (
     <>
       <Navbar />
       <div
         className={`${
           location.pathname === "/signin" || location.pathname === "/signup"
-            ? "w-full"
-            : "xl:w-[80%] xl:ml-[20%] ml-0"
+            ? "w-full min-h-screen"
+            : "xl:w-[40%] xl:ml-[33%] ml-0"
         } min-h-screen text-black px-2`}
       >
         <Suspense>
