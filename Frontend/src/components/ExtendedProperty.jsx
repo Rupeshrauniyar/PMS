@@ -49,14 +49,14 @@ const ExtendedProperty = (props) => {
                 <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
               </div>
             )}
-            {console.log(currentImageIndex)}
+            {/* {console.log(currentImageIndex)} */}
             <img
               src={
                 props.props.images?.[currentImageIndex] ||
                 props.props.images?.[0]
               }
               alt={props.props.title}
-              className={`relative w-full h-full object-cover xl:object-contain z-15 transition-opacity duration-300 ${
+              className={`relative w-full h-full object-cover xl:object-contain z-10 transition-opacity duration-300 ${
                 imageLoading ? "opacity-0" : "opacity-100"
               }`}
               onLoad={() => setImageLoading(false)}

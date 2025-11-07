@@ -105,10 +105,7 @@ const Book = () => {
       if (res.status === 200) {
         setUser((prev) => ({
           ...prev,
-          bookedProperties: [
-            ...prev.bookedProperties,
-            { propId: params.id, price: barPrice ? barPrice : params.price },
-          ],
+          bookedProperties: [...prev.bookedProperties, Data],
         }));
         setSubmitting(false);
         setSuccess(res.data.message);

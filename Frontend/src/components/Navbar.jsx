@@ -50,7 +50,7 @@ const Navbar = () => {
     <>
       {/* Top Nav */}
       <div
-        className={`w-full fixed top-0  right-0 z-90 transition-transform duration-300 ${
+        className={`w-full fixed top-0  right-0 z-[2000] transition-transform duration-300 ${
           show ? "translate-y-0" : "-translate-y-full"
         }`}
       >
@@ -116,7 +116,7 @@ const Navbar = () => {
       </div>
       {/* Mobile bottombar*/}
       <div
-        className={`block xl:hidden fixed bottom-0 left-0 right-0 z-35 transition-transform duration-300 `}
+        className={`block xl:hidden fixed bottom-0 left-0 right-0 z-[2000] transition-transform duration-300 `}
       >
         {/* {console.log(user.displayName)} */}
         <div className="max-w-6xl ">
@@ -157,7 +157,7 @@ const Navbar = () => {
         </div>
       </div>
       {/* Desktop sidebar*/}
-      <div className="hidden xl:block fixed left-0 top-0 h-full w-[25%]  text-black bg-white shadow-md z-40 ">
+      <div className="hidden xl:block fixed left-0 top-0 h-full w-[25%]  text-black bg-white shadow-md z-[2000] ">
         <div className="w-full p-2 border-b-2 border-zinc-200">
           <h3 className="font-bold text-3xl  ">Sidebar</h3>
           <p>Navigate through pages.</p>

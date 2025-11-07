@@ -1,11 +1,16 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, Link, useParams, useLocation } from "react-router-dom";
 import { AppContext } from "../contexts/AppContextx";
-import { Delete, Trash, Trash2, X } from "lucide-react";
 import axios from "axios";
 import AlertBox from "../components/AlertBox";
-import EditProfile from "./EditProfile";
 import ExtendedProperty from "../components/ExtendedProperty";
+import { Loader2, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 const BookedProp = () => {
   const { user, setUser } = useContext(AppContext);
@@ -14,9 +19,9 @@ const BookedProp = () => {
   const navigate = useNavigate();
   const [success, setSuccess] = useState(null);
   const [backendError, setBackendError] = useState(null);
-  const [editOpen, setEditOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const [propertyLoading, setPropertyLoading] = useState(true);
-
+  const [cancLoading, setCancLoading] = useState(false);
   if (
     !user?.bookedProperties?.find((myProps) => myProps?.propId === params.id)
   ) {
@@ -63,8 +68,8 @@ const BookedProp = () => {
   }, [params.id]);
 
   useEffect(() => {
-    document.body.style.overflow = editOpen ? "hidden" : "auto";
-  }, [editOpen]);
+    document.body.style.overflow = cancelOpen ? "hidden" : "auto";
+  }, [cancelOpen]);
 
   if (propertyLoading) {
     return (
@@ -107,6 +112,7 @@ const BookedProp = () => {
   }
   const HandleCancel = async () => {
     try {
+      setCancLoading(true);
       const res = await axios.post(
         `${import.meta.env.VITE_backendUrl}/api/booking/cancel-booking`,
         {
@@ -115,39 +121,24 @@ const BookedProp = () => {
         }
       );
       if (res.status === 200) {
+        setCancelOpen(false);
+        setCancLoading(false);
         setSuccess("Your booking has been canceled.");
         setPropData({});
       }
     } catch (err) {
+      setCancelOpen(false);
+      setCancLoading(false);
       setBackendError("Unable to cancel booking.");
     }
   };
   const activeBooking = user?.bookedProperties?.find(
     (myProps) => myProps.propId === params.id
   );
-  
+
   return (
     <div className="w-full min-h-screen overflow-hidden  pt-20 pb-18">
       {/* Edit Profile Modal */}
-      {editOpen && (
-        <>
-          <div className="fixed z-50 xl:w-[60%] xl:ml-[20%] w-[96%] h-[650px] top-0 left-2 flex flex-col items-center justify-center overflow-hidden">
-            <div className="w-full h-[80%] bg-white px-2 rounded-3xl overflow-y-auto mt-12 flex flex-col shadow-2xl animate-[slideUp_0.3s_ease-out]">
-              <div className="flex items-center justify-between mt-6 px-4">
-                <span className="text-xl font-semibold">Edit Profile</span>
-                <button
-                  onClick={() => setEditOpen(false)}
-                  className="hover:bg-gray-100 p-2 rounded-full transition-colors"
-                >
-                  <X size={26} />
-                </button>
-              </div>
-              <EditProfile />
-            </div>
-          </div>
-          <div className="fixed top-0 left-0 w-full h-full bg-black/60 backdrop-blur-sm z-40 animate-[fadeIn_0.3s_ease-out]"></div>
-        </>
-      )}
 
       {/* Alerts */}
       {success && (
@@ -167,24 +158,77 @@ const BookedProp = () => {
           onClose={() => setBackendError(null)}
         />
       )}
+      {cancelOpen && (
+        <div className="w-full h-screen absolute inset-0 p-4 flex items-center justify-center bg-black/40 backdrop-blur-md z-[999]">
+          {cancLoading ? (
+            <div className="flex items-center justify-center bg-white/95 dark:bg-neutral-900 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-neutral-800 text-center max-w-sm w-full transition-all duration-300">
+              <Loader2 className="animate-spin w-5 h-5" />
+            </div>
+          ) : (
+            <div className="bg-white/95 dark:bg-neutral-900 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-neutral-800 text-center max-w-sm w-full transition-all duration-300">
+              <p className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3">
+                Cancel Booking?
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                Are you sure you want to cancel this booking? This action cannot
+                be undone.
+              </p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => HandleCancel()}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-medium shadow-sm hover:shadow-md hover:from-red-600 hover:to-rose-700 active:scale-[0.98] transition-all"
+                >
+                  Yes, Cancel
+                </button>
+                <button
+                  onClick={() => setCancelOpen(false)}
+                  className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-neutral-800 active:scale-[0.98] transition-all"
+                >
+                  No, Keep It
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex items-center justify-between py-5">
+        <span></span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              variant="ghost"
+              size="icon"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="text-red-500"
+              onClick={() => setCancelOpen(true)}
+            >
+              Cancel Booking
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <ExtendedProperty
         props={props}
         price={activeBooking.price || null}
       />
       <hr />
       <div className="mt-2"></div>
-      <button
-        onClick={() => HandleCancel()}
-        className="bg-red-500/90 text-black px-4  py-3 rounded-md "
-      >
-        Cancel Booking
-      </button>
-      <div className="flex flex-col">Note:{activeBooking.note}</div>
+
+      {activeBooking.note ? (
+        <div className="flex flex-col">Note:{activeBooking.note}</div>
+      ) : null}
       <div className="">
         {activeBooking.status ? (
-          <button className="bg-green-500 text-white rounded-full p-3">Pay via Esewa</button>
+          <button className="bg-green-500 text-white rounded-full p-3">
+            Pay via Esewa
+          </button>
         ) : (
-          <>Wait until Owner accepts your Booking.</>
+          <>PROCESSING...</>
         )}
       </div>
     </div>

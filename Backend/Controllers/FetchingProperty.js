@@ -61,14 +61,16 @@ exports.getProperty = async (req, res) => {
         .lean();
       if (!Property)
         return res.status(200).json({ message: "No property found." });
-      Property.bookers = Property.bookers.length;
-      // console.log(Property.bookers);
+      else {
+        Property.bookers = Property.bookers.length;
+        // console.log(Property.bookers);
 
-      return res.status(200).json({
-        Property: Property || [],
-        success: !!Property,
-        message: Property ? undefined : "No properties available yet",
-      });
+        return res.status(200).json({
+          Property: Property || [],
+          success: !!Property,
+          message: Property ? undefined : "No properties available yet",
+        });
+      }
     } else if (Data.filter) {
       const Properties = await PropertyModel.find({
         _id: { $ne: Data.filter },
@@ -124,6 +126,8 @@ exports.getUserProperty = async (req, res) => {
       .select("-password -FCMtokens");
 
     if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user[Type])
+      return res.status(200).json({ properties: [], success: true });
 
     res.status(200).json({ properties: user[Type], success: true });
   } catch (err) {
@@ -131,7 +135,6 @@ exports.getUserProperty = async (req, res) => {
     res.status(500).json({ error: "Something went wrong." });
   }
 };
-
 exports.searchProperty = async (req, res) => {
   try {
     const { value } = req.body;
