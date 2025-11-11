@@ -278,7 +278,7 @@ const MyProp = () => {
 
           {/* 🟣 Other Bookers */}
           <h3 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">
-            Available Bookings
+            Other Bookers
           </h3>
 
           {props.bookers.filter((item) => !item.status).length > 0 ? (
@@ -341,11 +341,11 @@ const MyProp = () => {
           )}
         </>
       ) : (
-        <div className="flex flex-col  bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-inner p-10 mt-3">
+        <div className="flex flex-col items-center justify-center bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-inner p-10">
           <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
             No bookings available.
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 ">
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
             Once a customer books your property, details will appear here.
           </p>
         </div>

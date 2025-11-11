@@ -205,17 +205,10 @@ const Profile = () => {
           {Type ? (
             myProp.length > 0 ? (
               myProp.map((item, index) => (
-                <div key={index}>
-                  {item.propId ? (
-                    <Properties prop={item.propId} />
-                  ) : (
-                    <>
-                      <div className="w-full h-50 bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group flex items-center justify-center text-zinc-600 text-lg font-medium">
-                        This property is no longer available.
-                      </div>
-                    </>
-                  )}
-                </div>
+                <Properties
+                  prop={item.propId}
+                  key={index}
+                />
               ))
             ) : (
               <div className="   p-12 text-center">
@@ -236,7 +229,7 @@ const Profile = () => {
                 className="flex items-center justify-center cursor-pointer group"
                 onClick={() => HandleType("myProperties")}
               >
-                <ChevronDown className="mr-1" />
+                <ChevronDown className="mr-1"/>
                 <h3>Load Properties</h3>
               </button>
             </div>

@@ -5,18 +5,21 @@ import SwiperComp from "./Swiper";
 import { AppContext } from "../contexts/AppContextx";
 
 const Properties = (props) => {
-  if (!props.prop?._id) {
-    return null;
+
+  if (!props.prop) {
+    return <></>
   }
   let nav = `/view/${props.prop?._id}`;
-  const { user } = useContext(AppContext);
+  const {user} = useContext(AppContext);
   if (user?.myProperties?.some((myProp) => myProp.propId === props.prop._id)) {
+
     nav = `/my/${props.prop?._id}`;
   } else if (
     user?.bookedProperties?.some(
       (bookProp) => bookProp.propId === props.prop._id
     )
   ) {
+ 
     nav = `/booked/${props.prop?._id}`;
   }
   return (
@@ -24,7 +27,6 @@ const Properties = (props) => {
       to={nav}
       className="block"
     >
-  
       <div className="w-full h-full bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group ">
         {/* Image Section */}
         <div className=" relative overflow-hidden aspect-[16/9] bg-zinc-100 ">

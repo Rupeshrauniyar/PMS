@@ -45,7 +45,11 @@ const Home = () => {
 
       <SearchBar dis={true} />
 
-      <div className="pt-6"></div>
+      <div className="pt-8"></div>
+      <div className="overflow-hidden rounded-3xl  ">
+        <SwiperComp images={defaultImages} />
+      </div>
+      <div className="pb-4"></div>
 
       {/* Modern Tab Navigation */}
 
@@ -122,18 +126,12 @@ const Home = () => {
             </div>
           ) : propData.length > 0 ? (
             <div className="grid grid-cols-1  gap-3">
-              {propData.map((item, index) =>
-                item._id ? (
-                  <Properties
-                    prop={item}
-                    key={index}
-                  />
-                ) : (
-                  <div className="w-full h-50 bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group flex items-center justify-center text-zinc-600 text-lg font-medium">
-                    This property is no longer available.
-                  </div>
-                )
-              )}
+              {propData.map((item, index) => (
+                <Properties
+                  prop={item}
+                  key={index}
+                />
+              ))}
             </div>
           ) : (
             <div className="xl:w-full h-[400px] flex items-center justify-center flex-col  p-12 text-center">

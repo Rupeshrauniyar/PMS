@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <meta
+      name="google-site-verification"
+      content="xWX5to9dHEfGfWIhL3Mkb9dZtmWR0SrE9AIQEzW177A"
+    />
+    <!-- Title (keep under 60 chars for SEO) -->
+    <title>PMS BROKER- Deal with Properties Online</title>
+
+    <!-- Description (150–160 chars for search engines) -->
+    <meta
+      name="description"
+      content="PMS is a web app for buying, selling, and renting properties online, making real estate transactions easy and efficient."
+    />
+    <meta
+      name="keywords"
+      content="PMS, Property Management System, Real Estate, Buy Property, Sell Property, Rent Property, Online Property Portal, Web App"
+    />
+    <meta
+      name="author"
+      content="PMS Team"
+    />
+
+    <!-- Open Graph -->
+    <meta
+      property="og:title"
+      content="PMS - Property Management System"
+    />
+    <meta
+      property="og:description"
+      content="Buy, sell, and rent properties online easily with PMS — your all-in-one property management web app."
+    />
+    <meta
+      property="og:image"
+      content="/pms-og-image.png"
+    />
+    <meta
+      property="og:url"
+      content="https://pmsnepal.vercel.app"
+    />
+    <meta
+      property="og:type"
+      content="website"
+    />
+
+    <!-- Twitter Card -->
+    <meta
+      name="twitter:card"
+      content="summary_large_image"
+    />
+    <meta
+      name="twitter:title"
+      content="PMS - Property Management System"
+    />
+    <meta
+      name="twitter:description"
+      content="Explore PMS, the web app that allows you to buy, sell, and rent properties online with ease."
+    />
+    <meta
+      name="twitter:image"
+      content="/pms-og-image.png"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="/pms-favicon.png"
+      sizes="96x96"
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="/favicon.svg"
+    />
+    <link
+      rel="shortcut icon"
+      href="/favicon.ico"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/apple-touch-icon.png"
+    />
+    <link
+      rel="manifest"
+      href="/site.webmanifest"
+    />
+
+    <meta
+      name="theme-color"
+      content="#0f172a"
+    />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "PMS - Property Management System",
+        "url": "https://pmsnepal.vercel.app",
+        "description": "PMS is a web app that enables users to buy, sell, and rent properties online, simplifying real estate transactions.",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "sameAs": [
+          "https://facebook.com/yourapp",
+          "https://twitter.com/yourapp",
+          "https://linkedin.com/company/yourapp"
+        ],
+        "image": "https://pmsnepal.vercel.app/pms-og-image.png"
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <!-- <script>
+      (function () {
+        const appLink = "pmsnepal://open";
+        const fallbackLink = window.location.pathname; // or your deployed site
+        try {
+          
+          const isMobile = /Android|iPhone|iPad|iPod/i.test(
+            navigator.userAgent
+          );
+
+          if (!isMobile) return;
+
+          // check if we already attempted to open the app
+          const urlParams = new URLSearchParams(window.location.search);
+          const triedApp = urlParams.get("triedApp");
+
+          if (!triedApp) {
+            const start = Date.now();
+            // Try to open the app
+            window.location = appLink;
+
+            // Fallback if app not installed
+            setTimeout(() => {
+              const elapsed = Date.now() - start;
+              if (elapsed < 2000) {
+                // add ?triedApp=1 to URL so it won't try again
+                const separator = fallbackLink.includes("?") ? "&" : "?";
+                window.location = fallbackLink + separator + "triedApp=1";
+              }
+            }, 1000);
+          } 
+        } catch (err) {
+          // console.log(err);
+          const separator = fallbackLink.includes("?") ? "&" : "?";
+          window.location = fallbackLink + separator + "triedApp=1";
+        }
+      })();
+    </script> -->
+
+    <script
+      type="module"
+      src="/src/main.jsx"
+    ></script>
+  </body>
+</html>

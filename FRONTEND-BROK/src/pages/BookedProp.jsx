@@ -216,75 +216,19 @@ const BookedProp = () => {
         props={props}
         price={activeBooking.price || null}
       />
-      {activeBooking.note ? (
-        <div className="flex flex-col">Note:{activeBooking.note}</div>
-      ) : null}
       <hr />
       <div className="mt-2"></div>
 
+      {activeBooking.note ? (
+        <div className="flex flex-col">Note:{activeBooking.note}</div>
+      ) : null}
       <div className="">
         {activeBooking.status ? (
           <button className="bg-green-500 text-white rounded-full p-3">
             Pay via Esewa
           </button>
         ) : (
-          <div className="w-full max-w-md mx-auto bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-zinc-800 mb-4">
-              Order Status
-            </h2>
-
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-5 top-3 bottom-3 w-0.5 bg-zinc-200"></div>
-
-              {/* Step 1 */}
-              <div className="flex items-start gap-3 relative z-10 mb-6">
-                <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-medium">
-                  1
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-zinc-800">
-                    Order Placed
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    We have received your order.
-                  </p>
-                </div>
-              </div>
-
-             
-
-              {/* Step 3 */}
-              <div className="flex items-start gap-3 relative z-10 mb-6">
-                <div className="bg-yellow-400 text-white rounded-full w-8 h-8 flex items-center justify-center font-medium">
-                  2
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-zinc-800">
-                    Order Confirmed
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    The owner has'nt accepted the order
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="flex items-start gap-3 relative z-10">
-                <div className="bg-gray-300 text-white rounded-full w-8 h-8 flex items-center justify-center font-medium">
-                  3
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-zinc-800">
-                    Pay for property
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    You have selected for PAY option
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <>PROCESSING...</>
         )}
       </div>
     </div>
