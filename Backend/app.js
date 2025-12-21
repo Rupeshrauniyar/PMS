@@ -46,17 +46,17 @@ const fetchPropertyRoutes = require("./Routes/FetchingProperty");
 
 const emailRoutes = require("./Routes/Cred");
 const androidRoutes = require("./Routes/Android");
-// --- Keep Alive Function ---
-const makeActive = async () => {
-  try {
-    const resp = await fetch(process.env.BACKEND);
-    if (resp.ok)
-      console.log("Server reloaded:", new Date().toLocaleTimeString());
-  } catch (err) {
-    console.error("Keep-alive failed:", err.message);
-  }
-};
-setInterval(makeActive, 300_000); // every 5 minutes
+// // --- Keep Alive Function ---
+// const makeActive = async () => {
+//   try {
+//     const resp = await fetch(process.env.BACKEND);
+//     if (resp.ok)
+//       console.log("Server reloaded:", new Date().toLocaleTimeString());
+//   } catch (err) {
+//     console.error("Keep-alive failed:", err.message);
+//   }
+// };
+// setInterval(makeActive, 300_000); // every 5 minutes
 
 (async () => {
   try {
