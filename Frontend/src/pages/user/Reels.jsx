@@ -180,9 +180,11 @@ const Reels = () => {
                 src={reel.videoSrc}
                 className="absolute inset-0 w-full h-full object-cover"
                 loop
+                autoPlay
                 muted={isMuted}
                 playsInline
-                preload="auto"
+                webkit-playsinline="true"
+                preload="metadata"
                 onClick={() => togglePlay(reel.id)}
                 onMouseDown={() => speedUp(reel.id)} // desktop hold
                 onMouseUp={() => resetSpeed(reel.id)}

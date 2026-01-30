@@ -36,7 +36,7 @@ exports.sendPassResetMail = async (req, res) => {
 
     res.status(200).json({ message: "Email sent. Token expiration: 15 mins" });
   } catch (err) {
-    console.log(err);
+    console.log(err.response.data.body);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
