@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../../contexts/AppContext";
 import { Loader2, Eye, EyeClosed, Lock } from "lucide-react";
-import AlertBox from "../components/AlertBox";
+import AlertBox from "../../components/AlertBox";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 

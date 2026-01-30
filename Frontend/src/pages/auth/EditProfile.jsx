@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../../contexts/AppContext";
 import { Loader2, Mail, Phone, User, ChevronDown } from "lucide-react";
-import AlertBox from "../components/AlertBox";
+import AlertBox from "../../components/AlertBox";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -182,7 +182,7 @@ const EditProfile = (props) => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto h-full  flex items-center justify-center flex-col">
+    <div className={`max-w-7xl mx-auto ${props.css ? "h-full":"h-screen"}  flex items-center justify-center flex-col`}>
       {backendError && (
         <div className="px-4 pt-4">
           <AlertBox

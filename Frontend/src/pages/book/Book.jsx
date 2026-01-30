@@ -6,8 +6,8 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { AppContext } from "../contexts/AppContextx";
-import Home from "./Home";
+import { AppContext } from "../../contexts/AppContext";
+import Home from "../user/Home";
 import {
   Phone,
   Home as HomeIcon,
@@ -32,10 +32,10 @@ import {
   ChevronUp,
 } from "lucide-react";
 import axios from "axios";
-import AlertBox from "../components/AlertBox";
-import EditProfile from "./EditProfile";
-import Recommended from "../components/Recomended";
-import Signin from "./Signin";
+import AlertBox from "../../components/AlertBox";
+import EditProfile from "../auth/EditProfile";
+import Recommended from "../../components/Recomended";
+import Signin from "../auth/Signin";
 
 const Book = () => {
   const navigate = useNavigate();
@@ -233,7 +233,7 @@ const Book = () => {
           >
             <EditProfile
               error={errors?.contact ? errors?.contact : null}
-              className=""
+              css={true}
             />
             <button
               className="bg-black text-white rounded-xl w-full p-3 "
@@ -268,8 +268,11 @@ const Book = () => {
               <ChevronUp />
             </span>
           </div>
-          <div className="h- mt-4">
-            <Signin from={location.pathname} />
+          <div className=" mt-4">
+            <Signin
+              from={location.pathname}
+              css={true}
+            />
           </div>
         </div>
       )}

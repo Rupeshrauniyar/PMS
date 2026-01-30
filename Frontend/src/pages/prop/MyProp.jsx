@@ -1,11 +1,11 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, Link, useParams, useLocation } from "react-router-dom";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../../contexts/AppContext";
 import { Delete, DeleteIcon, Trash, Trash2, X } from "lucide-react";
 import axios from "axios";
-import AlertBox from "../components/AlertBox";
-import EditProfile from "./EditProfile";
-import Properties from "../components/Properties";
+import AlertBox from "../../components/AlertBox";
+import EditProfile from "../auth/EditProfile";
+import Properties from "../../components/Properties";
 import { Loader2, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,

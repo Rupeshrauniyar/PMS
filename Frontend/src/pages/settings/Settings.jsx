@@ -10,7 +10,7 @@ import {
   Lock,
 } from "lucide-react";
 import React, { useContext } from "react";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 // import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
@@ -30,8 +30,7 @@ const Settings = () => {
       label: "Your Profile",
       action: () => navigate("/profile"),
       section: "account",
-    },
-    {
+    }, {
       icon: Pen,
       label: "Edit Profile",
       action: () => navigate("/edit-profile"),

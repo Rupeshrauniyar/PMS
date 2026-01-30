@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
 import {
   Mail,
@@ -12,7 +12,7 @@ import {
   Plus,
   ChevronDown,
 } from "lucide-react";
-import Properties from "../components/Properties";
+import Properties from "../../components/Properties";
 import axios from "axios";
 
 const Profile = () => {

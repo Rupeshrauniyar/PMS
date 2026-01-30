@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, NavLink, useLocation, useParams } from "react-router-dom";
-import { Home, HousePlus, Plus, Search, Settings, User2 } from "lucide-react";
-import { AppContext } from "../contexts/AppContextx";
+import {
+  Clapperboard,
+  Home,
+  HousePlus,
+  Menu,
+  MoreVertical,
+  PlaySquare,
+  Plus,
+  RectangleEllipsis,
+  Search,
+  Settings,
+  User2,
+} from "lucide-react";
+import { AppContext } from "../contexts/AppContext";
 
 const Navbar = () => {
   const [show, setShow] = useState(true);
@@ -30,14 +42,19 @@ const Navbar = () => {
       icon: Home,
     },
     {
-      path: "/search",
-      name: "Search",
-      icon: Search,
+      path: "/reels",
+      name: "Reels",
+      icon: PlaySquare,
     },
     {
       path: "/add-property",
       name: "Add property",
       icon: Plus,
+    },
+    {
+      path: "/search",
+      name: "Search",
+      icon: Search,
     },
     {
       path: "/profile",
@@ -46,7 +63,9 @@ const Navbar = () => {
     },
   ];
   return location.pathname === "/signup" ||
-    location.pathname === "/signin" ? null : (
+    location.pathname === "/signin" ||
+    location.pathname === "/reels" ||
+    location.pathname === "/intro" ? null : (
     <>
       {/* Top Nav */}
       <div
@@ -110,6 +129,19 @@ const Navbar = () => {
                   </Link>
                 </div>
               )}
+              <NavLink
+                to="settings"
+                className={({ isActive }) => `
+                   transition-all duration-200
+                ${
+                  isActive
+                    ? " font-extrabold text-black    hover:text-zinc-900"
+                    : " text-gray-600  hover:text-gray-800"
+                }
+              `}
+              >
+                <Menu />
+              </NavLink>
             </div>
           </div>
         </div>
@@ -120,7 +152,7 @@ const Navbar = () => {
       >
         {/* {console.log(user.displayName)} */}
         <div className="max-w-6xl ">
-          <div className="h-15  bg-white/70 backdrop-blur-xl border border-zinc-200/60  shadow-lg  flex items-center justify-between px-3">
+          <div className="h-14  bg-white/70 backdrop-blur-xl border border-zinc-200/60  shadow-lg  flex items-center justify-between px-4">
             {/* Left: Menu + Logo */}
             {navLinks.map((navLink, index) => (
               <NavLink
@@ -128,7 +160,7 @@ const Navbar = () => {
                 state={{ from: location.pathname }}
                 to={navLink.path}
                 className={({ isActive }) => `
-               transition-all duration-200
+               transition-all duration-200 flex items-center justify-center
                 ${
                   isActive
                     ? "  text-black font-extrabold    hover:text-zinc-900"
@@ -136,23 +168,10 @@ const Navbar = () => {
                 }
               `}
               >
-                <navLink.icon className="w-5 h-5 " />
+                <navLink.icon className="w-6 h-6 " />
                 {/* <span className="font-medium">{navLink.name}</span> */}
               </NavLink>
             ))}
-            <NavLink
-              to="settings"
-              className={({ isActive }) => `
-                   transition-all duration-200
-                ${
-                  isActive
-                    ? " font-extrabold text-black    hover:text-zinc-900"
-                    : " text-gray-600  hover:text-gray-800"
-                }
-              `}
-            >
-              <Settings />
-            </NavLink>
           </div>
         </div>
       </div>

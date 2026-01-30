@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import SwiperComp from "../components/Swiper";
+import SwiperComp from "../../components/Swiper";
 import { DoorOpen, LandPlot, Home as HomeIcon, Building2 } from "lucide-react";
-import Properties from "../components/Properties";
+import Properties from "../../components/Properties";
 import axios from "axios";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../../components/SearchBar";
 import { Link } from "react-router-dom";
 const Home = () => {
   const [activeTab, setActiveTab] = useState("Room");

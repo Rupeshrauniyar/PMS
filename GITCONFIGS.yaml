@@ -2,5 +2,5 @@ git add .
 git init
 git commit -m 'Updated'
 git branch -M main
-git remote add origin https://github.com/Rupeshrauniyar/PMS.git
+git remote add origin https://github.com/MBMAN-HACKATHON-2026/Variant.git
 git push -u origin main

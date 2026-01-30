@@ -20,6 +20,9 @@ exports.getProperty = async (req, res) => {
     //     message: Properties?.length ? undefined : "No property available yet",
     //   });
     // }
+    if (!Data) {
+      res.status(500).json({ error: "Something went wrong." });
+    }
     if (Data.type) {
       const rawProps = await client.sendCommand([
         "JSON.GET",

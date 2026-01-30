@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Loader2, Mail } from "lucide-react";
 import React, { useState } from "react";
-import AlertBox from "../components/AlertBox";
+import AlertBox from "../../components/AlertBox";
 
 const PassResetMail = () => {
   const [email, setEmail] = useState("");

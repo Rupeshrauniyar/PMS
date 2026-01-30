@@ -1,12 +1,12 @@
 import { useContext, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../../contexts/AppContext";
 import { CheckCircle, X, Bookmark, BookmarkCheck } from "lucide-react";
 import axios from "axios";
-import AlertBox from "../components/AlertBox";
-import EditProfile from "./EditProfile";
-import Reccomended from "../components/Recomended";
-import ExtendedProperty from "../components/ExtendedProperty";
+import AlertBox from "../../components/AlertBox";
+import EditProfile from "../auth/EditProfile";
+import Reccomended from "../../components/Recomended";
+import ExtendedProperty from "../../components/ExtendedProperty";
 
 const View = () => {
   const { user, setUser } = useContext(AppContext);
@@ -104,24 +104,28 @@ const View = () => {
 
   const handleSave = async () => {
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/booking/save-property`,
-        {
-          id: params.id,
-          token: localStorage.getItem("token"),
-          action,
+      if (!user?._id) {
+        setBackendError("Signin to save the property.");
+      } else {
+        const res = await axios.post(
+          `${import.meta.env.VITE_backendUrl}/api/booking/save-property`,
+          {
+            id: params.id,
+            token: localStorage.getItem("token"),
+            action,
+          }
+        );
+
+        if (res.status === 200) {
+          setSuccess(res.data.message);
+
+          setUser((prev) => ({
+            ...prev,
+            saved: action
+              ? [...prev.saved, { propId: params.id, createdAt: Date.now() }]
+              : prev.saved.filter((s) => s.propId !== params.id),
+          }));
         }
-      );
-
-      if (res.status === 200) {
-        setSuccess(res.data.message);
-
-        setUser((prev) => ({
-          ...prev,
-          saved: action
-            ? [...prev.saved, { propId: params.id, createdAt: Date.now() }]
-            : prev.saved.filter((s) => s.propId !== params.id),
-        }));
       }
     } catch (err) {
       console.log(err);

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Building2, Search as SearchIcon } from "lucide-react";
 import React, { useState } from "react";
-import Properties from "../components/Properties";
+import Properties from "../../components/Properties";
 const Search = () => {
   const [value, setValue] = useState("");
   const [props, setProps] = useState([]);

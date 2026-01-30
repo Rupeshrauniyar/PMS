@@ -8,27 +8,34 @@ import {
 } from "react-router-dom";
 import { PushNotifications } from "@capacitor/push-notifications";
 import axios from "axios";
-import { AppContext } from "./contexts/AppContextx";
+import { AppContext } from "./contexts/AppContext";
 import { App as CapacitorApp } from "@capacitor/app";
 import Navbar from "./components/Navbar";
-const Home = lazy(() => import("./pages/Home"));
-const Landing = lazy(() => import("./pages/Landing"));
-const ChangePassword = lazy(() => import("./pages/ChangePassword"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
-const PassResetMail = lazy(() => import("./pages/PassResetMail"));
-const Search = lazy(() => import("./pages/Search"));
-const EditProfile = lazy(() => import("./pages/EditProfile"));
-const Signin = lazy(() => import("./pages/Signin"));
-const Signup = lazy(() => import("./pages/Signup"));
-const AddProperty = lazy(() => import("./pages/AddProperty"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Settings = lazy(() => import("./pages/Settings"));
-const View = lazy(() => import("./pages/View"));
-const Book = lazy(() => import("./pages/Book"));
-const MyProp = lazy(() => import("./pages/MyProp"));
-const BookedProp = lazy(() => import("./pages/BookedProp"));
-const AuthUser = lazy(() => import("./middlewares/AuthUser"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+import Intro from "./pages/Intro";
+const Home = lazy(() => import("@/pages/user/Home"));
+
+const ChangePassword = lazy(() => import("@/pages/auth/ChangePassword"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
+const PassResetMail = lazy(() => import("@/pages/auth/PassResetMail"));
+const EditProfile = lazy(() => import("@/pages/auth/EditProfile"));
+const Signin = lazy(() => import("@/pages/auth/Signin"));
+const Signup = lazy(() => import("@/pages/auth/Signup"));
+
+const Search = lazy(() => import("@/pages/user/Search"));
+const Reel = lazy(() => import("@/pages/user/Reels"));
+const Profile = lazy(() => import("@/pages/user/Profile"));
+
+const AddProperty = lazy(() => import("@/pages/prop/AddProperty"));
+const View = lazy(() => import("@/pages/prop/View"));
+const MyProp = lazy(() => import("@/pages/prop/MyProp"));
+
+const Book = lazy(() => import("@/pages/book/Book"));
+const BookedProp = lazy(() => import("@/pages/book/BookedProp"));
+
+const Settings = lazy(() => import("@/pages/settings/Settings"));
+const NotFound = lazy(() => import("@/pages/settings/NotFound"));
+
+const AuthUser = lazy(() => import("@/middlewares/AuthUser"));
 
 const Index = () => {
   const { user } = useContext(AppContext);
@@ -128,10 +135,13 @@ const Index = () => {
       <Navbar />
       <div
         className={`${
-          location.pathname === "/signin" || location.pathname === "/signup"
+          location.pathname === "/signin" ||
+          location.pathname === "/signup" ||
+          location.pathname === "/reels" ||
+          location.pathname === "/intro"
             ? "w-full min-h-screen"
-            : "xl:w-[40%] xl:ml-[33%] ml-0"
-        } min-h-screen text-black px-2`}
+            : "xl:w-[40%] xl:ml-[33%] ml-0 px-2"
+        } min-h-screen text-black `}
       >
         <Suspense>
           <Routes>
@@ -162,13 +172,18 @@ const Index = () => {
               />
             </Route>
             <Route
+              path="/intro"
+              element={<Intro />}
+            />
+            <Route
               path="/"
               element={<Home />}
             />
             <Route
-              path="/landing"
-              element={<Landing />}
+              path="/reels"
+              element={<Reel />}
             />
+
             <Route
               path="/search"
               element={<Search />}

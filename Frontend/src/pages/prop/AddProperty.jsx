@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from "react";
-import SwiperComp from "../components/Swiper";
+import SwiperComp from "../../components/Swiper";
 import {
   Banknote,
   Building,
@@ -22,8 +22,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
-import AlertBox from "../components/AlertBox";
-import { AppContext } from "../contexts/AppContextx";
+import AlertBox from "../../components/AlertBox";
+import { AppContext } from "../../contexts/AppContext";
 const AddProperty = () => {
   const { setUser } = useContext(AppContext);
   const navigate = useNavigate();
