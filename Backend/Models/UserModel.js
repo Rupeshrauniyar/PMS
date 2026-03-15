@@ -10,9 +10,11 @@ const userSchema = mongoose.Schema(
     phone: {
       type: String,
       unique: true,
-      trim: true,
       sparse: true,
-      match: [/^\+?[1-9]\d{7,14}$/, "Please enter a valid phone number"],
+      trim: true,
+      minlength: 8,
+      maxlength: 15,
+      match: [/^\+?[0-9]{8,15}$/, "Please enter a valid phone number"],
     },
     address: { type: String },
     pp: { type: String }, // profile picture
@@ -52,7 +54,7 @@ const userSchema = mongoose.Schema(
     ],
     FCMtokens: [{ type: String }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const UserModel = mongoose.model("users", userSchema);

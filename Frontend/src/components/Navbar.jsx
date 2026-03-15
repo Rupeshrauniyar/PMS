@@ -69,13 +69,13 @@ const Navbar = () => {
     <>
       {/* Top Nav */}
       <div
-        className={`w-full fixed top-0  right-0 z-[2000] transition-transform duration-300 ${
+        className={`xl:w-[75%] w-full fixed top-0  right-0 z-[2000] transition-transform duration-300 ${
           show ? "translate-y-0" : "-translate-y-full"
         }`}
       >
         {/* {console.log(user.displayName)} */}
         <div className=" ">
-          <div className="h-18  bg-white/70 backdrop-blur-xl border border-zinc-200/60  shadow-lg px-2 flex items-center justify-between">
+          <div className="h-19  bg-white/70 backdrop-blur-xl border border-zinc-200/60  shadow-lg px-2 flex items-center justify-between">
             {/* Left: Menu + Logo */}
             <div className="flex items-center gap-3">
               <Link

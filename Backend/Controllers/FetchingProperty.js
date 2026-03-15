@@ -24,40 +24,53 @@ exports.getProperty = async (req, res) => {
       res.status(500).json({ error: "Something went wrong." });
     }
     if (Data.type) {
-      const rawProps = await client.sendCommand([
-        "JSON.GET",
-        `property:${Data.type}`,
-        ".",
-      ]);
-      // console.log(rawProps);
-      if (rawProps && rawProps.length > 0) {
-        // console.log(redisData);
-        return res.status(200).json({
-          Properties: JSON.parse(rawProps),
-          success: rawProps?.length > 0,
-          message: rawProps?.length ? undefined : "No properties available yet",
-          redis: true,
-        });
-      } else {
-        const Properties = await PropertyModel.find({
-          propertyType: Data.type,
-        })
-          .select("-owner -bookers -ownerModel")
-          .lean()
-          .limit(10) // max 50 results
-          .sort({ createdAt: -1 }); // latest first;
-        await client.sendCommand([
-          "JSON.SET",
-          `property:${Data.type}`,
-          ".",
-          JSON.stringify(Properties),
-        ]);
-        return res.status(200).json({
-          Properties: Properties || [],
-          success: Properties?.length > 0,
-          message: Properties?.length ? undefined : "No posts available yet",
-        });
-      }
+      // const rawProps = await client.sendCommand([
+      //   "JSON.GET",
+      //   `property:${Data.type}`,
+      //   ".",
+      // ]);
+      // // console.log(rawProps);
+      // if (rawProps && rawProps.length > 0) {
+      //   // console.log(redisData);
+      //   return res.status(200).json({
+      //     Properties: JSON.parse(rawProps),
+      //     success: rawProps?.length > 0,
+      //     message: rawProps?.length ? undefined : "No properties available yet",
+      //     redis: true,
+      //   });
+      // } else {
+      //   const Properties = await PropertyModel.find({
+      //     propertyType: Data.type,
+      //   })
+      //     .select("-owner -bookers -ownerModel")
+      //     .lean()
+      //     .limit(10) // max 50 results
+      //     .sort({ createdAt: -1 }); // latest first;
+      //   await client.sendCommand([
+      //     "JSON.SET",
+      //     `property:${Data.type}`,
+      //     ".",
+      //     JSON.stringify(Properties),
+      //   ]);
+      //   return res.status(200).json({
+      //     Properties: Properties || [],
+      //     success: Properties?.length > 0,
+      //     message: Properties?.length ? undefined : "No posts available yet",
+      //   });
+      // }
+      const Properties = await PropertyModel.find({
+        propertyType: Data.type,
+        status: false,
+      })
+        .select("-owner -bookers -ownerModel")
+        .lean()
+        .limit(10) // max 50 results
+        .sort({ createdAt: -1 }); // latest first;
+      return res.status(200).json({
+        Properties: Properties || [],
+        // success: Properties?.length > 0,
+        message: Properties?.length ? undefined : "No properties available yet",
+      });
     } else if (Data._id) {
       const Property = await PropertyModel.findById(Data._id)
         .select("-owner -ownerModel ")
@@ -75,6 +88,7 @@ exports.getProperty = async (req, res) => {
         });
       }
     } else if (Data.filter) {
+      console.log("filter", Data.filter);
       const Properties = await PropertyModel.find({
         _id: { $ne: Data.filter },
       })
@@ -270,7 +284,7 @@ exports.searchProperty = async (req, res) => {
     locationKeywords.forEach((keyword) => {
       locationQuery = locationQuery.replace(
         new RegExp(`\\b${keyword}\\b`, "gi"),
-        ""
+        "",
       );
     });
 

@@ -41,6 +41,7 @@ exports.saveProperty = async (req, res) => {
 exports.bookProperty = async (req, res) => {
   try {
     const { token, propId, price, date, bType, note } = req.body;
+
     if (!token || !propId || !price || !bType) {
       return res.status(403).json({ message: "Something went wrong." });
     }
@@ -48,34 +49,68 @@ exports.bookProperty = async (req, res) => {
     const decode = jwt.verify(token, process.env.JWT_SECRET);
     const type = decode.type === "google" ? "googleUsers" : "users";
 
-    // 1️⃣ Update property
-    const prop = await PropertyModel.findByIdAndUpdate(propId, {
-      $push: {
-        bookers: {
-          price,
-          userId: decode.id,
-          date,
-          bType,
-          note,
-          userModel: type,
-        },
-      },
-    }).populate("owner");
+    // 1️⃣ Get property first
+    const prop = await PropertyModel.findById(propId).populate("owner");
 
-    // 2️⃣ Update user
-    await UserModel.findByIdAndUpdate(decode.id, {
-      $push: { bookedProperties: { propId, price, bType, note, date } },
+    if (!prop) {
+      return res.status(404).json({ message: "Property not found." });
+    }
+
+    // 2️⃣ Check if property already booked
+    if (prop.status === false) {
+      return res.status(400).json({ message: "Property already booked." });
+    }
+
+    // 3️⃣ Check if user already booked this property
+    const user = await UserModel.findById(decode.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const alreadyBooked = user.bookedProperties.some(
+      (p) => p.propId.toString() === propId,
+    );
+
+    if (alreadyBooked) {
+      return res
+        .status(400)
+        .json({ message: "You have already booked this property." });
+    }
+
+    // 4️⃣ Update property
+    prop.bookers.push({
+      price,
+      userId: decode.id,
+      date,
+      bType,
+      note,
+      userModel: type,
     });
 
-    // 3️⃣ Send FCM notification to property owner
+    prop.status = false; // mark as booked
+
+    await prop.save();
+
+    // 5️⃣ Update user
+    user.bookedProperties.push({
+      propId,
+      price,
+      bType,
+      note,
+      date,
+    });
+
+    await user.save();
+
+    // 6️⃣ Send FCM notification
     if (prop.owner?.FCMtokens?.length > 0) {
       const payload = {
         notification: {
           title: "Property Booking",
           body: `Your property has been booked for Rs. ${new Intl.NumberFormat(
-            "en-IN"
+            "en-IN",
           ).format(price)}.00`,
-          // icon: "splash", // ✅ logo for notification
         },
       };
 
@@ -83,10 +118,14 @@ exports.bookProperty = async (req, res) => {
         tokens: prop.owner.FCMtokens,
         ...payload,
       });
-      console.log("SENT.");
+
+      console.log("Notification Sent.");
     }
 
-    res.status(200).json({ success: true, message: "Booked successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Booked successfully",
+    });
   } catch (err) {
     console.log(err);
     res.status(403).json({ message: "Something went wrong." });
@@ -105,13 +144,13 @@ exports.canclePropertyBooking = async (req, res) => {
         { _id: decode.id },
         {
           $pull: { bookedProperties: { propId: _id } },
-        }
+        },
       );
       const prop = await PropertyModel.findOneAndUpdate(
         { _id },
         {
           $pull: { bookers: { userId: decode.id } },
-        }
+        },
       ).populate("owner");
       if (prop.owner?.FCMtokens?.length > 0) {
         const payload = {
@@ -152,13 +191,18 @@ exports.confirmPropertyBooking = async (req, res) => {
       { _id: userId, "bookedProperties.propId": _id },
       {
         $set: { "bookedProperties.$.status": true },
-      }
+      },
     );
     await PropertyModel.findOneAndUpdate(
       { _id: _id, "bookers.userId": userId },
-      { $set: { "bookers.$.status": true } }
+      {
+        $set: {
+          "bookers.$.status": true,
+          status: true,
+        },
+      },
     );
-    res.status(200).json({ success: true });
+    res.status(200).json({ success: false });
   } catch (err) {
     console.log(err);
     res.status(403).json({ message: "Something went wrong." });

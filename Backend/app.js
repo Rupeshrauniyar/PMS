@@ -35,7 +35,7 @@ app.use(
       else cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  })
+  }),
 );
 
 // --- Routes ---
@@ -76,7 +76,7 @@ const androidRoutes = require("./Routes/Android");
 
     // --- Express setup ---
     app.get("/", (req, res) => {
-      res.json(`Welcome to PMS. Served by worker #${process.pid}`);
+      res.json(`Welcome to Propatyc. Served by worker #${process.pid}`);
     });
 
     app.use("/api/auth", authRoutes);

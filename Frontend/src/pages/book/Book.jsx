@@ -1,40 +1,10 @@
 import { useContext, useEffect, useState } from "react";
-import {
-  useNavigate,
-  Link,
-  useParams,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import { useNavigate, Link, useParams, useLocation } from "react-router-dom";
 import { AppContext } from "../../contexts/AppContext";
-import Home from "../user/Home";
-import {
-  Phone,
-  Home as HomeIcon,
-  ArrowLeft,
-  CheckCircle,
-  Loader2,
-  Bookmark,
-  UserPen,
-  X,
-  BookmarkCheck,
-  ChevronLeft,
-  ChevronRight,
-  MapPin,
-  Users,
-  Bed,
-  Bath,
-  Maximize,
-  ImageIcon,
-  TypeIcon,
-  CircleSlash,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { CheckCircle, Loader2, ChevronRight, ChevronUp } from "lucide-react";
 import axios from "axios";
 import AlertBox from "../../components/AlertBox";
 import EditProfile from "../auth/EditProfile";
-import Recommended from "../../components/Recomended";
 import Signin from "../auth/Signin";
 
 const Book = () => {
@@ -100,7 +70,7 @@ const Book = () => {
       };
       const res = await axios.post(
         `${import.meta.env.VITE_backendUrl}/api/booking/book`,
-        Data
+        Data,
       );
       if (res.status === 200) {
         setUser((prev) => ({
@@ -199,7 +169,7 @@ const Book = () => {
       {user ? (
         <div className="flex flex-col">
           <div
-            className="w-full bg-black text-white px-2 py-4 rounded-xl flex items-center justify-between"
+            className="w-full bg-blue-300 text-black px-2 py-4 rounded-xl flex items-center justify-between"
             onClick={() => {
               if (open) {
                 if (!user?.phone || user?.phone.length === 0) {
@@ -236,7 +206,7 @@ const Book = () => {
               css={true}
             />
             <button
-              className="bg-black text-white rounded-xl w-full p-3 "
+              className="bg-green-400 text-white rounded-xl w-full p-3 "
               onClick={() => {
                 if (!user?.phone || user?.phone.length === 0) {
                   setErrors((prev) => ({
@@ -257,7 +227,7 @@ const Book = () => {
         </div>
       ) : (
         <div className="flex flex-col">
-          <div className="w-full bg-black text-white px-2 py-4 rounded-xl flex items-center justify-between">
+          <div className="w-full bg-blue-300 text-black px-2 py-4 rounded-xl flex items-center justify-between">
             <strong className="">
               <span className="mr-1 bg-white rounded-md text-black px-3 py-2">
                 1
@@ -281,7 +251,7 @@ const Book = () => {
         className="max-w-7xl  animate-[slideUp_0.5s_ease-out] flex flex-col mt-4"
       >
         <div
-          className="w-full bg-black text-white px-2 py-4 rounded-xl flex items-center justify-between"
+          className="w-full bg-blue-300 text-black px-2 py-4 rounded-xl flex items-center justify-between"
           onClick={() => {
             if (!open) {
               setOpen(true);
@@ -353,9 +323,15 @@ const Book = () => {
               <label className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
                 Price
                 {isBar && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                    Bargained
-                  </span>
+                  <>
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                      Bargained
+                    </span>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                      Original Price:{" "}
+                      {new Intl.NumberFormat("en-IN").format(params.price)}
+                    </span>
+                  </>
                 )}
               </label>
               <div className="relative">
@@ -415,7 +391,7 @@ const Book = () => {
               />
             </div>
             <div
-              className="bookingButtons z-10  flex items-center justify-between gap-2 xl:px-30 px-2  w-full  transition-all bg-white border-t border-zinc-200 p-2"
+              className="bookingButtons z-10  flex items-center justify-between gap-2 xl:px-30   w-full  transition-all bg-white border-t border-zinc-200 py-2"
               onClick={() => {
                 const element = document.getElementById("book");
                 if (element) {
@@ -442,7 +418,7 @@ const Book = () => {
                     </span>
                   ) : (
                     <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
+                      <CheckCircle className="w-6 h-5 mr-2" />
                       Confirm Booking
                     </>
                   )}

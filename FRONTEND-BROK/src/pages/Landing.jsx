@@ -18,7 +18,7 @@ const Landing = () => {
               alt="Logo"
               className="w-10 h-10"
             />
-            <h1 className="font-extrabold text-xl">PMS</h1>
+            <h1 className="font-extrabold text-xl">Propatyc</h1>
           </Link>
 
           <div className="flex gap-3 items-center">
@@ -32,7 +32,7 @@ const Landing = () => {
               href={`${import.meta.env.VITE_backendUrl}/api/android/getapk`}
               download
             >
-              <Download size={ 18} />
+              <Download size={18} />
               Download App
             </button>
           </div>
@@ -122,7 +122,7 @@ const Landing = () => {
       <footer className="w-full bg-black text-white py-10">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-6">
           <div>
-            <h4 className="text-2xl font-bold">PMS</h4>
+            <h4 className="text-2xl font-bold">Propatyc</h4>
             <p className="text-gray-400 mt-2 max-w-xs">
               The most intuitive way to explore real estate online.
             </p>

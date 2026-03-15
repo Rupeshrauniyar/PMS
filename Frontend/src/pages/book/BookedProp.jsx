@@ -244,10 +244,10 @@ const BookedProp = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-zinc-800">
-                    Order Placed
+                    Booking Placed
                   </p>
                   <p className="text-xs text-zinc-500">
-                    We have received your order.
+                    We have received your booking.
                   </p>
                 </div>
               </div>
@@ -261,10 +261,10 @@ const BookedProp = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-zinc-800">
-                    Order Confirmed
+                    Waiting for Booking Confirmation.
                   </p>
                   <p className="text-xs text-zinc-500">
-                    The owner has'nt accepted the order
+                    The Confirmation is pending.
                   </p>
                 </div>
               </div>

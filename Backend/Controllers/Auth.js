@@ -104,7 +104,7 @@ exports.signout = async (req, res) => {
         { _id: verify.id },
         {
           $pull: { FCMtokens: fcmToken },
-        }
+        },
       );
     }
 
@@ -120,7 +120,7 @@ exports.signout = async (req, res) => {
 exports.editProfile = async (req, res) => {
   try {
     const Data = req.body;
-    console.log(Data);
+    // console.log(Data);
     if (!Data && !Data.token) {
       res.status(403).json({ message: "Something went wrong." });
       return;
@@ -133,7 +133,7 @@ exports.editProfile = async (req, res) => {
       if (user) {
         const result = await bcrypt.compare(
           Data.currentPassword,
-          user.password
+          user.password,
         );
         if (result) {
           const hashedPassword = await bcrypt.hash(Data.newPassword, 10);
@@ -141,7 +141,7 @@ exports.editProfile = async (req, res) => {
             { _id: verify.id },
             {
               password: hashedPassword,
-            }
+            },
           );
           res.status(200).json({ success: true });
         } else {
@@ -150,13 +150,26 @@ exports.editProfile = async (req, res) => {
       }
       return;
     } else {
+      console.log(Data.phone);
+      const phone = Data.phone?.trim();
+
+      const phoneExists = await UserModel.exists({
+        phone: phone,
+        _id: { $ne: verify.id },
+      });
+      console.log(phoneExists);
+      if (phoneExists) {
+        return res.status(403).json({
+          message: "Phone Number already exists",
+        });
+      }
       const updateUser = await UserModel.findOneAndUpdate(
-        { _id: Data._id },
+        { _id: verify._id },
         {
           username: Data.username,
           phone: Data.phone,
         },
-        { new: true }
+        { new: true },
       ).select("-password -FCMtokens");
 
       // console.log(updateUser);
@@ -190,7 +203,7 @@ exports.checkAuth = async (req, res) => {
         JWT_SECRET,
         {
           expiresIn: "7d",
-        }
+        },
       );
       res.status(200).json({
         success: true,
@@ -220,7 +233,7 @@ exports.updateFCM = async (req, res) => {
         $addToSet: {
           FCMtokens: fcmToken,
         },
-      }
+      },
     );
   } catch (err) {
     console.log(err);

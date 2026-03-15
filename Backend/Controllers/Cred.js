@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const  UserModel  = require("../Models/UserModel");
+const UserModel = require("../Models/UserModel");
 const PasswordResetModel = require("../Models/PasswordResetModel");
 const sgMail = require("@sendgrid/mail");
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -28,7 +28,7 @@ exports.sendPassResetMail = async (req, res) => {
     const resetURL = `${process.env.FRONTEND2}/forgot-password/${token}`;
 
     await sgMail.send({
-      from: "PMS <propertymanagementsystem.pms@gmail.com>",
+      from: "Propatyc <propertymanagementsystem.Propatyc@gmail.com>",
       to: email,
       subject: "Password Reset Request",
       html: `<p>Click <a href="${resetURL}">here</a> to reset your password. Expires in 15 mins.</p>`,

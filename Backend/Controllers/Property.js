@@ -49,16 +49,16 @@ exports.addProperty = async (req, res) => {
           () =>
             new Promise((resolve, reject) => {
               const stream = cloudinary.uploader.upload_stream(
-                { folder: "PMS_PROPERTIES" },
+                { folder: "Propatyc_PROPERTIES" },
                 (err, uploaded) => {
                   if (err) return reject(err);
                   resolve(uploaded.secure_url);
-                }
+                },
               );
               stream.end(file.buffer);
-            })
-        )
-      )
+            }),
+        ),
+      ),
     );
     const property = await PropertyModel.create({
       title,
@@ -124,7 +124,7 @@ exports.deleteProperty = async (req, res) => {
       { _id: decode.id },
       {
         $pull: { myProperties: { propId: Data._id } },
-      }
+      },
     );
     if (!update.modifiedCount > 0) {
       res.status(500).json({

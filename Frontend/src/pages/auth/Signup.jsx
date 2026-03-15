@@ -17,13 +17,13 @@ import axios from "axios";
 import AlertBox from "../../components/AlertBox";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../../contexts/Firebase";
-// import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
-// GoogleAuth.initialize({
-//   clientId:
-//     "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
-//   scopes: ["profile", "email"],
-//   grantOfflineAccess: true,
-// });
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
+GoogleAuth.initialize({
+  clientId:
+    "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
+  scopes: ["profile", "email"],
+  grantOfflineAccess: true,
+});
 const Signup = (props) => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -101,8 +101,8 @@ const Signup = (props) => {
   //         navigate("/");
   //       })
   //       .catch((err) => {
-  //         console.log(err);
-  //         alert(err.message);
+  //         // console.log(err);
+  //         // alert(err.message);
   //         setGoogleLoading(false);
   //         setBackendError("Google sign-up failed.");
 
@@ -110,6 +110,8 @@ const Signup = (props) => {
   //         // alert("Signin failed");
   //       });
   //   } catch (err) {
+  //     // console.log(err.message);
+  //     // alert(err.message);
   //     setGoogleLoading(false);
   //     setBackendError("Google sign-up failed.");
   //   }

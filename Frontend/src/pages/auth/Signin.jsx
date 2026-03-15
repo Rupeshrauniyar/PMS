@@ -7,13 +7,13 @@ import AlertBox from "../../components/AlertBox";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../../contexts/Firebase";
 
-// import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
-// GoogleAuth.initialize({
-//   clientId:
-//     "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
-//   scopes: ["profile", "email"],
-//   grantOfflineAccess: true,
-// });
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
+GoogleAuth.initialize({
+  clientId:
+    "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
+  scopes: ["profile", "email"],
+  grantOfflineAccess: true,
+});
 const Signin = (props) => {
   const { setUser } = useContext(AppContext);
   const [showPass, setShowPass] = useState(false);
@@ -128,9 +128,9 @@ const Signin = (props) => {
   //         navigate("/");
   //       })
   //       .catch((err) => {
-  //         alert(err.message);
+  //         // alert(err.message);
 
-  //         console.log(err);
+  //         // console.log(err);
   //         setGoogleLoading(false);
   //         setBackendError("Google sign-in failed.");
 
@@ -138,7 +138,8 @@ const Signin = (props) => {
   //         // alert("Signin failed");
   //       });
   //   } catch (err) {
-  //     console.log(err);
+  //     // console.log(err.message);
+  //     // alert(err.message);
   //     setGoogleLoading(false);
   //     setBackendError("Google sign-in failed.");
   //   }

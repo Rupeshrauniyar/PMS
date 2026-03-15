@@ -1,10 +1,9 @@
 import { useContext, useEffect, useState } from "react";
-import { useNavigate, Link, useParams, useLocation } from "react-router-dom";
+import { useNavigate, Link, useParams } from "react-router-dom";
 import { AppContext } from "../../contexts/AppContext";
-import { Delete, DeleteIcon, Trash, Trash2, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import axios from "axios";
 import AlertBox from "../../components/AlertBox";
-import EditProfile from "../auth/EditProfile";
 import Properties from "../../components/Properties";
 import { Loader2, MoreVertical } from "lucide-react";
 import {
@@ -146,7 +145,7 @@ const MyProp = () => {
   return (
     <div className="w-full min-h-screen overflow-hidden  pt-20 pb-18">
       {/* Edit Profile Modal */}
-
+      {console.log(activeBooker)}
       {/* Alerts */}
       {success && (
         <AlertBox
@@ -218,20 +217,12 @@ const MyProp = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {/* <span className="flex items-center justify-between py-3">
-        <p></p>
-        <button
-          className="bg-red-600/90 p-2 rounded-md text-white"
-          onClick={() => HandleDelete()}
-        >
-          <Trash2 />
-        </button>
-      </span> */}
+
       <Properties prop={props} />
       {props.bookers.length > 0 ? (
         <>
           {/* 🟢 Active Booker */}
-          {activeBooker && (
+          {activeBooker ? (
             <>
               <h3 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">
                 Active Booking
@@ -246,7 +237,7 @@ const MyProp = () => {
                     ₹
                     {activeBooker.price
                       ? new Intl.NumberFormat("en-IN").format(
-                          activeBooker.price
+                          activeBooker.price,
                         )
                       : "N/A"}
                   </span>
@@ -274,69 +265,72 @@ const MyProp = () => {
                 </div>
               </div>
             </>
-          )}
-
-          {/* 🟣 Other Bookers */}
-          <h3 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">
-            Available Bookings
-          </h3>
-
-          {props.bookers.filter((item) => !item.status).length > 0 ? (
-            <div className="flex flex-col gap-4">
-              {props.bookers
-                .filter((item) => !item.status)
-                .map((booker, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col gap-3 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-lg p-5 transition-all hover:shadow-xl hover:scale-[1.01]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-medium text-gray-900 dark:text-gray-50">
-                        {booker.userId.username}
-                      </span>
-                      <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                        ₹
-                        {booker.price
-                          ? new Intl.NumberFormat("en-IN").format(booker.price)
-                          : "N/A"}
-                      </span>
-                    </div>
-
-                    <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                      <p>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                          Note:
-                        </span>{" "}
-                        {booker.note || "No additional note provided."}
-                      </p>
-                      <p>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                          Type:
-                        </span>{" "}
-                        {booker.bType || "Not specified"}
-                      </p>
-                    </div>
-
-                    <div className="flex justify-end mt-3">
-                      <button
-                        onClick={() => handleConfirm(booker.userId._id)}
-                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-sm hover:shadow-md hover:from-emerald-600 hover:to-teal-600 active:scale-[0.98] transition-all"
-                      >
-                        Confirm
-                      </button>
-                    </div>
-                  </div>
-                ))}
-            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-inner p-10 mt-4">
-              <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                No pending booking requests at the moment.
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                All bookings have been confirmed or there are no new requests
-                yet.
-              </p>
+            <div>
+              {/* 🟣 Other Bookers */}
+              <h3 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">
+                Available Bookings
+              </h3>
+
+              {props.bookers.filter((item) => !item.status).length > 0 ? (
+                <div className="flex flex-col gap-4">
+                  {props.bookers
+                    .filter((item) => !item.status)
+                    .map((booker, i) => (
+                      <div
+                        key={i}
+                        className="flex flex-col gap-3 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-lg p-5 transition-all hover:shadow-xl hover:scale-[1.01]"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg font-medium text-gray-900 dark:text-gray-50">
+                            {booker.userId.username}
+                          </span>
+                          <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                            ₹
+                            {booker.price
+                              ? new Intl.NumberFormat("en-IN").format(
+                                  booker.price,
+                                )
+                              : "N/A"}
+                          </span>
+                        </div>
+
+                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                          <p>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                              Note:
+                            </span>{" "}
+                            {booker.note || "No additional note provided."}
+                          </p>
+                          <p>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                              Type:
+                            </span>{" "}
+                            {booker.bType || "Not specified"}
+                          </p>
+                        </div>
+
+                        <div className="flex justify-end mt-3">
+                          <button
+                            onClick={() => handleConfirm(booker.userId._id)}
+                            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-sm hover:shadow-md hover:from-emerald-600 hover:to-teal-600 active:scale-[0.98] transition-all"
+                          >
+                            Confirm
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-inner p-10 mt-4">
+                  <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                    No pending booking requests at the moment.
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                    There are no new requests yet.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </>

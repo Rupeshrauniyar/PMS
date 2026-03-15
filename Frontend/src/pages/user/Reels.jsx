@@ -183,6 +183,7 @@ const Reels = () => {
                 autoPlay
                 muted={isMuted}
                 playsInline
+                // controls
                 webkit-playsinline="true"
                 preload="metadata"
                 onClick={() => togglePlay(reel.id)}
@@ -219,7 +220,7 @@ const Reels = () => {
               </div> */}
               </div>
 
-              {/* Bottom overlay: channel, title */}
+              {/* Bottom overlay: channel, title
               <div className="w-full absolute left-0 right-0 bottom-0 p-2 py-6 z-[1000] text-white bg-gradient-to-b from-black/20 to-transparent">
                 <div className="flex items-center gap-2 mb-1">
                   <User className="w-5 h-5 flex-shrink-0" />
@@ -230,7 +231,7 @@ const Reels = () => {
                 <p className="text-sm text-white/95 line-clamp-2 drop-shadow-lg">
                   {reel.title}
                 </p>
-              </div>
+              </div> */}
             </section>
           ))}
         </div>

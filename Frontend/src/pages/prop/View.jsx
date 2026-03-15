@@ -201,6 +201,7 @@ const View = () => {
         </Link>
       </div>
       <div className="max-w-7xl mx-auto mt-4 border-t-2 border-zinc-200 z-[1] pb-24">
+        <h3 className="text-2xl font-bold ">Related Properties</h3>
         <Reccomended id={props._id} />
         <p className="text-center mt-2">End of recommendations.</p>
       </div>

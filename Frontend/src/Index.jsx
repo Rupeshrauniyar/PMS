@@ -42,83 +42,83 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    console.log("Trying FCM");
-    const token = localStorage.getItem("token");
-    console.log("your-token", token);
-    console.log("your-fcm-token", localStorage.getItem("fcmToken"));
+  // useEffect(() => {
+  //   console.log("Trying FCM");
+  //   const token = localStorage.getItem("token");
+  //   console.log("your-token", token);
+  //   console.log("your-fcm-token", localStorage.getItem("fcmToken"));
 
-    const checkPermission = async () => {
-      let permStatus = await PushNotifications.checkPermissions();
-      if (permStatus.receive !== "granted") {
-        permStatus = await PushNotifications.requestPermissions();
-      }
-      return permStatus.receive === "granted";
-    };
+  //   const checkPermission = async () => {
+  //     let permStatus = await PushNotifications.checkPermissions();
+  //     if (permStatus.receive !== "granted") {
+  //       permStatus = await PushNotifications.requestPermissions();
+  //     }
+  //     return permStatus.receive === "granted";
+  //   };
 
-    if (token?.length > 0) {
-      const getFCMToken = () => {
-        return new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error("FCM token timeout"));
-          }, 10000); // 10 second timeout
+  //   if (token?.length > 0) {
+  //     const getFCMToken = () => {
+  //       return new Promise((resolve, reject) => {
+  //         const timeout = setTimeout(() => {
+  //           reject(new Error("FCM token timeout"));
+  //         }, 10000); // 10 second timeout
 
-          PushNotifications.addListener("registration", (tokenData) => {
-            clearTimeout(timeout);
-            resolve(tokenData.value);
-          });
+  //         PushNotifications.addListener("registration", (tokenData) => {
+  //           clearTimeout(timeout);
+  //           resolve(tokenData.value);
+  //         });
 
-          PushNotifications.addListener("registrationError", (error) => {
-            console.log("FCM ERROR", error);
-            clearTimeout(timeout);
-            reject(error);
-          });
+  //         PushNotifications.addListener("registrationError", (error) => {
+  //           console.log("FCM ERROR", error);
+  //           clearTimeout(timeout);
+  //           reject(error);
+  //         });
 
-          PushNotifications.register();
-        });
-      };
-      const tryIt = async () => {
-        try {
-          const granted = await checkPermission();
-          if (!granted)
-            return console.warn("Push notifications permission not granted");
-          const token = await getFCMToken();
-          // if (token === localStorage.getItem("fcmToken")) return;
-          console.log("FCM Token:", token);
-          // const token = "njdjndhsbbj"
-          localStorage.setItem("fcmToken", token);
-          await axios.post(
-            `${import.meta.env.VITE_backendUrl}/api/auth/update-fcm-token`,
-            {
-              fcmToken: token,
-              token: localStorage.getItem("token"),
-            }
-          );
-        } catch (err) {
-          console.error("Failed to get FCM token:", err.message);
-        }
-      };
-      tryIt();
-    } else {
-      console.log("No token available");
-    }
-  }, [user]);
+  //         PushNotifications.register();
+  //       });
+  //     };
+  //     const tryIt = async () => {
+  //       try {
+  //         const granted = await checkPermission();
+  //         if (!granted)
+  //           return console.warn("Push notifications permission not granted");
+  //         const token = await getFCMToken();
+  //         // if (token === localStorage.getItem("fcmToken")) return;
+  //         console.log("FCM Token:", token);
+  //         // const token = "njdjndhsbbj"
+  //         localStorage.setItem("fcmToken", token);
+  //         await axios.post(
+  //           `${import.meta.env.VITE_backendUrl}/api/auth/update-fcm-token`,
+  //           {
+  //             fcmToken: token,
+  //             token: localStorage.getItem("token"),
+  //           }
+  //         );
+  //       } catch (err) {
+  //         console.error("Failed to get FCM token:", err.message);
+  //       }
+  //     };
+  //     tryIt();
+  //   } else {
+  //     console.log("No token available");
+  //   }
+  // }, [user]);
 
-  useEffect(() => {
-    // Listen for hardware back button
-    const backHandler = CapacitorApp.addListener("backButton", (event) => {
-      // If not on the root, go back
-      if (location.pathname !== "/") {
-        navigate(-1);
-      } else {
-        // On root, exit the app
-        CapacitorApp.exitApp();
-      }
-    });
-    return () => {
-      backHandler.remove && backHandler.remove();
-    };
-  }, [location.pathname, navigate]);
+  // useEffect(() => {
+  //   // Listen for hardware back button
+  //   const backHandler = CapacitorApp.addListener("backButton", (event) => {
+  //     // If not on the root, go back
+  //     if (location.pathname !== "/") {
+  //       navigate(-1);
+  //     } else {
+  //       // On root, exit the app
+  //       CapacitorApp.exitApp();
+  //     }
+  //   });
+  //   return () => {
+  //     backHandler.remove && backHandler.remove();
+  //   };
+  // }, [location.pathname, navigate]);
 
   if (location.pathname === "/landing") {
     return <Landing />;

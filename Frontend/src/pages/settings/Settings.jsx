@@ -13,13 +13,13 @@ import React, { useContext } from "react";
 import { AppContext } from "../../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-// import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
-// GoogleAuth.initialize({
-//   clientId:
-//     "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
-//   scopes: ["profile", "email"],
-//   grantOfflineAccess: true,
-// });
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
+GoogleAuth.initialize({
+  clientId:
+    "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
+  scopes: ["profile", "email"],
+  grantOfflineAccess: true,
+});
 const Settings = () => {
   const { user, setUser } = useContext(AppContext);
   const navigate = useNavigate();
