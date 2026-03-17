@@ -28,7 +28,7 @@ exports.sendPassResetMail = async (req, res) => {
     const resetURL = `${process.env.FRONTEND2}/forgot-password/${token}`;
 
     await sgMail.send({
-      from: "Propatyc <propertymanagementsystem.Propatyc@gmail.com>",
+      from: "PMS <propertymanagementsystem.pms@gmail.com>",
       to: email,
       subject: "Password Reset Request",
       html: `<p>Click <a href="${resetURL}">here</a> to reset your password. Expires in 15 mins.</p>`,

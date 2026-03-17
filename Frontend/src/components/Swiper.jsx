@@ -11,11 +11,11 @@ import { Pagination, Autoplay } from "swiper/modules";
 const SwiperComp = ({ title, images = [] }) => {
   if (images.length < 1) {
     return (
-      <div className="flex flex-col items-center justify-center w-full h-full bg-gray-50 p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold text-gray-800 text-center">
+      <div className="flex flex-col items-center justify-center w-full h-full bg-card text-card-foreground p-6 rounded-lg border border-border">
+        <h3 className="text-lg font-semibold text-center">
           Image(s) are being processed
         </h3>
-        <p className="text-sm text-gray-500 text-center">
+        <p className="text-sm text-muted-foreground text-center">
           Please check back in a few moments.
         </p>
       </div>
@@ -36,9 +36,9 @@ const SwiperComp = ({ title, images = [] }) => {
         pagination={{
           clickable: true,
           bulletClass:
-            "swiper-pagination-bullet bg-black rounded-full transition-all duration-300 ease-in-out",
+            "swiper-pagination-bullet bg-foreground/70 rounded-full transition-all duration-300 ease-in-out",
           bulletActiveClass:
-            "swiper-pagination-bullet-active bg-white w-6 rounded-full",
+            "swiper-pagination-bullet-active bg-foreground w-6 rounded-full",
         }}
         modules={[Pagination]}
         className="mySwiper2 flex flex-col items-center justify-center z-[1]"

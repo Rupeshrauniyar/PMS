@@ -1,7 +1,13 @@
 import { useContext, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../../contexts/AppContext";
-import { CheckCircle, X, Bookmark, BookmarkCheck } from "lucide-react";
+import {
+  CheckCircle,
+  X,
+  Bookmark,
+  BookmarkCheck,
+  ChevronLeft,
+} from "lucide-react";
 import axios from "axios";
 import AlertBox from "../../components/AlertBox";
 import EditProfile from "../auth/EditProfile";
@@ -9,6 +15,7 @@ import Reccomended from "../../components/Recomended";
 import ExtendedProperty from "../../components/ExtendedProperty";
 
 const View = () => {
+  const navigate = useNavigate();
   const { user, setUser } = useContext(AppContext);
   const [props, setPropData] = useState({});
   const params = useParams();
@@ -62,7 +69,7 @@ const View = () => {
       try {
         const response = await axios.post(
           `${import.meta.env.VITE_backendUrl}/api/fetching/get-property`,
-          { _id: params.id }
+          { _id: params.id },
         );
         if (response?.status === 200 && response.data.Property?._id) {
           setPropData(response.data.Property);
@@ -113,7 +120,7 @@ const View = () => {
             id: params.id,
             token: localStorage.getItem("token"),
             action,
-          }
+          },
         );
 
         if (res.status === 200) {
@@ -170,31 +177,36 @@ const View = () => {
           onClose={() => setBackendError(null)}
         />
       )}
-
-      <ExtendedProperty props={props} />
-      <div className="bookingButtons bg-white/70 backdrop-blur-xl  flex items-center justify-between gap-2 xl:px-30 px-2 xl:ml-[20%] xl:w-[80%] fixed z-[998] xl:bottom-0 bottom-14 left-0 w-full border-t border-zinc-200 p-2">
+      <div className="flex items-center justify-between w-full max-w-7xl mb-2">
         <button
-          className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center bg-black hover:bg-gray-800 transition-all"
+          onClick={() => navigate(-1)}
+          className="flex items-center justify-center gap-1"
+        >
+          <ChevronLeft className="w-5 h-5 " />
+          Back
+        </button>
+        <button
+          className="px-2 py-2 rounded-md text-white font-semibold flex items-center justify-center  transition-all"
           onClick={handleSave}
         >
           {!action ? (
             <>
-              <BookmarkCheck className="text-blue-600 w-5 h-5 mr-1" />
-              Unsave
+              <BookmarkCheck className="text-blue-600 w-7 h-7 " />
             </>
           ) : (
             <>
-              <Bookmark className="text-blue-500 w-5 h-5 mr-1" />
-              Save
+              <Bookmark className="text-blue-500 w-7 h-7 " />
             </>
           )}
         </button>
-
+      </div>
+      <ExtendedProperty props={props} />
+      <div className="bookingButtons bg-white/70 backdrop-blur-xl  flex items-center justify-between gap-2 xl:px-30 px-2 xl:ml-[20%] xl:w-[80%] fixed z-[998] xl:bottom-0 bottom-14 left-0 w-full border-t border-zinc-200 p-2">
         <Link
           to={`/book/${params.id}/${props.price}`}
-          className="w-full"
+          className="w-full "
         >
-          <button className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center bg-black hover:bg-gray-800 transition-all">
+          <button className="w-full py-4 cursor-pointer rounded-xl text-white font-semibold flex items-center justify-center bg-black hover:bg-gray-800 transition-all">
             <CheckCircle className="w-5 h-5 mr-2" />
             Book
           </button>

@@ -25,9 +25,9 @@ const Properties = (props) => {
       className="block"
     >
   
-      <div className="w-full h-full bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group ">
+      <div className="w-full h-full bg-card text-card-foreground border border-border rounded-3xl overflow-hidden hover:border-foreground/30 transition-all duration-200 group">
         {/* Image Section */}
-        <div className=" relative overflow-hidden aspect-[16/9] bg-zinc-100 ">
+        <div className="relative overflow-hidden aspect-[16/9] bg-muted">
           <SwiperComp
             title={props.prop.title}
             images={props.prop.images}
@@ -51,47 +51,47 @@ const Properties = (props) => {
           </h3> */}
 
           {/* Description */}
-          <p className="text-zinc-600 text-sm mb-3 line-clamp-2 truncate">
+          <p className="text-muted-foreground text-sm mb-3 line-clamp-2 truncate">
             {props.prop.description}
           </p>
 
           {/* Property Details Grid */}
           <div className="grid grid-cols-2 gap-2 mb-3">
             {props.prop.rooms > 0 && (
-              <div className="flex items-center gap-1.5 text-zinc-700">
+              <div className="flex items-center gap-1.5 text-foreground">
                 <Bed
                   size={16}
-                  className="text-zinc-500 flex-shrink-0"
+                  className="text-muted-foreground flex-shrink-0"
                 />
                 <span className="text-sm">{props.prop.rooms} Rooms</span>
               </div>
             )}
 
             {props.prop.washrooms > 0 && (
-              <div className="flex items-center gap-1.5 text-zinc-700">
+              <div className="flex items-center gap-1.5 text-foreground">
                 <Bath
                   size={16}
-                  className="text-zinc-500 flex-shrink-0"
+                  className="text-muted-foreground flex-shrink-0"
                 />
                 <span className="text-sm">{props.prop.washrooms} Baths</span>
               </div>
             )}
 
             {props.prop.area > 0 && (
-              <div className="flex items-center gap-1.5 text-zinc-700">
+              <div className="flex items-center gap-1.5 text-foreground">
                 <Ruler
                   size={16}
-                  className="text-zinc-500 flex-shrink-0"
+                  className="text-muted-foreground flex-shrink-0"
                 />
                 <span className="text-sm">{props.prop.area} sq ft</span>
               </div>
             )}
 
             {props.prop.location && (
-              <div className="flex items-center gap-1.5 text-zinc-700">
+              <div className="flex items-center gap-1.5 text-foreground">
                 <MapPin
                   size={16}
-                  className="text-zinc-500 flex-shrink-0"
+                  className="text-muted-foreground flex-shrink-0"
                 />
                 <span className="text-sm truncate">{props.prop.location}</span>
               </div>
@@ -99,13 +99,13 @@ const Properties = (props) => {
           </div>
 
           {/* Price Section */}
-          <div className="pt-3 border-t border-zinc-200 flex items-center justify-between">
+          <div className="pt-3 border-t border-border flex items-center justify-between">
             <div>
-              <span className="text-xl font-bold text-zinc-900">
+              <span className="text-xl font-bold text-foreground">
                 रू. {new Intl.NumberFormat("en-IN").format(props.prop.price)}
               </span>
               {props.prop.sellingType === "Rent System" && (
-                <span className="text-sm text-zinc-600">/month</span>
+                <span className="text-sm text-muted-foreground">/month</span>
               )}
             </div>
             {/* <button className="text-sm font-medium text-black hover:underline">

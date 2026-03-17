@@ -6,12 +6,19 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { PushNotifications } from "@capacitor/push-notifications";
-import axios from "axios";
+// import { PushNotifications } from "@capacitor/push-notifications";
+// import axios from "axios";
+// import { App as CapacitorApp } from "@capacitor/app";
+
 import { AppContext } from "./contexts/AppContext";
-import { App as CapacitorApp } from "@capacitor/app";
 import Navbar from "./components/Navbar";
 import Intro from "./pages/Intro";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Themes from "./pages/Themes";
+import PayFailure from "./pages/book/PayFailure";
+import PaySuccess from "./pages/book/PaySuccess";
+// import Pay from "./pages/book/Pay";
 const Home = lazy(() => import("@/pages/user/Home"));
 
 const ChangePassword = lazy(() => import("@/pages/auth/ChangePassword"));
@@ -22,7 +29,7 @@ const Signin = lazy(() => import("@/pages/auth/Signin"));
 const Signup = lazy(() => import("@/pages/auth/Signup"));
 
 const Search = lazy(() => import("@/pages/user/Search"));
-const Reel = lazy(() => import("@/pages/user/Reels"));
+// const Reel = lazy(() => import("@/pages/user/Reels"));
 const Profile = lazy(() => import("@/pages/user/Profile"));
 
 const AddProperty = lazy(() => import("@/pages/prop/AddProperty"));
@@ -30,7 +37,10 @@ const View = lazy(() => import("@/pages/prop/View"));
 const MyProp = lazy(() => import("@/pages/prop/MyProp"));
 
 const Book = lazy(() => import("@/pages/book/Book"));
+const Bookings = lazy(() => import("@/pages/book/Bookings"));
+
 const BookedProp = lazy(() => import("@/pages/book/BookedProp"));
+const Pay = lazy(() => import("@/pages/book/Pay"));
 
 const Settings = lazy(() => import("@/pages/settings/Settings"));
 const NotFound = lazy(() => import("@/pages/settings/NotFound"));
@@ -38,8 +48,8 @@ const NotFound = lazy(() => import("@/pages/settings/NotFound"));
 const AuthUser = lazy(() => import("@/middlewares/AuthUser"));
 
 const Index = () => {
-  const { user } = useContext(AppContext);
-  const navigate = useNavigate();
+  // const { user } = useContext(AppContext);
+  // const navigate = useNavigate();
   const location = useLocation();
 
   // useEffect(() => {
@@ -141,7 +151,7 @@ const Index = () => {
           location.pathname === "/intro"
             ? "w-full min-h-screen"
             : "xl:w-[40%] xl:ml-[33%] ml-0 px-2"
-        } min-h-screen text-black `}
+        } min-h-screen bg-background text-foreground `}
       >
         <Suspense>
           <Routes>
@@ -167,6 +177,22 @@ const Index = () => {
                 element={<BookedProp />}
               />
               <Route
+                path="/bookings"
+                element={<Bookings />}
+              />
+              <Route
+                path="/pay/:id/:price"
+                element={<Pay />}
+              />
+              <Route
+                path="/payment-success"
+                element={<PaySuccess />}
+              />
+              <Route
+                path="/payment-failure"
+                element={<PayFailure />}
+              />
+              <Route
                 path="/change-password"
                 element={<ChangePassword />}
               />
@@ -176,13 +202,30 @@ const Index = () => {
               element={<Intro />}
             />
             <Route
+              path="/themes"
+              element={<Themes />}
+            />
+            <Route
+              path="/termsandcondition"
+              element={<Terms />}
+            />
+            <Route
+              path="/privacyandpolicy"
+              element={<Privacy />}
+            />
+            <Route
+              path="/themes"
+              element={<Themes />}
+            />
+            <Route
               path="/"
               element={<Home />}
             />
-            <Route
+
+            {/* <Route
               path="/reels"
               element={<Reel />}
-            />
+            /> */}
 
             <Route
               path="/search"
@@ -204,6 +247,7 @@ const Index = () => {
               path="/book/:id/:price"
               element={<Book />}
             />
+
             <Route
               path="/settings"
               element={<Settings />}

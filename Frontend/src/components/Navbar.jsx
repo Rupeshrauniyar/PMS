@@ -1,18 +1,36 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, NavLink, useLocation, useParams } from "react-router-dom";
 import {
-  Clapperboard,
+  Book,
   Home,
-  HousePlus,
   Menu,
-  MoreVertical,
   PlaySquare,
   Plus,
-  RectangleEllipsis,
   Search,
   Settings,
   User2,
 } from "lucide-react";
+import {
+  HomeIcon as HomeOutline,
+  ClipboardDocumentListIcon as ClipboardOutline,
+  Bars3Icon as MenuOutline,
+  PlayIcon as PlayOutline,
+  PlusCircleIcon  as PlusOutline,
+  MagnifyingGlassIcon as SearchOutline,
+  Cog6ToothIcon as SettingsOutline,
+  UserIcon as UserOutline,
+} from "@heroicons/react/24/outline";
+
+import {
+  HomeIcon as HomeSolid,
+  ClipboardDocumentListIcon as ClipboardSolid,
+  Bars3Icon as MenuSolid,
+  PlayIcon as PlaySolid,
+  PlusCircleIcon  as PlusSolid,
+  MagnifyingGlassIcon as SearchSolid,
+  Cog6ToothIcon as SettingsSolid,
+  UserIcon as UserSolid,
+} from "@heroicons/react/24/solid";
 import { AppContext } from "../contexts/AppContext";
 
 const Navbar = () => {
@@ -39,27 +57,32 @@ const Navbar = () => {
     {
       path: "/",
       name: "Home",
-      icon: Home,
+      outline: HomeOutline,
+      solid: HomeSolid,
     },
     {
-      path: "/reels",
-      name: "Reels",
-      icon: PlaySquare,
+      path: "/bookings",
+      name: "Bookings",
+      outline: ClipboardOutline,
+      solid: ClipboardSolid,
     },
     {
       path: "/add-property",
       name: "Add property",
-      icon: Plus,
+      outline: PlusOutline,
+      solid: PlusSolid,
     },
     {
       path: "/search",
       name: "Search",
-      icon: Search,
+      outline: SearchOutline,
+      solid: SearchSolid,
     },
     {
       path: "/profile",
       name: "Profile",
-      icon: User2,
+      outline: UserOutline,
+      solid: UserSolid,
     },
   ];
   return location.pathname === "/signup" ||
@@ -75,7 +98,7 @@ const Navbar = () => {
       >
         {/* {console.log(user.displayName)} */}
         <div className=" ">
-          <div className="h-19  bg-white/70 backdrop-blur-xl border border-zinc-200/60  shadow-lg px-2 flex items-center justify-between">
+          <div className="h-19 bg-background/70 backdrop-blur-xl border border-border shadow-lg px-2 flex items-center justify-between">
             {/* Left: Menu + Logo */}
             <div className="flex items-center gap-3">
               <Link
@@ -95,7 +118,7 @@ const Navbar = () => {
               {user ? (
                 <>
                   <Link to="/profile">
-                    <button className=" rounded-full hover:bg-zinc-100 transition-colors flex gap-1 items-center justify-center p-2 cursor-pointer">
+                    <button className="rounded-full hover:bg-accent transition-colors flex gap-1 items-center justify-center p-2 cursor-pointer">
                       {user?.pp?.length > 0 ? (
                         <img
                           className="w-6 h-6 object-cover rounded-full"
@@ -117,13 +140,13 @@ const Navbar = () => {
                 <div className="flex items-center gap-1 sm:gap-2">
                   <Link
                     to="/signin"
-                    className="hidden sm:block px-2 py-1 sm:px-3 sm:py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900"
+                    className="hidden sm:block px-2 py-1 sm:px-3 sm:py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
                   >
                     Sign in
                   </Link>
                   <Link
                     to="/signup"
-                    className=" px-5 py-3 sm:px-4 sm:py-2 text-sm font-semibold bg-zinc-900 text-white rounded-full hover:bg-zinc-800 transition-colors"
+                    className="px-5 py-3 sm:px-4 sm:py-2 text-sm font-semibold bg-foreground text-background rounded-full hover:bg-foreground/90 transition-colors"
                   >
                     Sign up
                   </Link>
@@ -135,8 +158,8 @@ const Navbar = () => {
                    transition-all duration-200
                 ${
                   isActive
-                    ? " font-extrabold text-black    hover:text-zinc-900"
-                    : " text-gray-600  hover:text-gray-800"
+                    ? "font-extrabold text-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }
               `}
               >
@@ -152,32 +175,35 @@ const Navbar = () => {
       >
         {/* {console.log(user.displayName)} */}
         <div className="max-w-6xl ">
-          <div className="h-14  bg-white/70 backdrop-blur-xl border border-zinc-200/60  shadow-lg  flex items-center justify-between px-4">
+          <div className="h-14 bg-background/70 backdrop-blur-xl border border-border shadow-lg flex items-center justify-between px-4">
             {/* Left: Menu + Logo */}
             {navLinks.map((navLink, index) => (
               <NavLink
                 key={index}
-                state={{ from: location.pathname }}
                 to={navLink.path}
-                className={({ isActive }) => `
-               transition-all duration-200 flex items-center justify-center
-                ${
-                  isActive
-                    ? "  text-black font-extrabold    hover:text-zinc-900"
-                    : " text-gray-600  hover:text-gray-800"
-                }
-              `}
+                className="flex items-center justify-center"
               >
-                <navLink.icon className="w-6 h-6 " />
-                {/* <span className="font-medium">{navLink.name}</span> */}
+                {({ isActive }) => {
+                  const Icon = isActive ? navLink.solid : navLink.outline;
+
+                  return (
+                    <Icon
+                      className={`w-6 h-6 transition-all duration-200 ${
+                        isActive
+                          ? "text-foreground scale-110"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                  );
+                }}
               </NavLink>
             ))}
           </div>
         </div>
       </div>
       {/* Desktop sidebar*/}
-      <div className="hidden xl:block fixed left-0 top-0 h-full w-[25%]  text-black bg-white shadow-md z-[2000] ">
-        <div className="w-full p-2 border-b-2 border-zinc-200">
+      <div className="hidden xl:block fixed left-0 top-0 h-full w-[25%] bg-background text-foreground shadow-md z-[2000] border-r border-border">
+        <div className="w-full p-2 border-b border-border">
           <h3 className="font-bold text-3xl  ">Sidebar</h3>
           <p>Navigate through pages.</p>
         </div>
@@ -191,18 +217,18 @@ const Navbar = () => {
                 flex items-center px-4 py-3 my-1 rounded-xl transition-all duration-200
                 ${
                   isActive
-                    ? " bg-black text-white   hover:bg-zinc-900"
-                    : " text-gray-700  hover:bg-gray-100"
+                    ? "bg-foreground text-background hover:bg-foreground/90"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }
               `}
             >
-              <navLink.icon className="w-5 h-5 mr-3" />
+              <navLink.outline className="w-5 h-5 mr-3" />
               <span className="font-medium">{navLink.name}</span>
             </NavLink>
           ))}
 
           {/* Divider */}
-          <div className="border-t border-gray-200 my-4"></div>
+          <div className="border-t border-border my-4"></div>
 
           {/* Settings Link */}
           <NavLink
@@ -211,8 +237,8 @@ const Navbar = () => {
               flex items-center px-4 py-3 my-1 rounded-xl transition-all duration-200
               ${
                 isActive
-                  ? " bg-black text-white  hover:bg-zinc-900"
-                  : " text-gray-700  hover:bg-gray-100"
+                  ? "bg-foreground text-background hover:bg-foreground/90"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               }
             `}
           >

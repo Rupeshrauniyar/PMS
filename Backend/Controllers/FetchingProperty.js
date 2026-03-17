@@ -2,6 +2,7 @@ const { client } = require("../DB/Redis");
 const PropertyModel = require("../Models/PropertyModel");
 const jwt = require("jsonwebtoken");
 const UserModel = require("../Models/UserModel");
+const { populate } = require("dotenv");
 require("dotenv").config();
 
 exports.getProperty = async (req, res) => {
@@ -114,8 +115,12 @@ exports.getBookers = async (req, res) => {
 
     const Property = await PropertyModel.findOne({ _id: Data._id })
       .populate({
-        path: "bookers.userId",
-        select: "username",
+        path: "bookers",
+        // select: "username",
+        populate: {
+          path: "userId",
+          select: "username",
+        },
       })
       .lean();
 
@@ -131,22 +136,42 @@ exports.getBookers = async (req, res) => {
 };
 exports.getUserProperty = async (req, res) => {
   try {
-    const { token, Type } = req.body;
+    const { token, Type, NestedPop } = req.body;
     if (!token) return res.status(403).json({ error: "Token is required" });
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const toPop = `${Type}.propId`; // Returns bookedProperties.propId
-    const user = await UserModel.findById(decoded.id)
-      .populate({
+    const toPop = `${Type}`; // Returns bookedProperties.propId
+    if (NestedPop) {
+      const user = await UserModel.findById(decoded.id).populate({
         path: toPop,
-        select: "-owner -ownerModel -bookers", // remove sensitive info
-      })
-      .select("-password -FCMtokens");
+        select: "-owner -ownerModel -bookers ",
+        populate: {
+          path: "propId",
+          select: "",
+        }, // remove sensitive info
+      });
 
-    if (!user) return res.status(404).json({ error: "User not found" });
-    if (!user[Type])
-      return res.status(200).json({ properties: [], success: true });
+      console.log(user);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user[Type])
+        return res.status(200).json({ properties: [], success: true });
 
-    res.status(200).json({ properties: user[Type], success: true });
+      res.status(200).json({ properties: user[Type], success: true });
+    } else {
+      // console.log("Nahi hai");
+      const user = await UserModel.findById(decoded.id)
+        .populate({
+          path: `${toPop}.propId`,
+          select: "-owner -ownerModel -bookers ", // remove sensitive info
+        })
+        .select("-password -FCMtokens");
+      console.log(toPop);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user[Type])
+        return res.status(200).json({ properties: [], success: true });
+
+      res.status(200).json({ properties: user[Type], success: true });
+    }
+    // return res.status(500).json({ error: "Something went wrong." });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Something went wrong." });

@@ -37,7 +37,7 @@ export const AppProvider = ({ children }) => {
     } catch (err) {
       setLoading(false);
       // console.log("Validation false");
-      console.log(err.response?.data);
+      // console.log(err.response?.data);
       if (!err.response?.data?.serverSuccess) {
         setUser(null);
         localStorage.removeItem("user");

@@ -14,7 +14,7 @@ const Book = () => {
   const [submitting, setSubmitting] = useState(false);
   const [date, setDate] = useState("");
   const [select, setSelect] = useState("pay");
-  const [note, setNote] = useState("pay");
+  const [note, setNote] = useState("");
 
   const params = useParams();
   const [barPrice, setBarPrice] = useState(null);
@@ -75,8 +75,9 @@ const Book = () => {
       if (res.status === 200) {
         setUser((prev) => ({
           ...prev,
-          bookedProperties: [...prev.bookedProperties, Data],
+          bookedProperties: [...prev.bookedProperties, res.data.booking],
         }));
+        // console.log(user);
         setSubmitting(false);
         setSuccess(res.data.message);
         navigate(`/booked/${params.id}`);

@@ -48,7 +48,7 @@ const MyProp = () => {
       try {
         const response = await axios.post(
           `${import.meta.env.VITE_backendUrl}/api/fetching/get-my-prop`,
-          { _id: params.id }
+          { _id: params.id },
         );
         if (response?.status === 200 && response.data.Property?._id) {
           setPropData(response.data.Property);
@@ -103,7 +103,7 @@ const MyProp = () => {
           _id: params?.id,
           propertyType: props.propertyType,
           token: localStorage.getItem("token"),
-        }
+        },
       );
       if (res.status === 200) {
         setDeleteLoading(false);
@@ -117,21 +117,21 @@ const MyProp = () => {
       setBackendError("Unable to delete property.");
     }
   };
-  const handleConfirm = async (userId) => {
+  const handleConfirm = async (userId, bookingId) => {
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_backendUrl}/api/booking/confirm-booking`,
         {
-          _id: params?.id,
+          _id: bookingId,
           userId,
           token: localStorage.getItem("token"),
-        }
+        },
       );
       if (res.status === 200) {
         setPropData((prop) => ({
           ...prop,
           bookers: prop.bookers.map((b) =>
-            b.userId === userId ? { ...b, status: true } : b
+            b.userId === userId ? { ...b, status: true } : b,
           ),
         }));
         setSuccess("Your property booker has been confirmed successfully.");
@@ -312,7 +312,9 @@ const MyProp = () => {
 
                         <div className="flex justify-end mt-3">
                           <button
-                            onClick={() => handleConfirm(booker.userId._id)}
+                            onClick={() =>
+                              handleConfirm(booker.userId, booker._id)
+                            }
                             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-sm hover:shadow-md hover:from-emerald-600 hover:to-teal-600 active:scale-[0.98] transition-all"
                           >
                             Confirm

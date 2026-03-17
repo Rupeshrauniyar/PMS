@@ -14,7 +14,6 @@ const userSchema = mongoose.Schema(
       trim: true,
       minlength: 8,
       maxlength: 15,
-      match: [/^\+?[0-9]{8,15}$/, "Please enter a valid phone number"],
     },
     address: { type: String },
     pp: { type: String }, // profile picture
@@ -26,24 +25,8 @@ const userSchema = mongoose.Schema(
     ],
     bookedProperties: [
       {
-        propId: { type: mongoose.Schema.Types.ObjectId, ref: "property" },
-        price: { type: String, required: true },
-        date: {
-          type: String,
-        },
-        note: {
-          type: String,
-        },
-        bType: {
-          type: String,
-          enum: ["pay", "visit"],
-          required: true,
-        },
-        status: {
-          type: Boolean,
-          default: false,
-        },
-        createdAt: { type: Date, default: Date.now },
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "bookings",
       },
     ],
     saved: [

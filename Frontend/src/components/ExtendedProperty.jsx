@@ -43,10 +43,10 @@ const ExtendedProperty = (props) => {
       {/* Image Gallery */}
       <div className="overflow-hidden animate-[fadeIn_0.5s_ease-out]">
         <div className="relative group">
-          <div className="relative w-full h-[300px] md:h-[350px] rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+          <div className="relative w-full h-[300px] md:h-[350px] rounded-2xl bg-muted overflow-hidden">
             {imageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-200 z-10">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
               </div>
             )}
             {/* {console.log(currentImageIndex)} */}
@@ -85,22 +85,22 @@ const ExtendedProperty = (props) => {
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-3 shadow-xl opacity-0 group-hover:opacity-100 transition-all z-30 cursor-pointer"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background rounded-full p-3 shadow-xl opacity-0 group-hover:opacity-100 transition-all z-30 cursor-pointer border border-border"
                 >
-                  <ChevronLeft className="w-6 h-6 text-gray-800" />
+                  <ChevronLeft className="w-6 h-6 text-foreground" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white rounded-full p-3 shadow-xl opacity-0 group-hover:opacity-100 transition-all z-30 cursor-pointer"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background rounded-full p-3 shadow-xl opacity-0 group-hover:opacity-100 transition-all z-30 cursor-pointer border border-border"
                 >
-                  <ChevronRight className="w-6 h-6 text-gray-800" />
+                  <ChevronRight className="w-6 h-6 text-foreground" />
                 </button>
               </>
             )}
           </div>
 
           {/* Thumbnails */}
-          <div className="py-2 border-t border-gray-100">
+          <div className="py-2 border-t border-border">
             <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-2">
               {props.props.images?.map((img, index) => (
                 <button
@@ -113,8 +113,8 @@ const ExtendedProperty = (props) => {
                   }}
                   className={`flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${
                     currentImageIndex === index
-                      ? "border-black ring-1 ring-blue-100"
-                      : "border-gray-200"
+                      ? "border-foreground ring-1 ring-ring/30"
+                      : "border-border"
                   }`}
                 >
                   <img
@@ -132,12 +132,12 @@ const ExtendedProperty = (props) => {
 
       {/* Property Info */}
       <div className=" animate-[slideUp_0.5s_ease-out]">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
           {props.props.title}
         </h1>
 
         <p
-          className={`text-gray-600 text-sm leading-relaxed transition-all ${
+          className={`text-muted-foreground text-sm leading-relaxed transition-all ${
             !showFullDescription && props.props.description.length > 80
               ? "line-clamp-2"
               : ""
@@ -149,7 +149,7 @@ const ExtendedProperty = (props) => {
         {props.props.description.length > 80 && (
           <button
             onClick={() => setShowFullDescription(!showFullDescription)}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+            className="text-foreground hover:text-foreground/80 text-sm font-medium flex items-center gap-1"
           >
             {showFullDescription ? "Show Less" : "Read More"}
             <ChevronRight
@@ -163,23 +163,23 @@ const ExtendedProperty = (props) => {
         {/* Property Details */}
         <div className="flex flex-wrap gap-2 mt-2 mb-2">
           {props.props.area > 0 ? (
-            <div className="inline-flex items-center px-3 py-1.5 bg-gray-100 rounded-md text-sm">
-              <Maximize className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
+            <div className="inline-flex items-center px-3 py-1.5 bg-muted rounded-md text-sm">
+              <Maximize className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
               <span>{props.props.area}</span>
             </div>
           ) : null}
-          <div className="inline-flex items-center px-3 py-1.5 bg-gray-100 rounded-md text-sm">
-            <Bed className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
+          <div className="inline-flex items-center px-3 py-1.5 bg-muted rounded-md text-sm">
+            <Bed className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
             <span>
               {props.props.rooms} {props.props.rooms === 1 ? "Room" : "Rooms"}
             </span>
           </div>
-          <div className="inline-flex items-center px-3 py-1.5 bg-gray-100 rounded-md text-sm w-40 ">
-            <MapPin className="w-4 h-4 mr-1 text-gray-500 " />
+          <div className="inline-flex items-center px-3 py-1.5 bg-muted rounded-md text-sm w-40 ">
+            <MapPin className="w-4 h-4 mr-1 text-muted-foreground " />
             <span className="truncate w-[85%]">{props.props.location}</span>
           </div>
-          <div className="inline-flex items-center px-3 py-1.5 bg-gray-100 rounded-md text-sm">
-            <Bath className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
+          <div className="inline-flex items-center px-3 py-1.5 bg-muted rounded-md text-sm">
+            <Bath className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
             <span>
               {props.props.washrooms}{" "}
               {props.props.washrooms === 1 ? "Bathroom" : "Bathrooms"}
@@ -187,7 +187,7 @@ const ExtendedProperty = (props) => {
           </div>
         </div>
         {!props.price ? (
-          <span className="text-gray-900 text-2xl font-bold">
+          <span className="text-foreground text-2xl font-bold">
             ₹
             {props.props.price
               ? new Intl.NumberFormat("en-IN").format(props.props.price)
@@ -196,7 +196,7 @@ const ExtendedProperty = (props) => {
         ) : (
           <div className="flex flex-col">
             {Number(props.props.price) === Number(props.price) ? (
-              <span className="text-gray-900 text-2xl font-bold">
+              <span className="text-foreground text-2xl font-bold">
                 ₹
                 {props.props.price
                   ? new Intl.NumberFormat("en-IN").format(props.props.price)
@@ -205,14 +205,14 @@ const ExtendedProperty = (props) => {
             ) : (
               <>
                 <div className="flex gap-4">
-                  <span className="text-gray-400 text-2xl  line-through">
+                  <span className="text-muted-foreground text-2xl line-through">
                     ₹
                     {props.props.price
                       ? new Intl.NumberFormat("en-IN").format(props.props.price)
                       : "N/A"}
                   </span>
                   <div className="flex items-center">
-                    <span className="text-gray-900 text-2xl font-bold">
+                    <span className="text-foreground text-2xl font-bold">
                       ₹
                       {props.price
                         ? new Intl.NumberFormat("en-IN").format(props.price)

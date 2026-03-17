@@ -23,7 +23,7 @@ const BookedProp = () => {
   const [propertyLoading, setPropertyLoading] = useState(true);
   const [cancLoading, setCancLoading] = useState(false);
   if (
-    !user?.bookedProperties?.find((myProps) => myProps?.propId === params.id)
+    !user?.bookedProperties?.find((myProps) => myProps.propId === params.id)
   ) {
     return (
       <>
@@ -50,7 +50,7 @@ const BookedProp = () => {
       try {
         const response = await axios.post(
           `${import.meta.env.VITE_backendUrl}/api/fetching/get-property`,
-          { _id: params.id }
+          { _id: params.id },
         );
         if (response?.status === 200 && response.data.Property?._id) {
           setPropData(response.data.Property);
@@ -100,7 +100,7 @@ const BookedProp = () => {
               setUser((prev) => ({
                 ...prev,
                 bookedProperties: prev.bookedProperties.filter(
-                  (item) => item.propId !== params.id
+                  (item) => item.propId !== params.id,
                 ),
               }));
               navigate("/profile");
@@ -113,12 +113,16 @@ const BookedProp = () => {
   const HandleCancel = async () => {
     try {
       setCancLoading(true);
+      const getBooking = user.bookedProperties.filter(
+        (data) => data.propId === params?.id,
+      );
+      console.log(getBooking);
       const res = await axios.post(
         `${import.meta.env.VITE_backendUrl}/api/booking/cancel-booking`,
         {
-          _id: params?.id,
+          _id: getBooking[0]._id,
           token: localStorage.getItem("token"),
-        }
+        },
       );
       if (res.status === 200) {
         setCancelOpen(false);
@@ -133,13 +137,12 @@ const BookedProp = () => {
     }
   };
   const activeBooking = user?.bookedProperties?.find(
-    (myProps) => myProps.propId === params.id
+    (myProps) => myProps.propId === params.id,
   );
 
   return (
     <div className="w-full min-h-screen overflow-hidden  pt-20 pb-18">
       {/* Edit Profile Modal */}
-
       {/* Alerts */}
       {success && (
         <AlertBox
@@ -224,9 +227,11 @@ const BookedProp = () => {
 
       <div className="">
         {activeBooking.status ? (
-          <button className="bg-green-500 text-white rounded-full p-3">
-            Pay via Esewa
-          </button>
+          <Link to={`/pay/${activeBooking._id}/${activeBooking.price}`}>
+            <button className="bg-green-500 text-white rounded-full p-3">
+              Pay via Esewa
+            </button>
+          </Link>
         ) : (
           <div className="w-full max-w-md mx-auto bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-800 mb-4">
@@ -252,8 +257,6 @@ const BookedProp = () => {
                 </div>
               </div>
 
-             
-
               {/* Step 3 */}
               <div className="flex items-start gap-3 relative z-10 mb-6">
                 <div className="bg-yellow-400 text-white rounded-full w-8 h-8 flex items-center justify-center font-medium">
@@ -276,10 +279,23 @@ const BookedProp = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-zinc-800">
-                    Pay for property
+                    {activeBooking.bType === "visit" ? (
+                      <>
+                        Visit the property on{" "}
+                        <span className="text-blue-500">
+                          {activeBooking.date}
+                        </span>
+                      </>
+                    ) : (
+                      <>Pay for property</>
+                    )}
                   </p>
                   <p className="text-xs text-zinc-500">
-                    You have selected for PAY option
+                    {activeBooking.bType === "visit" ? (
+                      <>You selected the visit option.</>
+                    ) : (
+                      <> You have selected for PAY option</>
+                    )}
                   </p>
                 </div>
               </div>

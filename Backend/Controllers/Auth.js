@@ -196,7 +196,9 @@ exports.checkAuth = async (req, res) => {
       return res.status(401).json({
         success: false,
       });
-    const findUser = await UserModel.findOne({ _id: decoded.id });
+    const findUser = await UserModel.findOne({ _id: decoded.id }).populate(
+      "bookedProperties",
+    );
     if (findUser) {
       const newToken = jwt.sign(
         { id: findUser._id, type: decoded.type },

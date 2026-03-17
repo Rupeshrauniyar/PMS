@@ -43,7 +43,7 @@ const authRoutes = require("./Routes/Auth");
 const propertyRoutes = require("./Routes/Property");
 const bookingRoutes = require("./Routes/Booking");
 const fetchPropertyRoutes = require("./Routes/FetchingProperty");
-
+const paymentRoutes = require("./Routes/Payment");
 const emailRoutes = require("./Routes/Cred");
 const androidRoutes = require("./Routes/Android");
 // // --- Keep Alive Function ---
@@ -85,6 +85,8 @@ const androidRoutes = require("./Routes/Android");
     app.use("/api/property", propertyRoutes);
     app.use("/api/booking", bookingRoutes);
     app.use("/api/fetching", fetchPropertyRoutes);
+    app.use("/api/payment", paymentRoutes);
+
 
     // Start server
     app.listen(port, () => {

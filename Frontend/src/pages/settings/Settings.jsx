@@ -30,7 +30,8 @@ const Settings = () => {
       label: "Your Profile",
       action: () => navigate("/profile"),
       section: "account",
-    }, {
+    },
+    {
       icon: Pen,
       label: "Edit Profile",
       action: () => navigate("/edit-profile"),
@@ -47,19 +48,19 @@ const Settings = () => {
     {
       icon: Sun,
       label: "Themes",
-      action: () => navigate("#"),
+      action: () => navigate("/themes"),
       section: "preferences",
     },
     {
       icon: Book,
       label: "Terms & Conditions",
-      action: () => navigate("#"),
+      action: () => navigate("/termsandcondition"),
       section: "legal",
     },
     {
       icon: Book,
       label: "Privacy & Policy",
-      action: () => navigate("#"),
+      action: () => navigate("/privacyandpolicy"),
       section: "legal",
     },
   ];

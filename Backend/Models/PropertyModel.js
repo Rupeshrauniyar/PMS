@@ -57,37 +57,12 @@ const PropertySchema = mongoose.Schema(
     },
     bookers: [
       {
-        price: {
-          type: String,
-          required: true,
-        },
-        userId: {
-          type: mongoose.Schema.Types.ObjectId,
-          required: true,
-          ref: "users", // single User collection
-        },
-        date: {
-          type: String,
-        },
-        note: {
-          type: String,
-        },
-        bType: {
-          type: String,
-          enum: ["pay", "visit"],
-        },
-        status: {
-          type: Boolean,
-          default: false,
-        },
-        createdAt: {
-          type: Date,
-          default: Date.now,
-        },
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "bookings",
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const PropertyModel = mongoose.model("property", PropertySchema);
