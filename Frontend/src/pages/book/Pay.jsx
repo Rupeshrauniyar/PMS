@@ -21,9 +21,7 @@ const Pay = () => {
 
   return (
     <div className="flex justify-center items-center h-screen">
-      {
-        console.log(payment)
-      }
+      {console.log(payment)}
       <form
         action="https://rc-epay.esewa.com.np/api/epay/main/v2/form"
         method="POST"
@@ -68,13 +66,13 @@ const Pay = () => {
         <input
           type="hidden"
           name="success_url"
-          value="http://localhost:5173/payment-success"
+          value="https://propatyc.vercel.app/payment-success"
         />
 
         <input
           type="hidden"
           name="failure_url"
-          value="http://localhost:5173/payment-failure"
+          value="https://propatyc.vercel.app/payment-failure"
         />
 
         <input

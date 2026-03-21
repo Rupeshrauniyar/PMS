@@ -67,7 +67,7 @@ const Settings = () => {
 
   const handleSignOut = async () => {
     try {
-      // await GoogleAuth.signOut();
+      await GoogleAuth.signOut();
       // console.log("Google sign-out successful");
     } catch (err) {
       console.warn("Google sign-out skipped or failed:", err.message);
