@@ -7,7 +7,8 @@ exports.CreatePayment = async (req, res) => {
   if (!Booking || !Booking.active || !Booking.status) {
     return res.status(400).json({ message: "Invalid Booking" });
   }
-  const total_amount = Number(amount);
+  const tax_amount = 0;
+  const total_amount = Number(amount) + tax_amount;
 
   const transaction_uuid = `${id}-${Date.now()}`;
   const product_code = "EPAYTEST";
@@ -21,6 +22,7 @@ exports.CreatePayment = async (req, res) => {
 
   res.json({
     amount,
+    tax_amount,
     total_amount,
     transaction_uuid,
     product_code,
