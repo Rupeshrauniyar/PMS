@@ -51,7 +51,7 @@ const Signup = (props) => {
               username: result.user.providerData[0].displayName,
               pp: result.user.providerData[0].photoURL,
               type: "google",
-            }
+            },
           )
           .then((res) => {
             setGoogleLoading(false);
@@ -101,7 +101,7 @@ const Signup = (props) => {
   //         navigate("/");
   //       })
   //       .catch((err) => {
-  //         // console.log(err);
+  //         console.log(err);
   //         // alert(err.message);
   //         setGoogleLoading(false);
   //         setBackendError("Google sign-up failed.");
@@ -110,7 +110,7 @@ const Signup = (props) => {
   //         // alert("Signin failed");
   //       });
   //   } catch (err) {
-  //     // console.log(err.message);
+  //     console.log(err.message);
   //     // alert(err.message);
   //     setGoogleLoading(false);
   //     setBackendError("Google sign-up failed.");

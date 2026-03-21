@@ -84,7 +84,7 @@ const Home = () => {
             <div className="grid grid-cols-1 gap-3">
               {[{}, {}, {}].map((p, i) => (
                 <div
-                  key={i}
+                  key={i}   
                   className="bg-white border border-zinc-200 rounded-3xl overflow-hidden animate-pulse h-full"
                 >
                   {/* Image Skeleton */}

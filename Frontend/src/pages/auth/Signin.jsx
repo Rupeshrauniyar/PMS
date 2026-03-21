@@ -130,7 +130,7 @@ const Signin = (props) => {
   //       .catch((err) => {
   //         // alert(err.message);
 
-  //         // console.log(err);
+  //         console.log(err);
   //         setGoogleLoading(false);
   //         setBackendError("Google sign-in failed.");
 
@@ -138,7 +138,7 @@ const Signin = (props) => {
   //         // alert("Signin failed");
   //       });
   //   } catch (err) {
-  //     // console.log(err.message);
+  //     console.log(err.message);
   //     // alert(err.message);
   //     setGoogleLoading(false);
   //     setBackendError("Google sign-in failed.");

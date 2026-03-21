@@ -6,12 +6,12 @@ const Pay = () => {
   const [payment, setPayment] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/payment/create-payment", {
+    fetch(`${import.meta.env.VITE_backendUrl}/api/payment/create-payment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ amount: 100, id: param.id }),
+      body: JSON.stringify({ amount: param.price, id: param.id }),
     })
       .then((res) => res.json())
       .then((data) => setPayment(data));

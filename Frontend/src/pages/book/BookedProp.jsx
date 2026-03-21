@@ -227,11 +227,20 @@ const BookedProp = () => {
 
       <div className="">
         {activeBooking.status ? (
-          <Link to={`/pay/${activeBooking._id}/${activeBooking.price}`}>
-            <button className="bg-green-500 text-white rounded-full p-3">
-              Pay via Esewa
-            </button>
-          </Link>
+          activeBooking.bType === "visit" ? (
+            <>
+              <p>Visit Date: {activeBooking.date}</p>
+              <p>You will get a call very soon.</p>
+            </>
+          ) : (
+            <>
+              <Link to={`/pay/${activeBooking._id}/${activeBooking.price}`}>
+                <button className="bg-green-500 text-white rounded-full p-3">
+                  Pay via Esewa
+                </button>
+              </Link>
+            </>
+          )
         ) : (
           <div className="w-full max-w-md mx-auto bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-800 mb-4">

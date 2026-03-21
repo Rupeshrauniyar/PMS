@@ -1,11 +1,13 @@
 const crypto = require("crypto");
 const SECRET = "8gBm/:&EnhH.1/q"; // eSewa test secret
-
+const BookingModel = require("../Models/BookingModel");
 exports.CreatePayment = async (req, res) => {
   const { amount, id } = req.body;
-
-  const tax_amount = 10;
-  const total_amount = Number(amount) + tax_amount;
+  const Booking = await BookingModel.findById(id);
+  if (!Booking || !Booking.active || !Booking.status) {
+    return res.status(400).json({ message: "Invalid Booking" });
+  }
+  const total_amount = Number(amount);
 
   const transaction_uuid = `${id}-${Date.now()}`;
   const product_code = "EPAYTEST";
@@ -19,7 +21,6 @@ exports.CreatePayment = async (req, res) => {
 
   res.json({
     amount,
-    tax_amount,
     total_amount,
     transaction_uuid,
     product_code,

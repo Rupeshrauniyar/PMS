@@ -74,7 +74,13 @@ exports.signin = async (req, res) => {
 exports.signinWithGoogle = async (req, res) => {
   try {
     const { email, uuid, username, pp } = req.body;
-    let user = await UserModel.findOne({ uuid, authProvider: "google" });
+    let user = await UserModel.findOne({
+      uuid,
+      authProvider: "google",
+    }).populate({
+      path: "bookedProperties",
+      // select: "propId",
+    });
     if (!user) {
       user = await UserModel.create({
         email,
@@ -196,9 +202,10 @@ exports.checkAuth = async (req, res) => {
       return res.status(401).json({
         success: false,
       });
-    const findUser = await UserModel.findOne({ _id: decoded.id }).populate(
-      "bookedProperties",
-    );
+    const findUser = await UserModel.findOne({ _id: decoded.id }).populate({
+      path: "bookedProperties",
+      // select: "",
+    });
     if (findUser) {
       const newToken = jwt.sign(
         { id: findUser._id, type: decoded.type },
