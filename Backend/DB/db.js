@@ -22,7 +22,7 @@ async function connectDB() {
   } catch (err) {
     console.error(
       `MongoDB connection error in worker ${process.pid}:`,
-      err.message
+      err
     );
     process.exit(1);
   }

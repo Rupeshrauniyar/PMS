@@ -28,7 +28,7 @@ const SwiperComp = ({ title, images = [] }) => {
   }));
 
   return (
-    <div className="relative w-full h-full overflow-hidden shadow-xl z-10">
+    <div className=" w-full h-full overflow-hidden shadow-xl z-10">
       <Swiper
         speed={200}
         spaceBetween={0}

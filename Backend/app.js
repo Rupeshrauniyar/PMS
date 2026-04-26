@@ -5,7 +5,9 @@ const helmet = require("helmet");
 const compression = require("compression");
 const cors = require("cors");
 const fetch = require("node-fetch");
-
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 require("dotenv").config();
 
 // Import services

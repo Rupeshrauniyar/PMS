@@ -60,90 +60,90 @@ const Signin = (props) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // const handleGoogleAuth = async () => {
-  //   const provider = new GoogleAuthProvider();
-  //   setGoogleLoading(true);
-  //   signInWithPopup(auth, provider)
-  //     .then(async (result) => {
-  //       // console.log(result);
-  //       await axios
-  //         .post(
-  //           `${import.meta.env.VITE_backendUrl}/api/auth/signinWithGoogle`,
-  //           {
-  //             email: result.user.providerData[0].email,
-  //             uuid: result.user.providerData[0].uid,
-  //             username: result.user.providerData[0].displayName,
-  //             pp: result.user.providerData[0].photoURL,
-  //             type: "google",
-  //           }
-  //         )
-  //         .then((res) => {
-  //           // console.log(res);
-  //           setGoogleLoading(false);
-
-  //           setUser(res.data.user);
-  //           localStorage.setItem("token", res.data.token);
-  //           localStorage.setItem("user", JSON.stringify(res.data.user));
-  //           navigate(from);
-  //         })
-  //         .catch((err) => {
-  //           setGoogleLoading(false);
-  //           setBackendError("Google sign-in failed.");
-  //         });
-  //     })
-  //     .catch((error) => {
-  //       setGoogleLoading(false);
-  //       setBackendError("Google sign-in failed.");
-  //       // Handle Errors here.
-  //       // console.log(error);
-  //       // alert("Signup failed");
-  //     });
-  // };
-
   const handleGoogleAuth = async () => {
-    try {
-      setGoogleLoading(true);
-      await GoogleAuth.signOut();
-      const data = await GoogleAuth.signIn({});
-      if (!data.idToken) {
+    const provider = new GoogleAuthProvider();
+    setGoogleLoading(true);
+    signInWithPopup(auth, provider)
+      .then(async (result) => {
+        // console.log(result);
+        await axios
+          .post(
+            `${import.meta.env.VITE_backendUrl}/api/auth/signinWithGoogle`,
+            {
+              email: result.user.providerData[0].email,
+              uuid: result.user.providerData[0].uid,
+              username: result.user.providerData[0].displayName,
+              pp: result.user.providerData[0].photoURL,
+              type: "google",
+            }
+          )
+          .then((res) => {
+            // console.log(res);
+            setGoogleLoading(false);
+
+            setUser(res.data.user);
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+            navigate(from);
+          })
+          .catch((err) => {
+            setGoogleLoading(false);
+            setBackendError("Google sign-in failed.");
+          });
+      })
+      .catch((error) => {
         setGoogleLoading(false);
-
-        setBackendError("Signin Failed due to token");
-      }
-
-      await axios
-        .post(`${import.meta.env.VITE_backendUrl}/api/auth/signinWithGoogle`, {
-          email: data.email,
-          uuid: data.id,
-          username: data.displayName,
-          pp: data.imageUrl,
-          type: "google",
-        })
-        .then((res) => {
-          setGoogleLoading(false);
-
-          setUser(res.data.user);
-          localStorage.setItem("token", res.data.token);
-          localStorage.setItem("user", JSON.stringify(res.data.user));
-          navigate("/");
-        })
-        .catch((err) => {
-          // alert(err.message);
-
-          console.log(err);
-          setGoogleLoading(false);
-          setBackendError("Google sign-in failed.");
-
-          // alert(err);
-          // alert("Signin failed");
-        });
-    } catch (err) {
-      console.log(err.message);
-      // alert(err.message);
-      setGoogleLoading(false);
-      setBackendError("Google sign-in failed.");
-    }
+        setBackendError("Google sign-in failed.");
+        // Handle Errors here.
+        // console.log(error);
+        // alert("Signup failed");
+      });
   };
+
+  // const handleGoogleAuth = async () => {
+  //   try {
+  //     setGoogleLoading(true);
+  //     await GoogleAuth.signOut();
+  //     const data = await GoogleAuth.signIn({});
+  //     if (!data.idToken) {
+  //       setGoogleLoading(false);
+
+  //       setBackendError("Signin Failed due to token");
+  //     }
+
+  //     await axios
+  //       .post(`${import.meta.env.VITE_backendUrl}/api/auth/signinWithGoogle`, {
+  //         email: data.email,
+  //         uuid: data.id,
+  //         username: data.displayName,
+  //         pp: data.imageUrl,
+  //         type: "google",
+  //       })
+  //       .then((res) => {
+  //         setGoogleLoading(false);
+
+  //         setUser(res.data.user);
+  //         localStorage.setItem("token", res.data.token);
+  //         localStorage.setItem("user", JSON.stringify(res.data.user));
+  //         navigate("/");
+  //       })
+  //       .catch((err) => {
+  //         // alert(err.message);
+
+  //         console.log(err);
+  //         setGoogleLoading(false);
+  //         setBackendError("Google sign-in failed.");
+
+  //         // alert(err);
+  //         // alert("Signin failed");
+  //       });
+  //   } catch (err) {
+  //     console.log(err.message);
+  //     // alert(err.message);
+  //     setGoogleLoading(false);
+  //     setBackendError("Google sign-in failed.");
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();

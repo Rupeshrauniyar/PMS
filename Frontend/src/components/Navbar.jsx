@@ -68,7 +68,7 @@ const Navbar = () => {
     },
     {
       path: "/add-property",
-      name: "Add property",
+      name: "Add ",
       outline: PlusOutline,
       solid: PlusSolid,
     },
@@ -187,6 +187,8 @@ const Navbar = () => {
                   const Icon = isActive ? navLink.solid : navLink.outline;
 
                   return (
+                    <span className="flex items-center justify-center flex-col">
+                    
                     <Icon
                       className={`w-6 h-6 transition-all duration-200 ${
                         isActive
@@ -194,6 +196,9 @@ const Navbar = () => {
                           : "text-muted-foreground"
                       }`}
                     />
+                    <p className={`font-medium text-xs text-center ${isActive ? "text-foreground" : "text-muted-foreground"}`}>{navLink.name}</p>
+                    </span>
+
                   );
                 }}
               </NavLink>
@@ -202,7 +207,7 @@ const Navbar = () => {
         </div>
       </div>
       {/* Desktop sidebar*/}
-      <div className="hidden xl:block fixed left-0 top-0 h-full w-[25%] bg-background text-foreground shadow-md z-[2000] border-r border-border">
+      <div className="hidden xl:block fixed left-22 top-0 h-full w-[25%] bg-background text-foreground  z-[2000] border-r border-border">
         <div className="w-full p-2 border-b border-border">
           <h3 className="font-bold text-3xl  ">Sidebar</h3>
           <p>Navigate through pages.</p>

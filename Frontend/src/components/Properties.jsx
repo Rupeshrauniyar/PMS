@@ -27,7 +27,7 @@ const Properties = (props) => {
   
       <div className="w-full h-full bg-card text-card-foreground border border-border rounded-3xl overflow-hidden hover:border-foreground/30 transition-all duration-200 group">
         {/* Image Section */}
-        <div className="relative overflow-hidden aspect-[16/9] bg-muted">
+        <div className="relative overflow-hidden aspect-[16/9] bg-muted ">
           <SwiperComp
             title={props.prop.title}
             images={props.prop.images}

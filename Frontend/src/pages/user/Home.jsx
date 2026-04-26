@@ -40,16 +40,16 @@ const Home = () => {
     getProperty();
   }, [activeTab]);
   return (
-    <div className="w-full min-h-screen font-sans pb-18 pt-28 ">
+    <div className="w-full min-h-screen font-sans pb-18 pt-22 ">
       {/* Hero Section */}
 
-      <SearchBar dis={true} />
+      {/* <SearchBar dis={true} /> */}
 
-      <div className="pt-6"></div>
+      {/* <div className="pt-6"></div> */}
 
       {/* Modern Tab Navigation */}
 
-      <div className="max-w-4xl mx-auto relative flex justify-center items-center  py-2 bg-white/70 backdrop-blur-xl border border-zinc-200/60 rounded-full shadow-lg overflow-hidden">
+      <div className="max-w-4xl mx-auto relative flex justify-center items-center  py-2 bg-white/70 backdrop-blur-xl border border-zinc-200/60 rounded-3xl shadow-lg overflow-hidden">
         {/* Animated Indicator */}
 
         {tabs.map((tab) => (
