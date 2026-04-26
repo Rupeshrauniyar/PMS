@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
 import { AppContext } from "../../contexts/AppContext";
-import { Trash2 } from "lucide-react";
+import { Trash2, ChevronDown, ArrowUpRight, CheckCircle2, Users, Building2 } from "lucide-react";
 import axios from "axios";
 import AlertBox from "../../components/AlertBox";
 import Properties from "../../components/Properties";
@@ -13,6 +13,90 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
+/* ── Collapsible section ── */
+const Accordion = ({ title, icon: Icon, open, onToggle, children, badge }) => (
+  <div className="border border-zinc-200 rounded-2xl overflow-hidden">
+    <button
+      type="button"
+      onClick={onToggle}
+      className="w-full flex items-center justify-between px-5 py-4 hover:bg-zinc-50 transition-colors"
+    >
+      <div className="flex items-center gap-2">
+        {Icon && <Icon className="w-4 h-4 text-zinc-400" />}
+        <span className="text-sm font-semibold text-zinc-700 tracking-wide uppercase">
+          {title}
+        </span>
+        {badge != null && (
+          <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-black text-white text-[10px] font-bold">
+            {badge}
+          </span>
+        )}
+      </div>
+      <ChevronDown
+        className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+      />
+    </button>
+    <div
+      className={`transition-all duration-300 ease-in-out overflow-hidden ${
+        open ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+      }`}
+    >
+      <div className="border-t border-zinc-100 px-5 pb-5 pt-4">{children}</div>
+    </div>
+  </div>
+);
+
+/* ── Booker card ── */
+const BookerCard = ({ booker, onConfirm, isActive }) => (
+  <div className="border border-zinc-200 rounded-xl p-4 flex flex-col gap-3">
+    <div className="flex items-start justify-between gap-2">
+      <div>
+        <p className="text-sm font-semibold text-black">
+          {booker.userId.username}
+        </p>
+        <p className="text-xs text-zinc-400 mt-0.5">
+          {booker.bType === "visit" ? "Schedule Visit" : "Pay Now"}
+        </p>
+      </div>
+      <span className="text-sm font-semibold text-black shrink-0">
+        ₹{booker.price ? new Intl.NumberFormat("en-IN").format(booker.price) : "N/A"}
+      </span>
+    </div>
+
+    {booker.note && (
+      <p className="text-xs text-zinc-500 bg-zinc-50 rounded-lg px-3 py-2 leading-relaxed">
+        {booker.note}
+      </p>
+    )}
+
+    {booker.bType === "visit" && booker.date && (
+      <p className="text-xs text-zinc-500">
+        <span className="font-medium text-zinc-700">Visit date:</span>{" "}
+        {new Date(booker.date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}
+      </p>
+    )}
+
+    <div className="flex justify-end pt-1">
+      {isActive ? (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-black text-white px-4 py-2 rounded-xl">
+          <CheckCircle2 className="w-3.5 h-3.5" /> Confirmed
+        </span>
+      ) : (
+        <button
+          onClick={onConfirm}
+          className="text-xs font-semibold bg-black text-white px-4 py-2 rounded-xl hover:bg-zinc-800 active:scale-[0.98] transition-all"
+        >
+          Confirm Booking
+        </button>
+      )}
+    </div>
+  </div>
+);
+
 const MyProp = () => {
   const { user } = useContext(AppContext);
   const [props, setPropData] = useState({});
@@ -23,40 +107,43 @@ const MyProp = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [propertyLoading, setPropertyLoading] = useState(true);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [propOpen, setPropOpen] = useState(false);
+  const [bookingsOpen, setBookingsOpen] = useState(true);
 
-  if (!user?.myProperties?.find((myProps) => myProps?.propId === params.id)) {
+  /* ── Guard ── */
+  if (!user?.myProperties?.find((p) => p?.propId === params.id)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 pt-20 text-center">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-4">
-          Oops! Link Not Found
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 text-center">
+        <div className="w-12 h-px bg-black mx-auto mb-6" />
+        <h1 className="text-3xl font-light tracking-tight text-black mb-3">
+          Not Your Property
         </h1>
-        <p className="text-gray-600 mb-6 max-w-md">
-          The page you are looking for might have been removed, had its name
-          changed, or is temporarily unavailable.
+        <p className="text-sm text-zinc-500 max-w-xs mb-8 leading-relaxed">
+          This listing isn't in your account. View it as a visitor instead.
         </p>
         <Link
           to={`/view/${params.id}`}
-          className="inline-block bg-black hover:bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
+          className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-7 py-3.5 rounded-full hover:bg-zinc-800 transition-colors"
         >
-          Go to Correct Page
+          View Property <ArrowUpRight className="w-4 h-4" />
         </Link>
       </div>
     );
   }
+
   useEffect(() => {
     const getProperty = async () => {
       try {
         const response = await axios.post(
           `${import.meta.env.VITE_backendUrl}/api/fetching/get-my-prop`,
-          { _id: params.id },
+          { _id: params.id }
         );
         if (response?.status === 200 && response.data.Property?._id) {
           setPropData(response.data.Property);
         } else {
           setPropData({});
         }
-      } catch (err) {
-        // console.log(err);
+      } catch {
         setPropData({});
       } finally {
         setPropertyLoading(false);
@@ -69,54 +156,59 @@ const MyProp = () => {
     document.body.style.overflow = deleteOpen ? "hidden" : "auto";
   }, [deleteOpen]);
 
+  /* ── Skeleton ── */
   if (propertyLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen w-full overflow-hidden pb-20 pt-26">
-        <div className="xl:w-2xl w-full animate-pulse space-y-4">
-          <div className="bg-gray-200 h-96 rounded-2xl mb-4"></div>
-          <div className="h-8 bg-gray-200 rounded-md w-3/4 mb-2"></div>
-          <div className="h-6 bg-gray-200 rounded-md w-1/2 mb-4"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen w-full bg-white pb-20 pt-28">
+        <div className="max-w-2xl w-full px-4 animate-pulse space-y-5">
+          <div className="bg-zinc-100 h-80 rounded-2xl w-full" />
+          <div className="space-y-2 pt-2">
+            <div className="h-7 bg-zinc-100 rounded-full w-2/3" />
+            <div className="h-4 bg-zinc-100 rounded-full w-1/3" />
+          </div>
+          <div className="h-px bg-zinc-100 w-full" />
           <div className="grid grid-cols-3 gap-4">
-            <div className="h-24 bg-gray-200 rounded-lg"></div>
-            <div className="h-24 bg-gray-200 rounded-lg"></div>
-            <div className="h-24 bg-gray-200 rounded-lg"></div>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-zinc-100 h-20 rounded-xl" />
+            ))}
           </div>
         </div>
       </div>
     );
   }
-  // console.log(props);
+
   if (!props._id) {
     return (
-      <div className="flex flex-col items-center justify-center w-full h-screen">
-        <h3 className="text-center font-bold text-xl">No properties found</h3>
+      <div className="flex flex-col items-center justify-center w-full h-screen bg-white">
+        <p className="text-sm text-zinc-500">No property found.</p>
       </div>
     );
   }
+
   const HandleDelete = async () => {
     try {
       setDeleteLoading(true);
-
       const res = await axios.post(
         `${import.meta.env.VITE_backendUrl}/api/property/delete-property`,
         {
           _id: params?.id,
           propertyType: props.propertyType,
           token: localStorage.getItem("token"),
-        },
+        }
       );
       if (res.status === 200) {
         setDeleteLoading(false);
         setDeleteOpen(false);
-        setSuccess("Your property has been Deleted successfully.");
+        setSuccess("Property deleted successfully.");
         setPropData({});
       }
-    } catch (err) {
+    } catch {
       setDeleteLoading(false);
       setDeleteOpen(false);
       setBackendError("Unable to delete property.");
     }
   };
+
   const handleConfirm = async (userId, bookingId) => {
     try {
       const res = await axios.post(
@@ -125,227 +217,168 @@ const MyProp = () => {
           _id: bookingId,
           userId,
           token: localStorage.getItem("token"),
-        },
+        }
       );
       if (res.status === 200) {
-        setPropData((prop) => ({
-          ...prop,
-          bookers: prop.bookers.map((b) =>
-            b.userId === userId ? { ...b, status: true } : b,
+        setPropData((prev) => ({
+          ...prev,
+          bookers: prev.bookers.map((b) =>
+            b.userId === userId ? { ...b, status: true } : b
           ),
         }));
-        setSuccess("Your property booker has been confirmed successfully.");
+        setSuccess("Booker confirmed successfully.");
       }
-    } catch (err) {
+    } catch {
       setBackendError("Unable to confirm booker.");
     }
   };
-  const activeBooker = props.bookers.find((booker) => booker.status);
+
+  const activeBooker = props.bookers.find((b) => b.status);
+  const pendingBookers = props.bookers.filter((b) => !b.status);
 
   return (
-    <div className="w-full min-h-screen overflow-hidden  pt-20 pb-18">
-      {/* Edit Profile Modal */}
-      {console.log(activeBooker)}
-      {/* Alerts */}
+    <div className="w-full min-h-screen bg-white overflow-hidden pt-20 pb-24">
+      {/* ── Alerts ── */}
       {success && (
-        <AlertBox
-          message={success}
-          type="success"
-          onClose={() => {
-            setSuccess(null);
-          }}
-        />
+        <AlertBox message={success} type="success" onClose={() => setSuccess(null)} />
       )}
       {backendError && (
-        <AlertBox
-          message={backendError}
-          type="error"
-          onClose={() => setBackendError(null)}
-        />
+        <AlertBox message={backendError} type="error" onClose={() => setBackendError(null)} />
       )}
+
+      {/* ── Delete Modal ── */}
       {deleteOpen && (
-        <div className="w-full h-screen absolute inset-0 p-4 flex items-center justify-center bg-black/40 backdrop-blur-md z-[999]">
-          {deleteLoading ? (
-            <div className="flex items-center justify-center bg-white/95 dark:bg-neutral-900 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-neutral-800 text-center max-w-sm w-full transition-all duration-300">
-              <Loader2 className="animate-spin w-5 h-5" />
+        <>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[998]" />
+          <div className="fixed inset-0 z-[999] flex items-center justify-center px-4">
+            <div className="bg-white rounded-2xl shadow-xl border border-zinc-100 w-full max-w-sm p-6 animate-[slideUp_0.2s_ease-out]">
+              {deleteLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="animate-spin w-5 h-5 text-zinc-400" />
+                </div>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
+                    <Trash2 className="w-4 h-4 text-zinc-500" />
+                  </div>
+                  <h3 className="text-base font-semibold text-black text-center mb-1">
+                    Delete Property?
+                  </h3>
+                  <p className="text-sm text-zinc-500 text-center mb-6 leading-relaxed">
+                    This will permanently remove your listing and all associated bookings.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setDeleteOpen(false)}
+                      className="flex-1 py-3 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-600 hover:bg-zinc-50 active:scale-[0.98] transition-all"
+                    >
+                      Keep Listing
+                    </button>
+                    <button
+                      onClick={HandleDelete}
+                      className="flex-1 py-3 rounded-xl bg-black text-white text-sm font-medium hover:bg-zinc-800 active:scale-[0.98] transition-all"
+                    >
+                      Yes, Delete
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-          ) : (
-            <div className="bg-white/95 dark:bg-neutral-900 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-neutral-800 text-center max-w-sm w-full transition-all duration-300">
-              <p className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                Cancel Booking?
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                Are you sure you want to cancel this booking? This action cannot
-                be undone.
-              </p>
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={() => HandleDelete()}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-medium shadow-sm hover:shadow-md hover:from-red-600 hover:to-rose-700 active:scale-[0.98] transition-all"
-                >
-                  Yes, Delete
-                </button>
-                <button
-                  onClick={() => setDeleteOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-neutral-800 active:scale-[0.98] transition-all"
-                >
-                  No, Keep It
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        </>
       )}
-      <div className="flex items-center justify-between py-5">
-        <span></span>
+
+      {/* ── Top Bar ── */}
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400">
+            My Listing
+          </p>
+          <h1 className="text-xl font-semibold tracking-tight text-black">
+            Property Dashboard
+          </h1>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
-              variant="ghost"
-              size="icon"
-            >
-              <MoreVertical className="h-5 w-5" />
+            <button className="w-9 h-9 flex items-center justify-center rounded-full border border-zinc-200 hover:bg-zinc-50 transition-colors">
+              <MoreVertical className="w-4 h-4 text-zinc-500" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="rounded-xl shadow-lg border border-zinc-100">
             <DropdownMenuItem
-              className="text-red-500"
+              className="text-sm text-zinc-800 cursor-pointer focus:bg-zinc-50 flex items-center gap-2"
               onClick={() => setDeleteOpen(true)}
             >
-              <Trash2 /> Delete
+              <Trash2 className="w-3.5 h-3.5" /> Delete Property
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <Properties prop={props} />
-      {props.bookers.length > 0 ? (
-        <>
-          {/* 🟢 Active Booker */}
-          {activeBooker ? (
-            <>
-              <h3 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">
-                Active Booking
-              </h3>
+      {/* ── Accordions ── */}
+      <div className="flex flex-col gap-3">
 
-              <div className="flex flex-col gap-3 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-lg p-5 mb-8 transition-all">
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-medium text-gray-900 dark:text-gray-50">
-                    {activeBooker.userId.username}
-                  </span>
-                  <span className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
-                    ₹
-                    {activeBooker.price
-                      ? new Intl.NumberFormat("en-IN").format(
-                          activeBooker.price,
-                        )
-                      : "N/A"}
-                  </span>
-                </div>
+        {/* Accordion 1 — Property Details */}
+        <Accordion
+          title="Property Details"
+          icon={Building2}
+          open={propOpen}
+          onToggle={() => setPropOpen((p) => !p)}
+        >
+          <Properties prop={props} />
+        </Accordion>
 
-                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <p>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                      Note:
-                    </span>{" "}
-                    {activeBooker.note || "No additional note provided."}
-                  </p>
-                  <p>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                      Type:
-                    </span>{" "}
-                    {activeBooker.bType || "Not specified"}
-                  </p>
-                </div>
-
-                <div className="flex justify-end mt-3">
-                  <button className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-sm hover:shadow-md hover:from-blue-700 hover:to-indigo-700 transition-all">
-                    Confirmed
-                  </button>
-                </div>
+        {/* Accordion 2 — Bookings */}
+        <Accordion
+          title="Bookings"
+          icon={Users}
+          open={bookingsOpen}
+          onToggle={() => setBookingsOpen((p) => !p)}
+          badge={props.bookers.length > 0 ? props.bookers.length : null}
+        >
+          {props.bookers.length === 0 ? (
+            /* Empty state */
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center mb-3">
+                <Users className="w-4 h-4 text-zinc-400" />
               </div>
-            </>
+              <p className="text-sm font-medium text-zinc-700">No bookings yet</p>
+              <p className="text-xs text-zinc-400 mt-1">
+                Booking requests will appear here once customers book your property.
+              </p>
+            </div>
+          ) : activeBooker ? (
+            /* Active confirmed booker */
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400">
+                Active Booking
+              </p>
+              <BookerCard booker={activeBooker} isActive={true} />
+            </div>
           ) : (
-            <div>
-              {/* 🟣 Other Bookers */}
-              <h3 className="text-2xl font-semibold mb-3 text-gray-800 dark:text-gray-100">
-                Available Bookings
-              </h3>
-
-              {props.bookers.filter((item) => !item.status).length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  {props.bookers
-                    .filter((item) => !item.status)
-                    .map((booker, i) => (
-                      <div
-                        key={i}
-                        className="flex flex-col gap-3 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-lg p-5 transition-all hover:shadow-xl hover:scale-[1.01]"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-lg font-medium text-gray-900 dark:text-gray-50">
-                            {booker.userId.username}
-                          </span>
-                          <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                            ₹
-                            {booker.price
-                              ? new Intl.NumberFormat("en-IN").format(
-                                  booker.price,
-                                )
-                              : "N/A"}
-                          </span>
-                        </div>
-
-                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                          <p>
-                            <span className="font-medium text-gray-700 dark:text-gray-300">
-                              Note:
-                            </span>{" "}
-                            {booker.note || "No additional note provided."}
-                          </p>
-                          <p>
-                            <span className="font-medium text-gray-700 dark:text-gray-300">
-                              Type:
-                            </span>{" "}
-                            {booker.bType || "Not specified"}
-                          </p>
-                        </div>
-
-                        <div className="flex justify-end mt-3">
-                          <button
-                            onClick={() =>
-                              handleConfirm(booker.userId, booker._id)
-                            }
-                            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium shadow-sm hover:shadow-md hover:from-emerald-600 hover:to-teal-600 active:scale-[0.98] transition-all"
-                          >
-                            Confirm
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
+            /* Pending bookers list */
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400">
+                Pending Requests · {pendingBookers.length}
+              </p>
+              {pendingBookers.length > 0 ? (
+                pendingBookers.map((booker, i) => (
+                  <BookerCard
+                    key={i}
+                    booker={booker}
+                    isActive={false}
+                    onConfirm={() => handleConfirm(booker.userId, booker._id)}
+                  />
+                ))
               ) : (
-                <div className="flex flex-col items-center justify-center bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-inner p-10 mt-4">
-                  <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                    No pending booking requests at the moment.
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                    There are no new requests yet.
-                  </p>
-                </div>
+                <p className="text-sm text-zinc-400 py-4 text-center">
+                  No pending requests.
+                </p>
               )}
             </div>
           )}
-        </>
-      ) : (
-        <div className="flex flex-col  bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-inner p-10 mt-3">
-          <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-            No bookings available.
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 ">
-            Once a customer books your property, details will appear here.
-          </p>
-        </div>
-      )}
+        </Accordion>
+      </div>
     </div>
   );
 };

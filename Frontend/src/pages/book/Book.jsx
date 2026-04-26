@@ -1,63 +1,134 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, Link, useParams, useLocation } from "react-router-dom";
 import { AppContext } from "../../contexts/AppContext";
-import { CheckCircle, Loader2, ChevronRight, ChevronUp } from "lucide-react";
+import {
+  CheckCircle,
+  Loader2,
+  ChevronRight,
+  ChevronDown,
+  ArrowUpRight,
+  User,
+  CalendarDays,
+  SlidersHorizontal,
+  FileText,
+  Tag,
+} from "lucide-react";
 import axios from "axios";
 import AlertBox from "../../components/AlertBox";
 import EditProfile from "../auth/EditProfile";
 import Signin from "../auth/Signin";
 
+/* ── Small helper: step pill ── */
+const StepBadge = ({ number, active }) => (
+  <span
+    className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 transition-colors ${
+      active ? "bg-black text-white" : "bg-zinc-100 text-zinc-400"
+    }`}
+  >
+    {number}
+  </span>
+);
+
+/* ── Collapsible accordion section ── */
+const Section = ({ step, title, icon: Icon, open, onToggle, children, disabled }) => (
+  <div className="rounded-2xl border border-zinc-200 overflow-hidden">
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onToggle}
+      className={`w-full flex items-center justify-between px-5 py-4 text-left transition-colors ${
+        disabled ? "cursor-default opacity-40" : "hover:bg-zinc-50 cursor-pointer"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <StepBadge number={step} active={open} />
+        <div className="flex items-center gap-2">
+          <Icon className="w-4 h-4 text-zinc-500" />
+          <span className="text-sm font-semibold tracking-wide uppercase text-zinc-700">
+            {title}
+          </span>
+        </div>
+      </div>
+      <ChevronDown
+        className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+      />
+    </button>
+    <div
+      className={`transition-all duration-300 ease-in-out overflow-hidden ${
+        open ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
+      }`}
+    >
+      <div className="px-5 pb-5 pt-1 border-t border-zinc-100">{children}</div>
+    </div>
+  </div>
+);
+
+/* ── Field wrapper ── */
+const Field = ({ label, error, hint, children }) => (
+  <div className="flex flex-col gap-1.5">
+    {label && (
+      <label className="text-xs font-semibold tracking-widest uppercase text-zinc-500">
+        {label}
+      </label>
+    )}
+    {children}
+    {hint && !error && <p className="text-xs text-zinc-400 italic">{hint}</p>}
+    {error && (
+      <p className="text-xs text-black font-medium flex items-center gap-1.5">
+        <span className="w-1 h-1 rounded-full bg-black inline-block" />
+        {error}
+      </p>
+    )}
+  </div>
+);
+
+const inputClass = (hasError) =>
+  `w-full px-4 py-3 rounded-xl border text-sm font-mono bg-white transition-all outline-none focus:ring-2 focus:ring-black focus:border-black ${
+    hasError ? "border-black ring-1 ring-black" : "border-zinc-200"
+  }`;
+
 const Book = () => {
   const navigate = useNavigate();
   const { user, setUser } = useContext(AppContext);
+  const params = useParams();
+  const location = useLocation();
 
   const [submitting, setSubmitting] = useState(false);
   const [date, setDate] = useState("");
   const [select, setSelect] = useState("pay");
   const [note, setNote] = useState("");
-
-  const params = useParams();
   const [barPrice, setBarPrice] = useState(null);
   const [isBar, setIsBar] = useState(false);
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(null);
   const [backendError, setBackendError] = useState(null);
-  const [open, setOpen] = useState(true);
-
-  // const [image, setImage] = useState("");
-  const location = useLocation();
+  const [step1Open, setStep1Open] = useState(true);
+  const [step2Open, setStep2Open] = useState(false);
 
   const validate = () => {
     const newErrors = {};
     if (!user?.phone || user?.phone.length === 0) {
-      newErrors.contact = "Please provide your contact number.";
-      setOpen(true);
+      newErrors.contact = "Please add a contact number to continue.";
+      setStep1Open(true);
+      setStep2Open(false);
     }
     if (!params.price || params.price === 0) {
-      newErrors.price = "Invalid price of a property";
+      newErrors.price = "Invalid property price.";
     }
-    if (!barPrice) {
-    } else if (barPrice === "0" || !barPrice || barPrice === "00") {
-      newErrors.price = "Invalid price of a property";
+    if (barPrice && (barPrice === "0" || barPrice === "00")) {
+      newErrors.price = "Invalid property price.";
     }
     if (select !== "pay" && !date) {
-      newErrors.date = "Invalid date for Visit";
+      newErrors.date = "Please select an appointment date.";
     }
-    // console.log(barPrice);
-    // if (barPrice && !barPrice > 0) {
-    //   newErrors.price = "Invalid price of a property";
-    // }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleConfirmBooking = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
     try {
-      e.preventDefault();
-      if (!validate()) {
-        return;
-      }
       setSubmitting(true);
       const Data = {
         propId: params.id,
@@ -70,14 +141,13 @@ const Book = () => {
       };
       const res = await axios.post(
         `${import.meta.env.VITE_backendUrl}/api/booking/book`,
-        Data,
+        Data
       );
       if (res.status === 200) {
         setUser((prev) => ({
           ...prev,
           bookedProperties: [...prev.bookedProperties, res.data.booking],
         }));
-        // console.log(user);
         setSubmitting(false);
         setSuccess(res.data.message);
         navigate(`/booked/${params.id}`);
@@ -85,7 +155,6 @@ const Book = () => {
         setSubmitting(false);
       }
     } catch (err) {
-      console.log(err);
       setSubmitting(false);
       setBackendError(err.response?.data.message || "Something went wrong.");
     }
@@ -93,250 +162,210 @@ const Book = () => {
 
   useEffect(() => {
     if (!barPrice) return;
-    if (params.price.toString() !== barPrice?.toString()) {
-      setIsBar(true);
-    } else {
-      setIsBar(false);
-    }
+    setIsBar(params.price.toString() !== barPrice.toString());
   }, [barPrice]);
 
-  if (!params.id)
+  /* ── Guard screens ── */
+  if (!params.id) {
     return (
-      <div className="flex flex-col items-center justify-center w-full h-screen">
-        <h3 className="text-center font-bold text-xl">
-          No properties available
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 text-center">
+        <div className="w-12 h-px bg-black mx-auto mb-6" />
+        <h3 className="text-2xl font-light tracking-tight text-black mb-2">
+          No Property Found
         </h3>
+        <p className="text-sm text-zinc-400">Please go back and select a property.</p>
       </div>
     );
-  if (user?.myProperties?.find((myProps) => myProps?.propId === params.id)) {
+  }
+
+  if (user?.myProperties?.find((p) => p?.propId === params.id)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 pt-20 text-center">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-4">
-          Oops! Link Not Found
-        </h1>
-        <p className="text-gray-600 mb-6 max-w-md">
-          The page you are looking for might have been removed, had its name
-          changed, or is temporarily unavailable.
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 text-center">
+        <div className="w-12 h-px bg-black mx-auto mb-6" />
+        <h1 className="text-3xl font-light tracking-tight text-black mb-3">Your Property</h1>
+        <p className="text-sm text-zinc-500 max-w-xs mb-8 leading-relaxed">
+          You can't book your own listing. View it from your property dashboard instead.
         </p>
         <Link
           to={`/my/${params.id}`}
-          className="inline-block bg-black hover:bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
+          className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-7 py-3.5 rounded-full hover:bg-zinc-800 transition-colors"
         >
-          Go to Correct Page
-        </Link>
-      </div>
-    );
-  } else if (
-    user?.bookedProperties?.find((bookProps) => bookProps?.propId === params.id)
-  ) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 pt-20 text-center">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-4">
-          Oops! Link Not Found
-        </h1>
-        <p className="text-gray-600 mb-6 max-w-md">
-          The page you are looking for might have been removed, had its name
-          changed, or is temporarily unavailable.
-        </p>
-        <Link
-          to={`/booked/${params.id}`}
-          className="inline-block bg-black hover:bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
-        >
-          Go to Correct Page
+          Open Listing <ArrowUpRight className="w-4 h-4" />
         </Link>
       </div>
     );
   }
+
+  if (user?.bookedProperties?.find((p) => p?.propId === params.id)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 text-center">
+        <div className="w-12 h-px bg-black mx-auto mb-6" />
+        <h1 className="text-3xl font-light tracking-tight text-black mb-3">Already Booked</h1>
+        <p className="text-sm text-zinc-500 max-w-xs mb-8 leading-relaxed">
+          You've already booked this property. Manage it from your bookings.
+        </p>
+        <Link
+          to={`/booked/${params.id}`}
+          className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-7 py-3.5 rounded-full hover:bg-zinc-800 transition-colors"
+        >
+          View Booking <ArrowUpRight className="w-4 h-4" />
+        </Link>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full min-h-screen overflow-hidden xl:pt-20 pt-24 pb-26">
+    <div className="w-full min-h-screen bg-white overflow-hidden pt-20 pb-24">
       {/* Alerts */}
       {success && (
-        <AlertBox
-          message={success}
-          type="success"
-          onClose={() => setSuccess(null)}
-        />
+        <AlertBox message={success} type="success" onClose={() => setSuccess(null)} />
       )}
       {backendError && (
-        <AlertBox
-          message={backendError}
-          type="error"
-          onClose={() => setBackendError(null)}
-        />
+        <AlertBox message={backendError} type="error" onClose={() => setBackendError(null)} />
       )}
 
-      {/* Main Content */}
+      {/* ── Page Header ── */}
+      {/* <div className="max-w-lg mx-auto  my-5">
+        <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400 mb-1">
+          Property · {params.id?.slice(-6).toUpperCase()}
+        </p>
+        <h1 className="text-3xl font-light tracking-tight text-black">
+          Complete Booking
+        </h1>
+        <div className="mt-2 h-px bg-zinc-100 w-full" />
+      </div> */}
 
-      {user ? (
-        <div className="flex flex-col">
-          <div
-            className="w-full bg-blue-300 text-black px-2 py-4 rounded-xl flex items-center justify-between"
-            onClick={() => {
-              if (open) {
-                if (!user?.phone || user?.phone.length === 0) {
-                  setErrors((prev) => ({
-                    ...prev,
-                    contact: "Please provide your contact number.",
-                  }));
-                } else {
-                  setOpen(false);
-                }
-              } else {
-                setOpen(true);
-              }
-            }}
-          >
-            <strong className="">
-              <span className="mr-1 bg-white rounded-md text-black px-3 py-2">
-                1
-              </span>
-              CHECK CREDENTIALS
-            </strong>
-            <span>
-              <ChevronUp className={`${open ? "" : "rotate-180"}`} />
-            </span>
-          </div>
-          <div
-            id="edit"
-            className={`w-full overflow-hidden transition-all ${
-              open ? "h-full" : "h-0"
-            }`}
-          >
-            <EditProfile
-              error={errors?.contact ? errors?.contact : null}
-              css={true}
-            />
-            <button
-              className="bg-green-400 text-white rounded-xl w-full p-3 "
-              onClick={() => {
-                if (!user?.phone || user?.phone.length === 0) {
-                  setErrors((prev) => ({
-                    ...prev,
-                    contact: "Please provide your contact number.",
-                  }));
-                } else {
-                  errors.contact = null;
-                  setOpen(false);
-                }
-              }}
-            >
-              <span className="flex gap-1 text-center items-center justify-center">
-                Continue <ChevronRight />
-              </span>
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col">
-          <div className="w-full bg-blue-300 text-black px-2 py-4 rounded-xl flex items-center justify-between">
-            <strong className="">
-              <span className="mr-1 bg-white rounded-md text-black px-3 py-2">
-                1
-              </span>
-              LOGIN OR SIGNUP{" "}
-            </strong>
-            <span>
-              <ChevronUp />
-            </span>
-          </div>
-          <div className=" mt-4">
-            <Signin
-              from={location.pathname}
-              css={true}
-            />
-          </div>
-        </div>
-      )}
-      <div
-        id="book"
-        className="max-w-7xl  animate-[slideUp_0.5s_ease-out] flex flex-col mt-4"
-      >
-        <div
-          className="w-full bg-blue-300 text-black px-2 py-4 rounded-xl flex items-center justify-between"
-          onClick={() => {
-            if (!open) {
-              setOpen(true);
-            } else {
-              setOpen(false);
-            }
-          }}
+      {/* ── Steps ── */}
+      <div className="max-w-lg mx-auto mb-10 flex flex-col gap-3">
+
+        {/* Step 1 — Credentials / Sign In */}
+        <Section
+          step={1}
+          title={user ? "Your Details" : "Sign In"}
+          icon={User}
+          open={step1Open}
+          onToggle={() => setStep1Open((p) => !p)}
         >
-          <strong className="">
-            <span className="mr-1 bg-white rounded-md text-black px-3 py-2">
-              2
-            </span>
-            BOOKING PREFRENCES
-          </strong>
-          <span>
-            <ChevronUp className={`${!open ? "" : "rotate-180"}`} />
-          </span>
-        </div>
-        {user ? (
-          <div
-            className={` space-y-2  w-full mt-4 ${
-              !open ? "h-full" : "h-0"
-            } overflow-hidden`}
-          >
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold"></span>
-              <select
-                onChange={(e) => {
-                  setErrors((prev) => ({ ...prev, select: "" }));
-                  setSelect(e.target.value);
+          {user ? (
+            <>
+              <div className="">
+                <EditProfile
+                  error={errors?.contact || null}
+                  css={true}
+                />
+              </div>
+              {errors.contact && (
+                <p className="text-xs text-black font-medium flex items-center gap-1.5 mt-2">
+                  <span className="w-1 h-1 rounded-full bg-black inline-block" />
+                  {errors.contact}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user?.phone || user?.phone.length === 0) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      contact: "Please add a contact number to continue.",
+                    }));
+                  } else {
+                    setErrors((prev) => ({ ...prev, contact: null }));
+                    setStep1Open(false);
+                    setStep2Open(true);
+                  }
                 }}
-                className={`w-full px-2 py-3 border-2 ${
-                  errors.select ? "border-red-500" : "border-gray-200"
-                } rounded-xl font-mono text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
+                className="mt-4 w-full py-3 rounded-xl bg-black text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-zinc-800 active:scale-[0.98] transition-all"
               >
-                <option value={"pay"}>Pay Now</option>
-                <option value={"visit"}>Visit property</option>
-              </select>
+                Continue <ChevronRight className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <div className="">
+              <Signin from={location.pathname} css={true} />
             </div>
-            {select !== "pay" ? (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Appointment Date
-                </label>
+          )}
+        </Section>
+
+        {/* Step 2 — Booking Preferences */}
+        <Section
+          step={2}
+          title="Booking Preferences"
+          icon={SlidersHorizontal}
+          open={step2Open}
+          onToggle={() => {
+            if (user && user?.phone?.length > 0) setStep2Open((p) => !p);
+          }}
+          disabled={!user || !user?.phone || user?.phone?.length === 0}
+        >
+          <div className="mt-3 flex flex-col gap-5">
+
+            {/* Booking type */}
+            <Field label="Booking Type">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "pay", label: "Pay Now" },
+                  { value: "visit", label: "Schedule Visit" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      setErrors((prev) => ({ ...prev, select: "" }));
+                      setSelect(opt.value);
+                    }}
+                    className={`py-3 rounded-xl text-sm font-semibold border transition-all ${
+                      select === opt.value
+                        ? "bg-black text-white border-black"
+                        : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-400"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            {/* Appointment date — only for visit */}
+            {select !== "pay" && (
+              <Field
+                label={
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5" /> Appointment Date
+                  </span>
+                }
+                error={errors.date}
+              >
                 <input
                   type="date"
                   onChange={(e) => {
                     setErrors((prev) => ({ ...prev, date: "" }));
                     setDate(e.target.value);
                   }}
-                  className={`w-full p-3 border-2 ${
-                    errors.date ? "border-red-500" : "border-gray-200"
-                  } rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
+                  className={inputClass(!!errors.date)}
                   min={new Date().toISOString().split("T")[0]}
                   required
                 />
-                {errors.date && (
-                  <p className="text-red-500 text-xs mt-2 flex items-center animate-bounce ">
-                    <span className="w-1 h-1 bg-red-500 rounded-full mr-1 "></span>
-                    {errors.date}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <></>
+              </Field>
             )}
 
-            <div>
-              <label className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                Price
-                {isBar && (
-                  <>
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                      Bargained
-                    </span>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                      Original Price:{" "}
+            {/* Price */}
+            <Field
+              label={
+                <span className="flex items-center gap-2">
+                  <Tag className="w-3.5 h-3.5" /> Price
+                  {isBar && (
+                    <span className="ml-auto text-xs bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full font-medium">
+                      Bargained · Original:{" "}
                       {new Intl.NumberFormat("en-IN").format(params.price)}
                     </span>
-                  </>
-                )}
-              </label>
+                  )}
+                </span>
+              }
+              hint="You can negotiate the listed price"
+              error={errors.price}
+            >
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 text-sm font-semibold pointer-events-none">
                   ₹
                 </span>
                 <input
@@ -348,86 +377,74 @@ const Book = () => {
                   }
                   onChange={(e) => {
                     if (e.target.value.trim()) {
-                      console.log(e.target.value);
                       setErrors((prev) => ({ ...prev, price: "" }));
-                      const rawValue = e.target.value.replace(/,/g, "");
-                      if (!isNaN(rawValue)) {
-                        setBarPrice(rawValue);
-                      }
+                      const raw = e.target.value.replace(/,/g, "");
+                      if (!isNaN(raw)) setBarPrice(raw);
                     } else {
                       setBarPrice("0");
                     }
                   }}
-                  className={`w-full pl-8 p-3 border-2 ${
-                    errors.price ? "border-red-500" : "border-gray-200"
-                  } rounded-xl font-mono text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
+                  className={`${inputClass(!!errors.price)} pl-8`}
                   required
                 />
               </div>
-              {!isBar && (
-                <p className="text-xs text-gray-500 mt-2 italic">
-                  You can negotiate the price
-                </p>
-              )}
-              {errors.price && (
-                <p className="text-red-500 text-xs mt-2 flex items-center animate-bounce">
-                  <span className="w-1 h-1 bg-red-500 rounded-full mr-1 "></span>
-                  {errors.price}
-                </p>
-              )}
-            </div>
-            <div className="relative">
-              <label className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                Note (optional)
-              </label>
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold"></span>
-              <input
-                onChange={(e) => {
-                  // setErrors((prev) => ({ ...prev, select: "" }));
-                  setNote(e.target.value);
-                }}
-                className={`w-full px-2 py-3 border-2 
-              "border-red-500
-               rounded-xl font-mono text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
-              />
-            </div>
-            <div
-              className="bookingButtons z-10  flex items-center justify-between gap-2 xl:px-30   w-full  transition-all bg-white border-t border-zinc-200 py-2"
-              onClick={() => {
-                const element = document.getElementById("book");
-                if (element) {
-                  element.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                  });
-                }
-              }}
+            </Field>
+
+            {/* Note */}
+            <Field
+              label={
+                <span className="flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5" /> Note{" "}
+                  <span className="normal-case text-zinc-400 font-normal tracking-normal">
+                    (optional)
+                  </span>
+                </span>
+              }
             >
-              <form
-                noValidate
-                onSubmit={handleConfirmBooking}
-                className="w-full"
-              >
-                <button
-                  type="submit"
-                  className="w-full py-4 rounded-xl text-white font-semibold flex items-center justify-center bg-black hover:bg-gray-800 transition-all duration-150 shadow-md hover:shadow-lg transform active:scale-95 active:shadow-inner"
-                >
-                  {submitting ? (
-                    <span className="flex items-center justify-center">
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Processing...
-                    </span>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-6 h-5 mr-2" />
-                      Confirm Booking
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
+              <textarea
+                rows={3}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Any special requests or questions..."
+                className="w-full px-4 py-3 rounded-xl border border-zinc-200 text-sm bg-white resize-none outline-none focus:ring-2 focus:ring-black focus:border-black transition-all placeholder:text-zinc-300"
+              />
+            </Field>
           </div>
-        ) : null}
+        </Section>
+      </div>
+
+      {/* ── Sticky Confirm Bar ── */}
+      <div className="fixed xl:bottom-0 bottom-13 left-0 w-full z-[998] bg-white/80 backdrop-blur-xl border-t border-zinc-200">
+        <div className="max-w-lg mx-auto p-2 flex items-center gap-4">
+          {/* Price summary */}
+          {params.price && (
+            <div className="hidden sm:flex flex-col shrink-0">
+              <span className="text-xs text-zinc-400 leading-none mb-0.5">Total</span>
+              <span className="text-lg font-semibold text-black tracking-tight">
+                ₹{new Intl.NumberFormat("en-IN").format(isBar ? barPrice : params.price)}
+              </span>
+            </div>
+          )}
+
+          <form noValidate onSubmit={handleConfirmBooking} className="flex-1 ">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-3.5 rounded-xl cursor-pointer text-white text-sm font-semibold flex items-center justify-center gap-2 bg-black hover:bg-zinc-800 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processing…
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Confirm Booking
+                </>
+              )}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

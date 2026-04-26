@@ -1,131 +1,135 @@
 import axios from "axios";
-import { Building2, Search as SearchIcon } from "lucide-react";
+import { Building2, Search as SearchIcon, X } from "lucide-react";
 import React, { useState } from "react";
 import Properties from "../../components/Properties";
+
+const SkeletonCard = () => (
+  <div className="border border-zinc-100 rounded-2xl overflow-hidden animate-pulse">
+    <div className="aspect-video bg-zinc-100 w-full" />
+    <div className="p-4 space-y-3">
+      <div className="h-4 bg-zinc-100 rounded-full w-3/4" />
+      <div className="h-3 bg-zinc-100 rounded-full w-1/2" />
+      <div className="grid grid-cols-2 gap-2 pt-1">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-3 bg-zinc-100 rounded-full" />
+        ))}
+      </div>
+      <div className="pt-2 border-t border-zinc-100 flex justify-between">
+        <div className="h-4 bg-zinc-100 rounded-full w-24" />
+        <div className="h-3 bg-zinc-100 rounded-full w-16" />
+      </div>
+    </div>
+  </div>
+);
+
 const Search = () => {
   const [value, setValue] = useState("");
   const [props, setProps] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const handleSearch = async (e) => {
+    const query = e.target.value;
+    setValue(query);
+
+    if (!query.trim()) {
+      setProps([]);
+      return;
+    }
+
     try {
       setLoading(true);
-      setValue(e.target.value);
       const res = await axios.post(
         `${import.meta.env.VITE_backendUrl}/api/fetching/search`,
-        {
-          value: e.target.value,
-        }
+        { value: query }
       );
-      if (res.data.props) {
-        setLoading(false);
-        setProps(res.data.props);
-      } else {
-        setLoading(false);
-      }
-    } catch (err) {
+      setProps(res.data.props || []);
+    } catch {
+      setProps([]);
+    } finally {
       setLoading(false);
     }
-    // console.log(e.target.value);
-
-    // console.log(res.data);
-    // console.log(e.target.value);
   };
+
+  const clearSearch = () => {
+    setValue("");
+    setProps([]);
+  };
+
   return (
-    <div className="w-full min-h-screen pt-20">
-      <div
-        className={` 
-      transition-all  `}
-      >
-        <div className="max-w-3xl mx-auto">
-          <div className="relative bg-white/70 backdrop-blur-xl border border-zinc-200/60 rounded-full shadow-lg">
-            <SearchIcon
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
-              size={20}
-            />
-            <input
-              type="text"
-              value={value}
-              onChange={(e) => handleSearch(e)}
-              className="w-full py-3 pl-12 pr-4 rounded-full bg-transparent focus:outline-none text-zinc-800 placeholder-zinc-400"
-              placeholder="Search for houses, rooms, plots…"
-            />
-          </div>
+    <div className="w-full min-h-screen bg-white pt-20 pb-16">
+
+      {/* ── Search Bar ── */}
+      <div className="mb-6">
+        <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400 mb-3">
+          Search
+        </p>
+        <div className="relative">
+          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+          <input
+            type="text"
+            value={value}
+            onChange={handleSearch}
+            className="w-full py-3.5 pl-11 pr-10 rounded-2xl border border-zinc-200 bg-white text-sm text-black placeholder-zinc-400 outline-none focus:ring-2 focus:ring-black focus:border-black transition-all"
+            placeholder="Search houses, rooms, plots…"
+            autoFocus
+          />
+          {value && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-zinc-100 hover:bg-zinc-200 transition-colors"
+            >
+              <X className="w-3 h-3 text-zinc-500" />
+            </button>
+          )}
         </div>
       </div>
-      <div className="pt-3 w-full  ">
-        {value.length < 1 ? (
-          <div className="w-full  flex items-center justify-center flex-col  py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
-              <SearchIcon
-                size={32}
-                className="text-zinc-400"
-              />
-            </div>
-            <h3 className="text-xl font-semibold text-zinc-900 mb-2">
-              Enter keywords to search.
-            </h3>
+
+      {/* ── Results ── */}
+      {!value.trim() ? (
+        /* Empty prompt */
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mb-3">
+            <SearchIcon className="w-5 h-5 text-zinc-400" />
           </div>
-        ) : loading ? (
-          [{}, {}, {}].map((p, i) => (
-            <div
-              key={i}
-              className="bg-white border border-zinc-200 rounded-3xl overflow-hidden animate-pulse h-full"
-            >
-              {/* Image Skeleton */}
-              <div className="relative overflow-hidden aspect-video bg-zinc-200">
-                <div className="absolute top-3 left-3 w-20 h-5 bg-zinc-300/60 rounded-md"></div>
-              </div>
-
-              {/* Content Section */}
-              <div className="p-4">
-                {/* Description */}
-                <div className="w-5/6 h-3 bg-zinc-300/70 mb-2 rounded"></div>
-                <div className="w-4/5 h-3 bg-zinc-200/70 mb-4 rounded"></div>
-
-                {/* Property Details Grid */}
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  {[...Array(4)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-1.5 text-zinc-700"
-                    >
-                      <div className="w-4 h-4 bg-zinc-300/70 rounded"></div>
-                      <div className="w-16 h-3 bg-zinc-200/70 rounded"></div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Price Section */}
-                <div className="pt-3 border-t border-zinc-200 flex items-center justify-between">
-                  <div className="w-24 h-4 bg-zinc-300/70 rounded"></div>
-                  <div className="w-16 h-3 bg-zinc-200/70 rounded"></div>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : props?.length > 0 ? (
-          <span className="pb-20 grid  grid-cols-1 gap-3">
-            {props.map((prop, i) => (
-              <Properties
-                prop={prop}
-                key={i}
-              />
-            ))}
-          </span>
-        ) : (
-          <div className="w-full  flex items-center justify-center flex-col  p-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
-              <Building2
-                size={32}
-                className="text-zinc-400"
-              />
-            </div>
-            <h3 className="text-xl font-semibold text-zinc-900 mb-2">
-              No Properties available yet
-            </h3>
+          <p className="text-sm font-medium text-zinc-600">
+            Start typing to search
+          </p>
+          <p className="text-xs text-zinc-400 mt-1">
+            Search by location, type, or keyword
+          </p>
+        </div>
+      ) : loading ? (
+        /* Skeleton */
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400 mb-1">
+            Searching…
+          </p>
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      ) : props.length > 0 ? (
+        /* Results */
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold tracking-widest uppercase text-zinc-400 mb-1">
+            Results · {props.length}
+          </p>
+          {props.map((prop, i) => (
+            <Properties prop={prop} key={i} />
+          ))}
+        </div>
+      ) : (
+        /* No results */
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mb-3">
+            <Building2 className="w-5 h-5 text-zinc-400" />
           </div>
-        )}
-      </div>
+          <p className="text-sm font-medium text-zinc-600">No results found</p>
+          <p className="text-xs text-zinc-400 mt-1">
+            Try a different keyword or location
+          </p>
+        </div>
+      )}
     </div>
   );
 };

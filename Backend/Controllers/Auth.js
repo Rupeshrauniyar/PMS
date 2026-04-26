@@ -126,51 +126,48 @@ exports.signout = async (req, res) => {
 exports.editProfile = async (req, res) => {
   try {
     const Data = req.body;
-    // console.log(Data);
-    if (!Data && !Data.token) {
-      res.status(403).json({ message: "Something went wrong." });
-      return;
+
+    if (!Data || !Data.token) {
+      return res.status(403).json({ message: "Something went wrong." });
     }
+
     const verify = jwt.verify(Data.token, process.env.JWT_SECRET);
 
-    // console.log(Data, verify);
     if (Data.currentPassword?.length > 0 && verify.type !== "google") {
       const user = await UserModel.findOne({ _id: verify.id });
-      if (user) {
-        const result = await bcrypt.compare(
-          Data.currentPassword,
-          user.password,
-        );
-        if (result) {
-          const hashedPassword = await bcrypt.hash(Data.newPassword, 10);
-          await UserModel.findOneAndUpdate(
-            { _id: verify.id },
-            {
-              password: hashedPassword,
-            },
-          );
-          res.status(200).json({ success: true });
-        } else {
-          res.status(403).json({ message: "Current password is invalid" });
-        }
+      if (!user) {
+        return res.status(403).json({ message: "User not found." });
       }
-      return;
+
+      const result = await bcrypt.compare(Data.currentPassword, user.password);
+      if (!result) {
+        return res
+          .status(403)
+          .json({ message: "Current password is invalid." });
+      }
+
+      const hashedPassword = await bcrypt.hash(Data.newPassword, 10);
+      await UserModel.findOneAndUpdate(
+        { _id: verify.id },
+        { password: hashedPassword },
+      );
+      return res.status(200).json({ success: true });
     } else {
-      console.log(Data.phone);
       const phone = Data.phone?.trim();
 
       const phoneExists = await UserModel.exists({
-        phone: phone,
-        _id: { $ne: verify.id },
+        phone,
+        _id: { $ne: verify.id }, // ✅ verify.id, not verify._id
       });
-      console.log(phoneExists);
+
       if (phoneExists) {
-        return res.status(403).json({
-          message: "Phone Number already exists",
-        });
+        return res
+          .status(403)
+          .json({ message: "Phone number already exists." });
       }
+
       const updateUser = await UserModel.findOneAndUpdate(
-        { _id: verify._id },
+        { _id: verify.id }, // ✅ fixed here too
         {
           username: Data.username,
           phone: Data.phone,
@@ -178,19 +175,18 @@ exports.editProfile = async (req, res) => {
         { new: true },
       ).select("-password -FCMtokens");
 
-      // console.log(updateUser);
-      if (updateUser) {
-        res.status(200).json({ user: updateUser, success: true });
-      } else {
-        res.status(403).json({ message: "Something went wrong user." });
+      if (!updateUser) {
+        return res.status(403).json({ message: "User not found." });
       }
+
+      return res.status(200).json({ user: updateUser, success: true });
     }
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(403).json({ message: "Phone Number already Exists." });
+      return res.status(403).json({ message: "Phone number already exists." });
     }
-    console.log(err.message);
-    res.status(403).json({ message: "Something went wrong." });
+    console.error("editProfile error:", err);
+    return res.status(403).json({ message: "Something went wrong." });
   }
 };
 
