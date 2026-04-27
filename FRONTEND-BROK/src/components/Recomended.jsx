@@ -13,14 +13,14 @@ const Recommend = (prop) => {
         let response;
         if (prop.id) {
           response = await axios.post(
-            `${import.meta.env.VITE_backendUrl}/api/fetching/get-property`,
+            `${import.meta.env.VITE_backendUrl}/api/broker/fetching/get-property`,
             {
               filter: prop.id,
             }
           );
         } else {
           response = await axios.post(
-            `${import.meta.env.VITE_backendUrl}/api/fetching/get-property`
+            `${import.meta.env.VITE_backendUrl}/api/broker/fetching/get-property`
           );
         }
 

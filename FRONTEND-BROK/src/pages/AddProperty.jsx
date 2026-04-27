@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
 import AlertBox from "../components/AlertBox";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../contexts/AppContext";
 const AddProperty = () => {
   const { setUser } = useContext(AppContext);
   const navigate = useNavigate();
@@ -171,7 +171,7 @@ const AddProperty = () => {
 
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/property/add-property`,
+        `${import.meta.env.VITE_backendUrl}/api/broker/property/add-property`,
         formData
       );
 

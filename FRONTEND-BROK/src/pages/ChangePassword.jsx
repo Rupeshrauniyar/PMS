@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../contexts/AppContext";
 import { Loader2, Eye, EyeClosed, Lock } from "lucide-react";
 import AlertBox from "../components/AlertBox";
 import axios from "axios";
@@ -44,7 +44,7 @@ const EditProfile = () => {
 
       setLoading(true);
       const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/auth/edit-profile`,
+        `${import.meta.env.VITE_backendUrl}/api/broker/auth/edit-profile`,
         {
           token: localStorage.getItem("token"),
           currentPassword: fieldData["Current Password"],

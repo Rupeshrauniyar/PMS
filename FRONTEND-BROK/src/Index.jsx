@@ -8,7 +8,7 @@ import {
 } from "react-router-dom";
 import { PushNotifications } from "@capacitor/push-notifications";
 import axios from "axios";
-import { AppContext } from "./contexts/AppContextx";
+import { AppContext } from "./contexts/AppContext";
 import { App as CapacitorApp } from "@capacitor/app";
 import Navbar from "./components/Navbar";
 const Home = lazy(() => import("./pages/Home"));

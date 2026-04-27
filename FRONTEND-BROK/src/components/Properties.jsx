@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { Link } from "react-router-dom";
 import { Tag, Bed, Bath, Ruler, MapPin } from "lucide-react";
 import SwiperComp from "./Swiper";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../contexts/AppContext";
 
 const Properties = (props) => {
 

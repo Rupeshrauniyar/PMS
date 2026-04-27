@@ -6,7 +6,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../contexts/AppContext";
 import Home from "./Home";
 import {
   Phone,
@@ -99,7 +99,7 @@ const Book = () => {
         token: localStorage.getItem("token"),
       };
       const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/booking/book`,
+        `${import.meta.env.VITE_backendUrl}/api/broker/booking/book`,
         Data
       );
       if (res.status === 200) {

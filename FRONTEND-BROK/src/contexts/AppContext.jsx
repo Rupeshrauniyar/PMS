@@ -19,7 +19,7 @@ export const AppProvider = ({ children }) => {
       }
 
       const response = await axios.get(
-        `${import.meta.env.VITE_backendUrl}/api/auth/checkAuth`,
+        `${import.meta.env.VITE_backendUrl}/api/broker/auth/checkAuth`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

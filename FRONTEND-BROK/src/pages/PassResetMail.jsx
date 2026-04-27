@@ -30,7 +30,7 @@ const PassResetMail = () => {
       }
       setLoading(true);
       const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/cred/send-pass-reset-mail`,
+        `${import.meta.env.VITE_backendUrl}/api/broker/cred/send-pass-reset-mail`,
         { email }
       );
 

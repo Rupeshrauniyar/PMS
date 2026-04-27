@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import Index from "./Index";
 import Navbar from "./components/Navbar";
-import { AppProvider } from "./contexts/AppContextx";
+import { AppProvider } from "./contexts/AppContext";
 // import { Analytics } from "@vercel/analytics/next";
 
 const App = () => {

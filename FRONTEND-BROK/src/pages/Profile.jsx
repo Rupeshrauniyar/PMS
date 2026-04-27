@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
 import {
   Mail,
@@ -41,7 +41,7 @@ const Profile = () => {
     if (user[e].length < 1) return setMyProp([]);
     // console.log(user[e]);
     const res = await axios.post(
-      `${import.meta.env.VITE_backendUrl}/api/fetching/get-user-property`,
+      `${import.meta.env.VITE_backendUrl}/api/broker/fetching/get-user-property`,
       {
         token: localStorage.getItem("token"),
         Type: e,

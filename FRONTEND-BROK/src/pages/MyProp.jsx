@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, Link, useParams, useLocation } from "react-router-dom";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../contexts/AppContext";
 import { Delete, DeleteIcon, Trash, Trash2, X } from "lucide-react";
 import axios from "axios";
 import AlertBox from "../components/AlertBox";
@@ -48,7 +48,7 @@ const MyProp = () => {
     const getProperty = async () => {
       try {
         const response = await axios.post(
-          `${import.meta.env.VITE_backendUrl}/api/fetching/get-my-prop`,
+          `${import.meta.env.VITE_backendUrl}/api/broker/fetching/get-my-prop`,
           { _id: params.id }
         );
         if (response?.status === 200 && response.data.Property?._id) {
@@ -99,7 +99,7 @@ const MyProp = () => {
       setDeleteLoading(true);
 
       const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/property/delete-property`,
+        `${import.meta.env.VITE_backendUrl}/api/broker/property/delete-property`,
         {
           _id: params?.id,
           propertyType: props.propertyType,
@@ -121,7 +121,7 @@ const MyProp = () => {
   const handleConfirm = async (userId) => {
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/booking/confirm-booking`,
+        `${import.meta.env.VITE_backendUrl}/api/broker/booking/confirm-booking`,
         {
           _id: params?.id,
           userId,

@@ -29,7 +29,7 @@ const Landing = () => {
             <button
               className="bg-black text-white p-3 rounded-full flex gap-1 items-center justify-center"
               as="a"
-              href={`${import.meta.env.VITE_backendUrl}/api/android/getapk`}
+              href={`${import.meta.env.VITE_backendUrl}/api/broker/android/getapk`}
               download
             >
               <Download size={18} />

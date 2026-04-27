@@ -62,7 +62,7 @@ const ForgotPassword = () => {
 
       setLoading(true);
       const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/cred/forgot-password`,
+        `${import.meta.env.VITE_backendUrl}/api/broker/cred/forgot-password`,
         {
           token: params.token,
           newPassword: fieldData["New Password"],
@@ -87,7 +87,7 @@ const ForgotPassword = () => {
     const verify = async () => {
       try {
         const res = await axios.post(
-          `${import.meta.env.VITE_backendUrl}/api/cred/verify-token`,
+          `${import.meta.env.VITE_backendUrl}/api/broker/cred/verify-token`,
           {
             token: params?.token,
           }

@@ -10,7 +10,7 @@ import {
   Lock,
 } from "lucide-react";
 import React, { useContext } from "react";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 // import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
@@ -72,7 +72,7 @@ const Settings = () => {
     } catch (err) {
       console.warn("Google sign-out skipped or failed:", err.message);
     }
-    await axios.post(`${import.meta.env.VITE_backendUrl}/api/auth/signout`, {
+    await axios.post(`${import.meta.env.VITE_backendUrl}/api/broker/auth/signout`, {
       token: localStorage.getItem("token"),
       fcmToken: localStorage.getItem("fcmToken"),
     });

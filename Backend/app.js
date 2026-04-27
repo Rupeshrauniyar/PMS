@@ -48,6 +48,11 @@ const fetchPropertyRoutes = require("./Routes/FetchingProperty");
 const paymentRoutes = require("./Routes/Payment");
 const emailRoutes = require("./Routes/Cred");
 const androidRoutes = require("./Routes/Android");
+
+// Broker Routes
+const brokerauthRoutes = require("./Routes/Broker/Auth");
+const fetchBroking = require("./Routes/Broker/FetchBroking");
+
 // // --- Keep Alive Function ---
 // const makeActive = async () => {
 //   try {
@@ -89,6 +94,8 @@ const androidRoutes = require("./Routes/Android");
     app.use("/api/fetching", fetchPropertyRoutes);
     app.use("/api/payment", paymentRoutes);
 
+    app.use("/api/broker/auth", brokerauthRoutes);
+    app.use("/api/broker/fetch", fetchBroking);
 
     // Start server
     app.listen(port, () => {

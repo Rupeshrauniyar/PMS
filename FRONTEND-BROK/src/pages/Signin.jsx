@@ -1,7 +1,7 @@
 import { Eye, EyeClosed, Loader2, Lock, Mail, Phone } from "lucide-react";
 import React, { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AppContext } from "../contexts/AppContextx";
+import { AppContext } from "../contexts/AppContext";
 import axios from "axios";
 import AlertBox from "../components/AlertBox";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
@@ -68,7 +68,7 @@ const Signin = (props) => {
         // console.log(result);
         await axios
           .post(
-            `${import.meta.env.VITE_backendUrl}/api/auth/signinWithGoogle`,
+            `${import.meta.env.VITE_backendUrl}/api/broker/auth/signinWithGoogle`,
             {
               email: result.user.providerData[0].email,
               uuid: result.user.providerData[0].uid,
@@ -151,7 +151,7 @@ const Signin = (props) => {
     }
     setLoading(true);
     await axios
-      .post(`${import.meta.env.VITE_backendUrl}/api/auth/signin`, {
+      .post(`${import.meta.env.VITE_backendUrl}/api/broker/auth/signin`, {
         email: fieldData.Email,
         password: fieldData.Password,
       })
