@@ -20,14 +20,15 @@ const App = () => {
   }, []);
 
   return (
-    <div className="w-full overflow-x-hidden bg-background text-foreground">
+    <div className="w-full overflow-x-hidden bg-background text-foreground text-center h-screen flex items-center justify-center">
       {/* FCM:{FCM} */}
       {/* <Analytics /> */}
-      <AppProvider>
+      {/* <AppProvider>
         <Router>
           <Index />
         </Router>
-      </AppProvider>
+      </AppProvider> */}
+       <h1 className="font-bold">Site is under maintenance.</h1>
     </div>
   );
 };
