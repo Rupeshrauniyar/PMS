@@ -51,7 +51,10 @@ exports.signin = async (req, res) => {
         .status(400)
         .json({ message: "Email and password are required." });
 
-    const user = await UserModel.findOne({ email, authProvider: "local" });
+    const user = await UserModel.findOne({
+      email,
+      authProvider: "local",
+    }).populate("bookedProperties");
     if (!user)
       return res.status(401).json({ message: "Invalid email or password." });
 
