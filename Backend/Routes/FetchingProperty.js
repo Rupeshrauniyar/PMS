@@ -6,10 +6,11 @@ const {
   searchProperty,
   getBookers,
 } = require("../Controllers/FetchingProperty");
+const { requireUserAuth } = require("../middleware/requireAuth");
 
 router.post("/get-property", getProperty);
 router.post("/get-my-prop", getBookers);
-router.post("/get-user-property", getUserProperty);
+router.post("/get-user-property", requireUserAuth, getUserProperty);
 router.post("/search", searchProperty);
 
 module.exports = router;

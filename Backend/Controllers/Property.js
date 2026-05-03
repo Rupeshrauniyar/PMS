@@ -1,9 +1,17 @@
 const PropertyModel = require("../Models/PropertyModel");
-const jwt = require("jsonwebtoken");
 const UserModel = require("../Models/UserModel");
 require("dotenv").config();
 const { client } = require("../DB/Redis");
+const {
+  pushUserNotification,
+  NOTIFICATION_KINDS,
+} = require("../utils/notificationsHelper");
 const cloudinary = require("cloudinary").v2;
+const pLimit = require("p-limit");
+const { isValidObjectId, sendServerError } = require("../utils/authHelpers");
+
+const uploadLimit = pLimit(3);
+
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.API_KEY,
@@ -22,8 +30,10 @@ exports.addProperty = async (req, res) => {
       washrooms,
       rooms,
       description,
-      token,
     } = req.body;
+
+    const userId = req.userId;
+    const accountType = req.accountType;
 
     if (
       !title ||
@@ -33,19 +43,18 @@ exports.addProperty = async (req, res) => {
       !price ||
       !rooms ||
       !washrooms ||
-      !description ||
-      !token
+      !description
     ) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const pLimit = require("p-limit");
-    const limit = pLimit(3); // optional: limit concurrent uploads
+    if (!req.files?.length) {
+      return res.status(400).json({ message: "At least one image is required." });
+    }
 
     const imageUrls = await Promise.all(
       req.files.map((file) =>
-        limit(
+        uploadLimit(
           () =>
             new Promise((resolve, reject) => {
               const stream = cloudinary.uploader.upload_stream(
@@ -60,6 +69,7 @@ exports.addProperty = async (req, res) => {
         ),
       ),
     );
+
     const property = await PropertyModel.create({
       title,
       sellingType,
@@ -70,8 +80,8 @@ exports.addProperty = async (req, res) => {
       washrooms,
       rooms,
       description,
-      owner: decoded.id,
-      ownerModel: decoded.type === "google" ? "googleUsers" : "users",
+      owner: userId,
+      ownerModel: accountType === "google" ? "googleUsers" : "users",
       images: imageUrls,
     });
 
@@ -89,80 +99,101 @@ exports.addProperty = async (req, res) => {
       images: property.images,
       createdAt: property.createdAt,
     };
-    await client.sendCommand([
-      "JSON.ARRINSERT",
-      `property:${propertyType}`,
-      ".",
-      "0",
-      JSON.stringify(propertySafe),
-    ]);
 
-    // await client.lTrim(`property:${propertyType}`, 0, 5); // indexes are 0-based
-    await UserModel.findByIdAndUpdate(decoded.id, {
-      $push: { myProperties: { propId: property._id } },
-    });
+    try {
+      await client.sendCommand([
+        "JSON.ARRINSERT",
+        `property:${property.propertyType}`,
+        ".",
+        "0",
+        JSON.stringify(propertySafe),
+      ]);
+    } catch (redisErr) {
+      console.error("Redis JSON.ARRINSERT failed:", redisErr.message);
+    }
 
-    res.status(200).json({ success: true, property: property._id });
-    // res.status(500).json({ success: false });
+    await UserModel.updateOne(
+      { _id: userId },
+      { $push: { myProperties: { propId: property._id } } },
+    );
+
+    const publisher = await UserModel.findById(userId).select("FCMtokens").lean();
+    await pushUserNotification(
+      userId,
+      {
+        title: "Listing published",
+        body: `Your listing "${title}" is now live.`,
+        kind: NOTIFICATION_KINDS.LISTING_LIVE,
+        propId: property._id,
+      },
+      publisher?.FCMtokens ?? [],
+    );
+
+    return res.status(200).json({ success: true, property: property._id });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Something went wrong." });
+    return sendServerError(res, err, "addProperty");
   }
 };
+
 exports.deleteProperty = async (req, res) => {
   try {
     const Data = req.body;
-    console.log(Data);
-    if (!Data) {
-      return res.status(500).json({
+    const userId = req.userId;
+
+    if (!Data?._id) {
+      return res.status(400).json({
         success: false,
-        message: "An error occurred while deleting property, Insufficient Data",
+        message: "Property id is required.",
       });
     }
-    const decode = jwt.verify(Data.token, process.env.JWT_SECRET);
-    const update = await UserModel.updateOne(
-      { _id: decode.id },
-      {
-        $pull: { myProperties: { propId: Data._id } },
-      },
+    if (!isValidObjectId(Data._id)) {
+      return res.status(400).json({ success: false, message: "Invalid property id." });
+    }
+
+    const property = await PropertyModel.findOne({
+      _id: Data._id,
+      owner: userId,
+    }).select("propertyType");
+
+    if (!property) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized or property not found.",
+      });
+    }
+
+    await PropertyModel.deleteOne({ _id: Data._id });
+
+    await UserModel.updateOne(
+      { _id: userId },
+      { $pull: { myProperties: { propId: Data._id } } },
     );
-    if (!update.modifiedCount > 0) {
-      res.status(500).json({
-        success: false,
-        message: "You are not Authenticated",
-      });
-    } else {
-      const arr = await client.sendCommand([
-        "JSON.GET",
-        `property:${Data.propertyType}`,
-        ".",
-      ]);
-      // console.log(arr)
 
-      if (!arr.length > 0) {
-        await PropertyModel.findOneAndDelete({ _id: Data._id });
-        res.status(200).json({ success: true });
+    const cacheKey = `property:${property.propertyType}`;
+    try {
+      const arr = await client.sendCommand(["JSON.GET", cacheKey, "."]);
+      if (arr && String(arr).length > 0) {
+        const array = JSON.parse(arr);
+        if (Array.isArray(array)) {
+          const newArray = array.filter(
+            (item) => String(item._id) !== String(Data._id),
+          );
+          await client.sendCommand([
+            "JSON.SET",
+            cacheKey,
+            ".",
+            JSON.stringify(newArray),
+          ]);
+        }
       }
-      await PropertyModel.findOneAndDelete({ _id: Data._id });
-      const array = JSON.parse(arr);
-      // 2. Remove object by property (example: id)
-      const newArray = array.filter((item) => item._id !== Data._id);
-
-      await client.sendCommand([
-        "JSON.SET",
-        `property:${Data.propertyType}`,
-        ".",
-        JSON.stringify(newArray),
-      ]);
-      res.status(200).json({ success: true });
+    } catch (redisErr) {
+      console.error("Redis cache update failed:", redisErr.message);
     }
-    // 1. Get the array
+
+    return res.status(200).json({ success: true });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while deleting property.",
-    });
+    return sendServerError(res, err, "deleteProperty");
   }
 };
+
 exports.editProperty = async (req, res) => {};

@@ -10,6 +10,9 @@ dns.setDefaultResultOrder("ipv4first");
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 require("dotenv").config();
 
+const { assertJwtSecret } = require("./utils/authHelpers");
+assertJwtSecret();
+
 // Import services
 const { connectDB, disconnectDB } = require("./DB/db");
 const { connectRedis, disconnectRedis } = require("./DB/Redis");
@@ -19,7 +22,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // --- Middlewares ---
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
 app.use(compression());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -29,12 +36,35 @@ const allowedOrigins = [
   process.env.FRONTEND1,
   process.env.FRONTEND2,
   process.env.FRONTEND3,
-];
+].filter((o) => typeof o === "string" && o.length > 0);
+
+const nodeEnv = process.env.NODE_ENV || "development";
+
+function isLoopbackBrowserOrigin(origin) {
+  try {
+    const u = new URL(origin);
+    if (!(u.protocol === "http:" || u.protocol === "https:")) return false;
+    const h = u.hostname.toLowerCase();
+    return (
+      h === "localhost" || h === "127.0.0.1" || h === "::1" || h === "[::1]"
+    );
+  } catch {
+    return false;
+  }
+}
+
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin)) cb(null, true);
-      else cb(new Error("Not allowed by CORS"));
+      if (!origin || allowedOrigins.includes(origin))
+        return cb(null, true);
+      if (
+        nodeEnv !== "production" &&
+        typeof origin === "string" &&
+        isLoopbackBrowserOrigin(origin)
+      )
+        return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
   }),
@@ -67,19 +97,32 @@ const fetchBroking = require("./Routes/Broker/FetchBroking");
 
 (async () => {
   try {
-    await connectDB(); // MongoDB connection
-    await connectRedis(); // Redis connection
-    process.on("SIGTERM", async () => {
-      await disconnectDB();
-      await disconnectRedis();
-      process.exit(0);
-    });
+    await connectDB(); // MongoDB connection — required for the API
 
-    process.on("SIGINT", async () => {
-      await disconnectDB();
-      await disconnectRedis();
+    try {
+      await connectRedis(); // Redis: cache invalidation paths use try/catch; optional at boot
+    } catch (redisErr) {
+      console.warn(
+        `[PID ${process.pid}] Redis unavailable (continuing):`,
+        redisErr?.message || redisErr,
+      );
+    }
+    async function gracefulShutdown() {
+      try {
+        await disconnectDB();
+      } catch (_) {
+        /* ignore */
+      }
+      try {
+        await disconnectRedis();
+      } catch (_) {
+        /* Redis may never have connected */
+      }
       process.exit(0);
-    });
+    }
+
+    process.on("SIGTERM", () => gracefulShutdown());
+    process.on("SIGINT", () => gracefulShutdown());
 
     // --- Express setup ---
     app.get("/", (req, res) => {

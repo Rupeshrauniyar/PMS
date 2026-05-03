@@ -1,122 +1,89 @@
-const { client } = require("../DB/Redis");
 const PropertyModel = require("../Models/PropertyModel");
-const jwt = require("jsonwebtoken");
 const UserModel = require("../Models/UserModel");
-const { populate } = require("dotenv");
 require("dotenv").config();
+const { sendServerError } = require("../utils/authHelpers");
+
+const SEARCH_PUBLIC_FIELDS =
+  "title description location propertyType price rooms area washrooms sellingType images status createdAt";
 
 exports.getProperty = async (req, res) => {
   try {
-    const Data = req.body; // or req.query if using GET
-    // console.log(Data)
-    // if (!Data) {
-    //   const Properties = await PropertyModel.find()
-    //     .select("-owner -bookers -ownerModel")
-    //     .lean()
-    //     .limit(10) // max 50 results
-    //     .sort({ createdAt: -1 }); // latest first;
-    //   return res.status(200).json({
-    //     Properties: Properties || [],
-    //     success: Properties?.length > 0,
-    //     message: Properties?.length ? undefined : "No property available yet",
-    //   });
-    // }
-    if (!Data) {
-      res.status(500).json({ error: "Something went wrong." });
+    const Data = req.body;
+
+    if (Data == null || typeof Data !== "object") {
+      return res.status(400).json({ error: "Invalid request body." });
     }
+
     if (Data.type) {
-      // const rawProps = await client.sendCommand([
-      //   "JSON.GET",
-      //   `property:${Data.type}`,
-      //   ".",
-      // ]);
-      // // console.log(rawProps);
-      // if (rawProps && rawProps.length > 0) {
-      //   // console.log(redisData);
-      //   return res.status(200).json({
-      //     Properties: JSON.parse(rawProps),
-      //     success: rawProps?.length > 0,
-      //     message: rawProps?.length ? undefined : "No properties available yet",
-      //     redis: true,
-      //   });
-      // } else {
-      //   const Properties = await PropertyModel.find({
-      //     propertyType: Data.type,
-      //   })
-      //     .select("-owner -bookers -ownerModel")
-      //     .lean()
-      //     .limit(10) // max 50 results
-      //     .sort({ createdAt: -1 }); // latest first;
-      //   await client.sendCommand([
-      //     "JSON.SET",
-      //     `property:${Data.type}`,
-      //     ".",
-      //     JSON.stringify(Properties),
-      //   ]);
-      //   return res.status(200).json({
-      //     Properties: Properties || [],
-      //     success: Properties?.length > 0,
-      //     message: Properties?.length ? undefined : "No posts available yet",
-      //   });
-      // }
       const Properties = await PropertyModel.find({
         propertyType: Data.type,
         status: false,
       })
         .select("-owner -bookers -ownerModel")
         .lean()
-        .limit(10) // max 50 results
-        .sort({ createdAt: -1 }); // latest first;
+        .limit(10)
+        .sort({ createdAt: -1 });
+
       return res.status(200).json({
         Properties: Properties || [],
-        // success: Properties?.length > 0,
         message: Properties?.length ? undefined : "No properties available yet",
       });
-    } else if (Data._id) {
+    }
+
+    if (Data._id) {
       const Property = await PropertyModel.findById(Data._id)
         .select("-owner -ownerModel ")
         .lean();
-      if (!Property)
-        return res.status(200).json({ message: "No property found." });
-      else {
-        Property.bookers = Property.bookers.length;
-        // console.log(Property.bookers);
 
-        return res.status(200).json({
-          Property: Property || [],
-          success: !!Property,
-          message: Property ? undefined : "No properties available yet",
-        });
+      if (!Property) {
+        return res.status(200).json({ message: "No property found." });
       }
-    } else if (Data.filter) {
-      console.log("filter", Data.filter);
+
+      Property.bookers = Property.bookers?.length ?? 0;
+
+      return res.status(200).json({
+        Property: Property || [],
+        success: !!Property,
+        message: Property ? undefined : "No properties available yet",
+      });
+    }
+
+    if (Data.filter) {
       const Properties = await PropertyModel.find({
         _id: { $ne: Data.filter },
       })
         .select("-owner -bookers -ownerModel")
         .lean()
-        .limit(10) // max 50 results
-        .sort({ createdAt: -1 }); // latest first;
+        .limit(10)
+        .sort({ createdAt: -1 });
+
       return res.status(200).json({
         Properties: Properties || [],
         success: Properties?.length > 0,
         message: Properties?.length ? undefined : "No posts available yet",
       });
     }
+
+    return res
+      .status(400)
+      .json({ error: "Specify type, _id, or filter in the request body." });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Something went wrong." });
+    return sendServerError(res, err, "getProperty");
   }
 };
+
 exports.getBookers = async (req, res) => {
   try {
-    const Data = req.body; // or req.query if using GET
-    // console.log(Data)
+    const Data = req.body;
+
+    if (!Data?._id) {
+      return res.status(400).json({ error: "Property id is required." });
+    }
 
     const Property = await PropertyModel.findOne({ _id: Data._id })
       .populate({
         path: "bookers",
-        // select: "username",
         populate: {
           path: "userId",
           select: "username",
@@ -125,258 +92,419 @@ exports.getBookers = async (req, res) => {
       .lean();
 
     return res.status(200).json({
-      Property: Property || [],
-      success: Property?.length > 0,
-      message: Property?.length ? undefined : "No property available.",
+      Property: Property || null,
+      success: !!Property,
+      message: Property ? undefined : "No property available.",
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Something went wrong." });
+    return sendServerError(res, err, "getBookers");
   }
 };
+
 exports.getUserProperty = async (req, res) => {
   try {
-    const { token, Type, NestedPop } = req.body;
-    if (!token) return res.status(403).json({ error: "Token is required" });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const toPop = `${Type}`; // Returns bookedProperties.propId
+    const { Type, NestedPop } = req.body;
+    const userId = req.userId;
+
+    const toPop = `${Type}`;
     if (NestedPop) {
-      const user = await UserModel.findById(decoded.id).populate({
+      const user = await UserModel.findById(userId).populate({
         path: toPop,
         select: "-owner -ownerModel -bookers ",
         populate: {
           path: "propId",
           select: "",
-        }, // remove sensitive info
+        },
       });
 
-      console.log(user);
       if (!user) return res.status(404).json({ error: "User not found" });
-      if (!user[Type])
+      if (!user[Type]) {
         return res.status(200).json({ properties: [], success: true });
+      }
 
-      res.status(200).json({ properties: user[Type], success: true });
-    } else {
-      // console.log("Nahi hai");
-      const user = await UserModel.findById(decoded.id)
-        .populate({
-          path: `${toPop}.propId`,
-          select: "-owner -ownerModel -bookers ", // remove sensitive info
-        })
-        .select("-password -FCMtokens");
-      console.log(toPop);
-      if (!user) return res.status(404).json({ error: "User not found" });
-      if (!user[Type])
-        return res.status(200).json({ properties: [], success: true });
-
-      res.status(200).json({ properties: user[Type], success: true });
+      return res.status(200).json({ properties: user[Type], success: true });
     }
-    // return res.status(500).json({ error: "Something went wrong." });
+
+    const user = await UserModel.findById(userId)
+      .populate({
+        path: `${toPop}.propId`,
+        select: "-owner -ownerModel -bookers ",
+      })
+      .select("-password -FCMtokens");
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user[Type]) {
+      return res.status(200).json({ properties: [], success: true });
+    }
+
+    return res.status(200).json({ properties: user[Type], success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Something went wrong." });
+    return sendServerError(res, err, "getUserProperty");
   }
 };
+
+function escapeRegex(str) {
+  if (typeof str !== "string") return "";
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Coerce CSV body numbers; fields in DB may be strings. */
+function parseNum(v) {
+  if (v === undefined || v === null || v === "") return undefined;
+  const n =
+    typeof v === "number"
+      ? v
+      : Number(String(v).replace(/,/g, "").trim());
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function priceExprCondition(priceMin, priceMax) {
+  if (priceMin == null && priceMax == null) return null;
+  const innerParts = [
+    { $ne: ["$$p", null] },
+    ...(priceMin != null ? [{ $gte: ["$$p", priceMin] }] : []),
+    ...(priceMax != null ? [{ $lte: ["$$p", priceMax] }] : []),
+  ];
+  return {
+    $expr: {
+      $let: {
+        vars: {
+          p: {
+            $convert: {
+              input: { $trim: { input: "$price" } },
+              to: "double",
+              onError: null,
+              onNull: null,
+            },
+          },
+        },
+        in: { $and: innerParts },
+      },
+    },
+  };
+}
+
+/** Trimmed string numeric field comparison (rooms, washrooms stored as strings). */
+function intFieldExpr(fieldRef, numMin, numMax) {
+  if (numMin == null && numMax == null) return null;
+  const innerParts = [
+    { $ne: ["$$n", null] },
+    ...(numMin != null ? [{ $gte: ["$$n", numMin] }] : []),
+    ...(numMax != null ? [{ $lte: ["$$n", numMax] }] : []),
+  ];
+  return {
+    $expr: {
+      $let: {
+        vars: {
+          n: {
+            $convert: {
+              input: { $trim: { input: fieldRef } },
+              to: "int",
+              onError: null,
+              onNull: null,
+            },
+          },
+        },
+        in: { $and: innerParts },
+      },
+    },
+  };
+}
+
+/** Optional natural-language hints for price / rooms when `value` is non-empty. */
+function parseNlpPriceRooms(trimmedLower) {
+  const out = {
+    priceMin: undefined,
+    priceMax: undefined,
+    roomsExact: undefined,
+    sortByPrice: false,
+    typeRegexOr: [],
+  };
+  const query = trimmedLower.trim();
+  if (query.length < 2) return out;
+
+  const normalizedQuery = query.replace(/(\d+)\s*k\b/gi, (_, num) =>
+    String(parseInt(num, 10) * 1000),
+  );
+  const priceMatch = normalizedQuery.match(/\d+/g);
+
+  if (priceMatch) {
+    const prices = priceMatch.map((p) => parseInt(p, 10));
+    const mainPrice = Math.max(...prices);
+    if (
+      query.includes("under") ||
+      query.includes("below") ||
+      query.includes("less than") ||
+      query.includes("upto") ||
+      query.includes("up to") ||
+      query.includes("maximum") ||
+      query.includes("max")
+    ) {
+      out.priceMax = mainPrice;
+      out.sortByPrice = true;
+    } else if (
+      query.includes("above") ||
+      query.includes("over") ||
+      query.includes("more than") ||
+      query.includes("minimum") ||
+      query.includes("min") ||
+      query.includes("starting from") ||
+      query.includes("from")
+    ) {
+      out.priceMin = mainPrice;
+      out.sortByPrice = true;
+    } else if (query.includes("between") && prices.length >= 2) {
+      out.priceMin = Math.min(...prices);
+      out.priceMax = Math.max(...prices);
+      out.sortByPrice = true;
+    } else if (query.includes("around") || query.includes("about")) {
+      out.priceMin = Math.floor(mainPrice * 0.7);
+      out.priceMax = Math.ceil(mainPrice * 1.3);
+      out.sortByPrice = true;
+    } else {
+      out.priceMin = Math.floor(mainPrice * 0.75);
+      out.priceMax = Math.ceil(mainPrice * 1.25);
+      out.sortByPrice = true;
+    }
+  }
+
+  const roomMatch = query.match(/(\d+)\s*(bhk|bedroom|room|bed)/i);
+  if (roomMatch) out.roomsExact = parseInt(roomMatch[1], 10);
+
+  const vocabTypes = [
+    "apartment",
+    "flat",
+    "house",
+    "villa",
+    "bungalow",
+    "penthouse",
+    "studio",
+    "duplex",
+    "farmhouse",
+    "plot",
+    "land",
+    "commercial",
+    "office",
+    "shop",
+    "warehouse",
+  ];
+  vocabTypes.forEach((type) => {
+    if (query.includes(type)) {
+      out.typeRegexOr.push({ propertyType: { $regex: type, $options: "i" } });
+    }
+  });
+
+  return out;
+}
+
+function buildTextOrFilters(trimmedForDisplay, trimmedLower) {
+  const orFilters = [];
+
+  const locationKeywords = [
+    "near",
+    "in",
+    "at",
+    "around",
+    "close to",
+    "nearby",
+    "area",
+    "locality",
+  ];
+  let locationQuery = trimmedLower;
+  locationKeywords.forEach((keyword) => {
+    locationQuery = locationQuery.replace(new RegExp(`\\b${keyword}\\b`, "gi"), "");
+  });
+
+  const searchTerms = locationQuery
+    .replace(/\d+/g, "")
+    .replace(/[^\w\s]/g, "")
+    .trim()
+    .split(/\s+/)
+    .filter((term) => term.length > 2);
+
+  searchTerms.forEach((term) => {
+    const esc = escapeRegex(term);
+    orFilters.push({ title: { $regex: esc, $options: "i" } });
+    orFilters.push({ description: { $regex: esc, $options: "i" } });
+    orFilters.push({ location: { $regex: esc, $options: "i" } });
+    orFilters.push({ propertyType: { $regex: esc, $options: "i" } });
+  });
+
+  if (trimmedLower.length > 2) {
+    const escPhrase = escapeRegex(trimmedForDisplay.trim());
+    orFilters.push({ title: { $regex: escPhrase, $options: "i" } });
+    orFilters.push({ description: { $regex: escPhrase, $options: "i" } });
+    orFilters.push({ location: { $regex: escPhrase, $options: "i" } });
+    orFilters.push({ propertyType: { $regex: escPhrase, $options: "i" } });
+  }
+
+  return { orFilters, searchTerms };
+}
+
+const SELLING_TYPES_VALID = ["Rent System", "Selling System"];
+const PROPERTY_TYPES_VALID = ["House", "Room", "Plot"];
+
 exports.searchProperty = async (req, res) => {
   try {
-    const { value } = req.body;
+    const body = req.body || {};
+    const rawValue = typeof body.value === "string" ? body.value : "";
+    const trimmedDisplay = rawValue.trim();
+    const trimmedLower = trimmedDisplay.toLowerCase();
 
-    if (!value || !value.trim()) {
-      return res.status(400).json({
-        message: "Search query is required.",
+    const f =
+      body.filters && typeof body.filters === "object" && body.filters !== null
+        ? body.filters
+        : {};
+
+    const explicit = {
+      priceMin: parseNum(f.priceMin),
+      priceMax: parseNum(f.priceMax),
+      roomsMin: parseNum(f.roomsMin),
+      roomsMax: parseNum(f.roomsMax),
+      washroomsMin: parseNum(f.washroomsMin),
+      location: typeof f.location === "string" ? f.location.trim() : "",
+      sellingType: f.sellingType,
+      propertyType: f.propertyType,
+    };
+
+    const hasExplicitFilters =
+      explicit.priceMin != null ||
+      explicit.priceMax != null ||
+      explicit.roomsMin != null ||
+      explicit.roomsMax != null ||
+      explicit.washroomsMin != null ||
+      explicit.location.length > 0 ||
+      (explicit.sellingType &&
+        SELLING_TYPES_VALID.includes(explicit.sellingType)) ||
+      (explicit.propertyType &&
+        PROPERTY_TYPES_VALID.includes(explicit.propertyType));
+
+    if (!trimmedLower && !hasExplicitFilters) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
         props: [],
+        message: "Enter keywords or adjust filters to search.",
       });
     }
 
-    const query = value.toLowerCase().trim();
-    let filters = {};
-    let orFilters = [];
-    let sortOptions = {};
+    const nlp = trimmedLower ? parseNlpPriceRooms(trimmedLower) : {};
 
-    // ========================================
-    // 1️⃣ ENHANCED PRICE DETECTION
-    // ========================================
+    const effPriceMin = explicit.priceMin ?? nlp.priceMin;
+    const effPriceMax = explicit.priceMax ?? nlp.priceMax;
 
-    // Convert k/K to thousands (e.g., "10k" → 10000)
-    const normalizedQuery = query.replace(/(\d+)\s*k\b/gi, (match, num) => {
-      return (parseInt(num) * 1000).toString();
-    });
-
-    // Extract all numbers from query
-    const priceMatch = normalizedQuery.match(/\d+/g);
-
-    if (priceMatch) {
-      const prices = priceMatch.map((p) => parseInt(p));
-      const mainPrice = Math.max(...prices); // Use the largest number as reference
-
-      // Price range keywords
-      if (
-        query.includes("under") ||
-        query.includes("below") ||
-        query.includes("less than") ||
-        query.includes("upto") ||
-        query.includes("up to") ||
-        query.includes("maximum") ||
-        query.includes("max")
-      ) {
-        filters.price = { $lte: mainPrice };
-        sortOptions.price = 1; // Sort ascending (cheapest first)
-      } else if (
-        query.includes("above") ||
-        query.includes("over") ||
-        query.includes("more than") ||
-        query.includes("minimum") ||
-        query.includes("min") ||
-        query.includes("starting from") ||
-        query.includes("from")
-      ) {
-        filters.price = { $gte: mainPrice };
-        sortOptions.price = 1; // Sort ascending
-      } else if (query.includes("between") && prices.length >= 2) {
-        // Handle "between 10k and 20k"
-        const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
-        filters.price = { $gte: minPrice, $lte: maxPrice };
-        sortOptions.price = 1;
-      } else if (query.includes("around") || query.includes("about")) {
-        // If "around" mentioned, show ±30% range
-        filters.price = {
-          $gte: Math.floor(mainPrice * 0.7),
-          $lte: Math.ceil(mainPrice * 1.3),
-        };
-      } else {
-        // Default: show properties within ±25% of mentioned price
-        filters.price = {
-          $gte: Math.floor(mainPrice * 0.75),
-          $lte: Math.ceil(mainPrice * 1.25),
-        };
-      }
+    let effRoomsMin = explicit.roomsMin;
+    let effRoomsMax = explicit.roomsMax;
+    if (effRoomsMin == null && effRoomsMax == null && nlp.roomsExact != null) {
+      effRoomsMin = nlp.roomsExact;
+      effRoomsMax = nlp.roomsExact;
     }
 
-    // ========================================
-    // 2️⃣ BEDROOMS/ROOMS DETECTION
-    // ========================================
-    const roomMatch = query.match(/(\d+)\s*(bhk|bedroom|room|bed)/i);
-    if (roomMatch) {
-      const roomCount = parseInt(roomMatch[1]);
-      filters.rooms = roomCount;
+    const sortNumericPrice = Boolean(
+      explicit.priceMin != null ||
+        explicit.priceMax != null ||
+        nlp.sortByPrice,
+    );
+
+    const andConditions = [{ status: false }];
+
+    if (
+      explicit.sellingType &&
+      SELLING_TYPES_VALID.includes(explicit.sellingType)
+    ) {
+      andConditions.push({ sellingType: explicit.sellingType });
     }
 
-    // ========================================
-    // 3️⃣ PROPERTY TYPE DETECTION
-    // ========================================
-    const propertyTypes = [
-      "apartment",
-      "flat",
-      "house",
-      "villa",
-      "bungalow",
-      "penthouse",
-      "studio",
-      "duplex",
-      "farmhouse",
-      "plot",
-      "land",
-      "commercial",
-      "office",
-      "shop",
-      "warehouse",
-    ];
-
-    for (const type of propertyTypes) {
-      if (query.includes(type)) {
-        orFilters.push({
-          propertyType: { $regex: type, $options: "i" },
-        });
-      }
+    if (
+      explicit.propertyType &&
+      PROPERTY_TYPES_VALID.includes(explicit.propertyType)
+    ) {
+      andConditions.push({ propertyType: explicit.propertyType });
+    } else if (nlp.typeRegexOr && nlp.typeRegexOr.length > 0) {
+      andConditions.push({ $or: nlp.typeRegexOr });
     }
 
-    // ========================================
-    // 4️⃣ LOCATION KEYWORDS
-    // ========================================
-    const locationKeywords = [
-      "near",
-      "in",
-      "at",
-      "around",
-      "close to",
-      "nearby",
-      "area",
-      "locality",
-    ];
+    if (explicit.location.length > 0) {
+      const esc = escapeRegex(explicit.location);
+      andConditions.push({
+        location: { $regex: esc, $options: "i" },
+      });
+    }
 
-    let locationQuery = query;
-    locationKeywords.forEach((keyword) => {
-      locationQuery = locationQuery.replace(
-        new RegExp(`\\b${keyword}\\b`, "gi"),
-        "",
+    const pExpr = priceExprCondition(effPriceMin, effPriceMax);
+    if (pExpr) andConditions.push(pExpr);
+
+    const roomsExpr = intFieldExpr("$rooms", effRoomsMin, effRoomsMax);
+    if (roomsExpr) andConditions.push(roomsExpr);
+
+    if (explicit.washroomsMin != null) {
+      const washExpr = intFieldExpr(
+        "$washrooms",
+        explicit.washroomsMin,
+        undefined,
       );
-    });
+      if (washExpr) andConditions.push(washExpr);
+    }
 
-    const searchTerms = locationQuery
-      .replace(/\d+/g, "") // Remove numbers
-      .replace(/[^\w\s]/g, "") // Remove special chars
-      .trim()
-      .split(/\s+/)
-      .filter((term) => term.length > 2); // Only terms with 3+ chars
+    let searchTerms = [];
+    if (trimmedLower.length >= 3) {
+      const text = buildTextOrFilters(trimmedDisplay, trimmedLower);
+      searchTerms = text.searchTerms;
+      if (text.orFilters.length > 0)
+        andConditions.push({ $or: text.orFilters });
+    }
 
-    if (searchTerms.length > 0) {
-      searchTerms.forEach((term) => {
-        orFilters.push({ title: { $regex: term, $options: "i" } });
-        orFilters.push({ description: { $regex: term, $options: "i" } });
-        orFilters.push({ location: { $regex: term, $options: "i" } });
-        orFilters.push({ propertyType: { $regex: term, $options: "i" } });
+    const finalQuery = { $and: andConditions };
+
+    /* Avoid returning every listing when the query is effectively empty */
+    if (andConditions.length === 1) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        props: [],
+        message:
+          "Type at least 3 characters in the keyword box, or choose filters (e.g. price range, location).",
       });
     }
 
-    // Add full query search as well
-    if (query.length > 2) {
-      orFilters.push({ title: { $regex: query, $options: "i" } });
-      orFilters.push({ description: { $regex: query, $options: "i" } });
-      orFilters.push({ location: { $regex: query, $options: "i" } });
-      orFilters.push({ propertyType: { $regex: query, $options: "i" } });
-    }
+    let props = await PropertyModel.find(finalQuery)
+      .select(SEARCH_PUBLIC_FIELDS)
+      .limit(120)
+      .lean();
 
-    // ========================================
-    // 6️⃣ BUILD FINAL QUERY
-    // ========================================
-    let finalQuery = {};
-
-    if (Object.keys(filters).length > 0 && orFilters.length > 0) {
-      // Both filters and text search
-      finalQuery = {
-        $and: [{ ...filters }, { $or: orFilters }],
-      };
-    } else if (Object.keys(filters).length > 0) {
-      // Only filters (price, rooms, etc.)
-      finalQuery = { ...filters };
-    } else if (orFilters.length > 0) {
-      // Only text search
-      finalQuery = { $or: orFilters };
+    if (sortNumericPrice) {
+      props.sort((a, b) => {
+        const pa = parseNum(a.price);
+        const pb = parseNum(b.price);
+        const na = pa != null ? pa : Number.POSITIVE_INFINITY;
+        const nb = pb != null ? pb : Number.POSITIVE_INFINITY;
+        return na - nb;
+      });
     } else {
-      // Fallback: return all properties
-      finalQuery = {};
+      props.sort(
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+      );
     }
 
-    // ========================================
-    // 7️⃣ EXECUTE QUERY WITH SORTING
-    // ========================================
-    const props = await PropertyModel.find(finalQuery)
-      .sort(sortOptions.price ? sortOptions : { createdAt: -1 }) // Sort by price or newest first
-      .limit(100); // Limit results for performance
+    props = props.slice(0, 100);
 
-    // ========================================
-    // 8️⃣ RESPONSE WITH METADATA
-    // ========================================
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: props.length,
       query: {
-        original: value,
-        filters: filters,
-        searchTerms: searchTerms,
+        value: trimmedDisplay,
+        resolved: {
+          priceMin: effPriceMin ?? null,
+          priceMax: effPriceMax ?? null,
+          roomsMin: effRoomsMin ?? null,
+          roomsMax: effRoomsMax ?? null,
+        },
+        explicit,
+        searchTerms,
       },
-      props: props,
+      props,
       message:
         props.length === 0
           ? "No properties found matching your search."
@@ -386,7 +514,7 @@ exports.searchProperty = async (req, res) => {
     });
   } catch (err) {
     console.error("Search Error:", err);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "An error occurred while searching properties.",
       error: process.env.NODE_ENV === "development" ? err.message : undefined,

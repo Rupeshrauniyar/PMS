@@ -1,138 +1,223 @@
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const UserModel = require("../../Models/Broker/UserModel");
-const JWT_SECRET = process.env.JWT_SECRET;
+const {
+  BCRYPT_ROUNDS,
+  normalizeEmail,
+  isValidEmail,
+  sendServerError,
+  decodeAccessFromRequest,
+  tryUserIdFromRefreshCookie,
+} = require("../../utils/authHelpers");
+const {
+  setSessionForUser,
+  clearAuthCookies,
+  rotateSessionFromPayload,
+} = require("../../utils/authCookies");
+
+const MIN_PASSWORD_LEN = 8;
 
 function sanitizeUser(user) {
-  const { password, FCMtokens, ...safeUser } = user.toObject();
-  return safeUser;
+  if (!user) return user;
+  const o = user.toObject ? user.toObject() : { ...user };
+  const { password, FCMtokens, ...safe } = o;
+  return safe;
 }
 
-// SIGNUP
 exports.signup = async (req, res) => {
   try {
-    const { email, password, username, phone } = req.body;
-    if (!email || !password)
+    const { password, username, phone } = req.body;
+    const email = normalizeEmail(req.body?.email);
+
+    if (!email || !password) {
       return res
         .status(400)
         .json({ message: "Email and password are required." });
+    }
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: "Invalid email address." });
+    }
+    if (!username || !String(username).trim()) {
+      return res.status(400).json({ message: "Username is required." });
+    }
+    if (password.length < MIN_PASSWORD_LEN) {
+      return res.status(400).json({
+        message: `Password must be at least ${MIN_PASSWORD_LEN} characters.`,
+      });
+    }
 
-    const existingUser = await UserModel.findOne({ email });
-    if (existingUser)
+    const existingUser = await UserModel.findOne({ email }).select("_id authProvider").lean();
+    if (existingUser) {
+      if (existingUser.authProvider === "google") {
+        return res.status(409).json({
+          code: "USE_GOOGLE",
+          message:
+            "This email is registered with Google. Sign in with Google instead.",
+        });
+      }
       return res.status(409).json({ message: "User already exists." });
+    }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const newUser = await UserModel.create({
       email,
-      username,
+      username: String(username).trim(),
       phone,
       password: hashedPassword,
       authProvider: "local",
     });
 
-    const token = jwt.sign({ id: newUser._id }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
-    res.status(200).json({
+    setSessionForUser(res, newUser, "broker");
+
+    return res.status(200).json({
       message: "Broker registered successfully.",
-      token,
       user: sanitizeUser(newUser),
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendServerError(res, err, "broker signup");
   }
 };
 
-// SIGNIN
 exports.signin = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password)
+    const email = normalizeEmail(req.body?.email);
+    const { password } = req.body;
+
+    if (!email || !password) {
       return res
         .status(400)
         .json({ message: "Email and password are required." });
+    }
 
-    const user = await UserModel.findOne({ email, authProvider: "local" });
-    if (!user)
+    const user = await UserModel.findOne({ email });
+
+    if (!user) {
       return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    if (user.authProvider === "google") {
+      return res.status(401).json({
+        code: "USE_GOOGLE",
+        message:
+          "This account uses Google sign-in. Please continue with Google.",
+      });
+    }
+
+    if (!user.password) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
+    if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password." });
+    }
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
-    res.status(200).json({
+    setSessionForUser(res, user, "broker");
+
+    return res.status(200).json({
       message: "Signed in successfully.",
-      token,
       user: sanitizeUser(user),
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendServerError(res, err, "broker signin");
   }
 };
 
-// SIGNIN WITH GOOGLE
 exports.signinWithGoogle = async (req, res) => {
   try {
     const { email, uuid, username, pp } = req.body;
+    if (!uuid || !email) {
+      return res
+        .status(400)
+        .json({ message: "Email and Google id are required." });
+    }
+
+    const emailNorm = normalizeEmail(email);
+
     let user = await UserModel.findOne({
       uuid,
       authProvider: "google",
     });
-    if (!user) {
-      user = await UserModel.create({
-        email,
-        uuid,
-        username,
-        pp,
-        authProvider: "google",
+
+    if (user) {
+      setSessionForUser(res, user, "broker");
+      return res.status(200).json({
+        message: "Signed in successfully.",
+        user: sanitizeUser(user),
       });
     }
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
-    res.status(200).json({ message: "Signed in successfully.", token, user });
+    const existing = await UserModel.findOne({ email: emailNorm })
+      .select("_id authProvider uuid")
+      .lean();
+
+    if (existing) {
+      if (existing.authProvider === "local") {
+        return res.status(409).json({
+          code: "EMAIL_PASSWORD_ACCOUNT",
+          message:
+            "An account with this email already exists. Sign in with your email and password.",
+        });
+      }
+      if (
+        existing.authProvider === "google" &&
+        String(existing.uuid) !== String(uuid)
+      ) {
+        return res.status(409).json({
+          message:
+            "This email is linked to a different Google account. Use the original Google sign-in.",
+        });
+      }
+    }
+
+    user = await UserModel.create({
+      email: emailNorm,
+      uuid,
+      username,
+      pp,
+      authProvider: "google",
+    });
+
+    setSessionForUser(res, user, "broker");
+
+    return res.status(200).json({
+      message: "Signed in successfully.",
+      user: sanitizeUser(user),
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendServerError(res, err, "broker signinWithGoogle");
   }
 };
 
 exports.signout = async (req, res) => {
   try {
-    const { token, fcmToken } = req.body;
-    const verify = jwt.verify(token, JWT_SECRET);
-    if (!verify || !verify.id)
-      return res.status(500).json({ message: "No id found", success: false });
+    const { fcmToken } = req.body;
 
-    if (fcmToken?.length > 0) {
-      await UserModel.findOneAndUpdate(
-        { _id: verify.id },
-        {
-          $pull: { FCMtokens: fcmToken },
-        },
+    const fromAccess = decodeAccessFromRequest(req, "broker");
+    const fromRefresh = tryUserIdFromRefreshCookie(req, "broker");
+    const uid = fromAccess?.id || fromRefresh?.id;
+
+    clearAuthCookies(res, "broker");
+
+    if (fcmToken?.length > 0 && uid) {
+      await UserModel.updateOne(
+        { _id: uid },
+        { $pull: { FCMtokens: fcmToken } },
       );
     }
 
-    res.status(201).json({
-      success: true,
-    });
+    return res.status(200).json({ success: true });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Server error" });
+    return sendServerError(res, err, "broker signout");
   }
 };
 
 exports.editProfile = async (req, res) => {
   try {
     const Data = req.body;
-
-    if (!Data || !Data.token) {
-      return res.status(403).json({ message: "Something went wrong." });
-    }
-
-    const verify = jwt.verify(Data.token, process.env.JWT_SECRET);
+    const verify = { id: req.userId, type: req.accountType };
 
     if (Data.currentPassword?.length > 0 && verify.type !== "google") {
-      const user = await UserModel.findOne({ _id: verify.id });
+      const user = await UserModel.findOne({ _id: verify.id }).select("+password");
       if (!user) {
         return res.status(403).json({ message: "User not found." });
       }
@@ -144,99 +229,107 @@ exports.editProfile = async (req, res) => {
           .json({ message: "Current password is invalid." });
       }
 
-      const hashedPassword = await bcrypt.hash(Data.newPassword, 10);
-      await UserModel.findOneAndUpdate(
-        { _id: verify.id },
-        { password: hashedPassword },
-      );
-      return res.status(200).json({ success: true });
-    } else {
-      const phone = Data.phone?.trim();
+      if (!Data.newPassword || Data.newPassword.length < MIN_PASSWORD_LEN) {
+        return res.status(400).json({
+          message: `New password must be at least ${MIN_PASSWORD_LEN} characters.`,
+        });
+      }
 
+      const hashedPassword = await bcrypt.hash(Data.newPassword, BCRYPT_ROUNDS);
+      await UserModel.updateOne({ _id: verify.id }, { password: hashedPassword });
+      return res.status(200).json({ success: true });
+    }
+
+    const phone = Data.phone?.trim();
+    if (phone) {
       const phoneExists = await UserModel.exists({
         phone,
-        _id: { $ne: verify.id }, // ✅ verify.id, not verify._id
+        _id: { $ne: verify.id },
       });
-
       if (phoneExists) {
-        return res
-          .status(403)
-          .json({ message: "Phone number already exists." });
+        return res.status(403).json({ message: "Phone number already exists." });
       }
-
-      const updateUser = await UserModel.findOneAndUpdate(
-        { _id: verify.id }, // ✅ fixed here too
-        {
-          username: Data.username,
-          phone: Data.phone,
-        },
-        { new: true },
-      ).select("-password -FCMtokens");
-
-      if (!updateUser) {
-        return res.status(403).json({ message: "User not found." });
-      }
-
-      return res.status(200).json({ user: updateUser, success: true });
     }
+
+    const updateUser = await UserModel.findOneAndUpdate(
+      { _id: verify.id },
+      {
+        username: Data.username,
+        phone: Data.phone,
+      },
+      { new: true },
+    ).select("-password -FCMtokens");
+
+    if (!updateUser) {
+      return res.status(403).json({ message: "User not found." });
+    }
+
+    return res.status(200).json({ user: updateUser, success: true });
   } catch (err) {
     if (err.code === 11000) {
       return res.status(403).json({ message: "Phone number already exists." });
     }
-    console.error("editProfile error:", err);
+    console.error("broker editProfile error:", err);
     return res.status(403).json({ message: "Something went wrong." });
   }
 };
 
 exports.checkAuth = async (req, res) => {
   try {
-    const token = req.headers.authorization.split(" ")[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded || !decoded.id)
-      return res.status(401).json({
-        success: false,
-      });
-    const findUser = await UserModel.findOne({ _id: decoded.id })
-    if (findUser) {
-      const newToken = jwt.sign(
-        { id: findUser._id, type: decoded.type },
-        JWT_SECRET,
-        {
-          expiresIn: "7d",
-        },
+    let payload = decodeAccessFromRequest(req, "broker");
+    let findUser;
+
+    if (!payload) {
+      const refreshPayload = tryUserIdFromRefreshCookie(req, "broker");
+      if (!refreshPayload?.id) {
+        return res.status(401).json({ success: false });
+      }
+
+      findUser = await UserModel.findById(refreshPayload.id).select(
+        "-password -FCMtokens",
       );
-      res.status(200).json({
-        success: true,
-        token: newToken,
-        user: findUser,
-      });
+
+      if (!findUser) {
+        clearAuthCookies(res, "broker");
+        return res.status(401).json({ success: false });
+      }
+
+      rotateSessionFromPayload(res, refreshPayload, "broker");
     } else {
-      res.status(401).json({
-        success: false,
-      });
+      findUser = await UserModel.findById(payload.id).select(
+        "-password -FCMtokens",
+      );
+
+      if (!findUser) {
+        clearAuthCookies(res, "broker");
+        return res.status(401).json({ success: false });
+      }
     }
+
+    return res.status(200).json({
+      success: true,
+      user: findUser,
+    });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ serverSuccess: false });
+    console.error("broker checkAuth:", err);
+    return res.status(500).json({ serverSuccess: false });
   }
 };
 
 exports.updateFCM = async (req, res) => {
   try {
-    const { fcmToken, token } = req.body;
-    console.log(fcmToken, token);
-    const decode = jwt.verify(token, process.env.JWT_SECRET);
-    // console.log(decode);
-    await UserModel.findOneAndUpdate(
-      { _id: decode.id },
-      {
-        $addToSet: {
-          FCMtokens: fcmToken,
-        },
-      },
+    const { fcmToken } = req.body;
+    if (!fcmToken || typeof fcmToken !== "string") {
+      return res.status(400).json({ message: "fcmToken is required." });
+    }
+
+    await UserModel.updateOne(
+      { _id: req.userId },
+      { $addToSet: { FCMtokens: fcmToken.trim() } },
     );
+
+    return res.status(200).json({ success: true });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    return sendServerError(res, err, "broker updateFCM");
   }
 };

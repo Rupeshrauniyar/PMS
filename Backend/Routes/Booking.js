@@ -5,11 +5,14 @@ const {
   saveProperty,
   canclePropertyBooking,
   confirmPropertyBooking,
+  rejectPropertyBooking,
 } = require("../Controllers/Booking");
+const { requireUserAuth } = require("../middleware/requireAuth");
 
-router.post("/book", bookProperty);
-router.post("/cancel-booking", canclePropertyBooking);
-router.post("/confirm-booking", confirmPropertyBooking);
-router.post("/save-property", saveProperty);
+router.post("/book", requireUserAuth, bookProperty);
+router.post("/cancel-booking", requireUserAuth, canclePropertyBooking);
+router.post("/confirm-booking", requireUserAuth, confirmPropertyBooking);
+router.post("/reject-booking", requireUserAuth, rejectPropertyBooking);
+router.post("/save-property", requireUserAuth, saveProperty);
 
 module.exports = router;

@@ -1,5 +1,20 @@
 const mongoose = require("mongoose");
 
+const notificationEntrySchema = mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    body: { type: String, default: "" },
+    kind: { type: String, required: true },
+    propId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "property",
+      default: null,
+    },
+    read: { type: Boolean, default: false },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
+
 const userSchema = mongoose.Schema(
   {
     email: { type: String, required: true, unique: true },
@@ -36,6 +51,7 @@ const userSchema = mongoose.Schema(
       },
     ],
     FCMtokens: [{ type: String }],
+    notifications: [notificationEntrySchema],
   },
   { timestamps: true },
 );

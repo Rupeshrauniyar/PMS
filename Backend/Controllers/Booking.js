@@ -1,45 +1,46 @@
-const admin = require("firebase-admin");
-const serviceAccount = require("../serviceAccountKey.json");
 const PropertyModel = require("../Models/PropertyModel");
-const jwt = require("jsonwebtoken");
 const UserModel = require("../Models/UserModel");
 const BookingModel = require("../Models/BookingModel");
-require("dotenv").config();
+const { isValidObjectId, sendServerError } = require("../utils/authHelpers");
+const {
+  pushUserNotification,
+  NOTIFICATION_KINDS,
+} = require("../utils/notificationsHelper");
 
-if (!admin.apps || admin.apps.length === 0) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-}
+require("dotenv").config();
 
 // Save / unsave a property for the current user
 exports.saveProperty = async (req, res) => {
   try {
-    const { id, token, action } = req.body;
+    const { id, action } = req.body;
+    const userId = req.userId;
 
-    if (!id || !token) {
+    if (!id) {
       return res.status(403).json({ message: "Something went wrong." });
     }
-
-    const decode = jwt.verify(token, process.env.JWT_SECRET);
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid property id." });
+    }
 
     if (action) {
-      await UserModel.findByIdAndUpdate(decode.id, {
-        $addToSet: { saved: { propId: id } }, // avoids duplicates
-      });
+      await UserModel.updateOne(
+        { _id: userId },
+        { $addToSet: { saved: { propId: id } } },
+      );
       return res
         .status(200)
         .json({ success: true, message: "Saved successfully" });
-    } else {
-      await UserModel.findByIdAndUpdate(decode.id, {
-        $pull: { saved: { propId: id } },
-      });
-      return res
-        .status(200)
-        .json({ success: true, message: "Unsaved successfully" });
     }
+
+    await UserModel.updateOne(
+      { _id: userId },
+      { $pull: { saved: { propId: id } } },
+    );
+    return res
+      .status(200)
+      .json({ success: true, message: "Unsaved successfully" });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(403).json({ message: "Something went wrong." });
   }
 };
@@ -47,71 +48,81 @@ exports.saveProperty = async (req, res) => {
 // Create a new booking (visit or pay)
 exports.bookProperty = async (req, res) => {
   try {
-    const { token, propId, price, date, bType, note } = req.body;
+    const { propId, price, date, bType, note } = req.body;
+    const userId = req.userId;
 
-    if (!token || !propId || !price || !bType) {
+    if (!propId || price == null || !bType) {
       return res.status(400).json({ message: "Missing required fields." });
     }
+    if (!isValidObjectId(propId)) {
+      return res.status(400).json({ message: "Invalid property id." });
+    }
+    if (bType !== "visit" && bType !== "pay") {
+      return res.status(400).json({ message: "Invalid booking type." });
+    }
 
-    const decode = jwt.verify(token, process.env.JWT_SECRET);
+    const [prop, existingActiveBooking, userExists] = await Promise.all([
+      PropertyModel.findById(propId)
+        .populate({ path: "owner", select: "_id FCMtokens" })
+        .lean(),
+      BookingModel.findOne({
+        userId,
+        propId,
+        active: true,
+      })
+        .select("_id")
+        .lean(),
+      UserModel.exists({ _id: userId }),
+    ]);
 
-    // 1️⃣ Get property with owner
-    const prop = await PropertyModel.findById(propId).populate("owner");
     if (!prop) {
       return res.status(404).json({ message: "Property not found." });
     }
-
-    // 2️⃣ Get user
-    const user = await UserModel.findById(decode.id);
-    if (!user) {
+    if (!userExists) {
       return res.status(404).json({ message: "User not found." });
     }
-
-    // 3️⃣ Prevent duplicate active booking by same user for same property
-    const existingActiveBooking = await BookingModel.findOne({
-      userId: decode.id,
-      propId,
-      active: true,
-    });
-
     if (existingActiveBooking) {
       return res.status(400).json({
         message: "You already have an active booking for this property.",
       });
     }
 
-    // 4️⃣ Create booking
     const booking = await BookingModel.create({
-      userId: decode.id,
+      userId,
       propId,
-      price,
+      price: String(price),
       date,
       bType,
       note,
     });
 
-    // 5️⃣ Link booking to property and user
-    prop.bookers.push(booking._id);
-    await prop.save();
+    await Promise.all([
+      PropertyModel.updateOne(
+        { _id: propId },
+        { $push: { bookers: booking._id } },
+      ),
+      UserModel.updateOne(
+        { _id: userId },
+        { $push: { bookedProperties: booking._id } },
+      ),
+    ]);
 
-    user.bookedProperties.push(booking._id);
-    await user.save();
-
-    // 6️⃣ Notify owner (if FCM tokens present)
-    if (prop.owner?.FCMtokens?.length > 0) {
-      const payload = {
-        notification: {
-          title: "New Property Booking",
-          body: `You have a new ${bType === "visit" ? "visit" : "booking"} request for Rs. ${new Intl.NumberFormat(
-            "en-IN",
-          ).format(price)}.00`,
+    const ownerId = prop.owner?._id;
+    const ownerTokens = prop.owner?.FCMtokens;
+    if (ownerId) {
+      const bodyText = `Someone requested a ${bType === "visit" ? "visit" : "payment booking"} · Rs. ${new Intl.NumberFormat(
+        "en-IN",
+      ).format(Number(price))}`;
+      await pushUserNotification(
+        ownerId,
+        {
+          title: "New booking request",
+          body: bodyText,
+          kind: NOTIFICATION_KINDS.BOOKING_NEW,
+          propId,
         },
-      };
-
-      await admin.messaging().sendEachForMulticast({
-        tokens: prop.owner.FCMtokens,
-        ...payload,
-      });
+        ownerTokens ?? [],
+      );
     }
 
     return res.status(200).json({
@@ -120,48 +131,51 @@ exports.bookProperty = async (req, res) => {
       booking,
     });
   } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: "Something went wrong." });
+    return sendServerError(res, err, "bookProperty");
   }
 };
 
 // Cancel booking by buyer
 exports.canclePropertyBooking = async (req, res) => {
   try {
-    const { token, _id } = req.body;
+    const { _id } = req.body;
+    const userId = req.userId;
 
-    if (!token || !_id) {
-      return res.status(400).json({ message: "Missing token or booking ID." });
+    if (!_id) {
+      return res.status(400).json({ message: "Missing booking ID." });
+    }
+    if (!isValidObjectId(_id)) {
+      return res.status(400).json({ message: "Invalid booking id." });
     }
 
-    const decode = jwt.verify(token, process.env.JWT_SECRET);
-
-    const booking = await BookingModel.findById(_id);
+    const booking = await BookingModel.findById(_id).lean();
     if (!booking) {
       return res.status(404).json({ message: "Booking not found." });
     }
 
-    if (booking.userId.toString() !== decode.id) {
+    if (String(booking.userId) !== String(userId)) {
       return res
         .status(403)
         .json({ message: "Not allowed to cancel this booking." });
     }
 
-    booking.active = false;
-    await booking.save();
+    await BookingModel.updateOne({ _id }, { $set: { active: false } });
 
-    // Remove references from user and property
-    await UserModel.findByIdAndUpdate(decode.id, {
-      $pull: { bookedProperties: booking._id },
-    });
+    await Promise.all([
+      UserModel.updateOne(
+        { _id: userId },
+        { $pull: { bookedProperties: booking._id } },
+      ),
+      PropertyModel.updateOne(
+        { _id: booking.propId },
+        { $pull: { bookers: booking._id } },
+      ),
+    ]);
 
-    const prop = await PropertyModel.findByIdAndUpdate(
-      booking.propId,
-      { $pull: { bookers: booking._id } },
-      { new: true },
-    ).populate("owner");
+    const prop = await PropertyModel.findById(booking.propId)
+      .populate({ path: "owner", select: "_id FCMtokens" })
+      .lean();
 
-    // If there are no active, confirmed bookings left, mark property as available
     const activeConfirmedCount = await BookingModel.countDocuments({
       propId: booking.propId,
       active: true,
@@ -169,160 +183,155 @@ exports.canclePropertyBooking = async (req, res) => {
     });
 
     if (activeConfirmedCount === 0 && prop) {
-      prop.status = false;
-      await prop.save();
+      await PropertyModel.updateOne({ _id: prop._id }, { $set: { status: false } });
     }
 
-    // Notify owner about cancellation
-    if (prop?.owner?.FCMtokens?.length > 0) {
-      const payload = {
-        notification: {
-          title: "Booking Cancelled",
-          body: "A booking has been cancelled by the buyer.",
+    const oid = prop?.owner?._id;
+    if (oid) {
+      await pushUserNotification(
+        oid,
+        {
+          title: "Booking cancelled",
+          body: "The buyer cancelled a booking request for your property.",
+          kind: NOTIFICATION_KINDS.BOOKING_CANCELLED,
+          propId: booking.propId,
         },
-      };
-
-      await admin.messaging().sendEachForMulticast({
-        tokens: prop.owner.FCMtokens,
-        ...payload,
-      });
+        prop.owner?.FCMtokens ?? [],
+      );
     }
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: "Something went wrong." });
+    return sendServerError(res, err, "canclePropertyBooking");
   }
 };
 
 // Confirm booking by owner
 exports.confirmPropertyBooking = async (req, res) => {
   try {
-    const { token, _id } = req.body; // booking id
+    const { _id } = req.body;
+    const userId = req.userId;
 
-    if (!token || !_id) {
-      return res.status(400).json({ message: "Missing token or booking ID." });
+    if (!_id) {
+      return res.status(400).json({ message: "Missing booking ID." });
+    }
+    if (!isValidObjectId(_id)) {
+      return res.status(400).json({ message: "Invalid booking id." });
     }
 
-    const decode = jwt.verify(token, process.env.JWT_SECRET);
-
-    const booking = await BookingModel.findById(_id).populate("propId");
+    const booking = await BookingModel.findById(_id).lean();
     if (!booking) {
       return res.status(404).json({ message: "Booking not found." });
     }
 
-    const prop = await PropertyModel.findById(booking.propId).populate(
-      "owner",
-    );
+    const prop = await PropertyModel.findById(booking.propId)
+      .populate({ path: "owner", select: "_id" })
+      .lean();
 
     if (!prop) {
       return res.status(404).json({ message: "Property not found." });
     }
 
-    // Only owner can confirm
-    if (prop.owner._id.toString() !== decode.id) {
+    if (String(prop.owner._id) !== String(userId)) {
       return res
         .status(403)
         .json({ message: "Not allowed to confirm this booking." });
     }
 
-    booking.status = true;
-    await booking.save();
+    await Promise.all([
+      BookingModel.updateOne({ _id }, { $set: { status: true } }),
+      PropertyModel.updateOne({ _id: prop._id }, { $set: { status: true } }),
+    ]);
 
-    // Mark property as booked
-    prop.status = true;
-    await prop.save();
+    const buyer = await UserModel.findById(booking.userId)
+      .select("FCMtokens")
+      .lean();
 
-    // Notify buyer that booking is confirmed
-    const buyer = await UserModel.findById(booking.userId);
-    if (buyer?.FCMtokens?.length > 0) {
-      const payload = {
-        notification: {
-          title: "Booking Confirmed",
-          body: "Your booking has been confirmed by the owner.",
-        },
-      };
-
-      await admin.messaging().sendEachForMulticast({
-        tokens: buyer.FCMtokens,
-        ...payload,
-      });
-    }
+    await pushUserNotification(
+      booking.userId,
+      {
+        title: "Booking confirmed",
+        body: "The owner confirmed your booking. Open the listing for details.",
+        kind: NOTIFICATION_KINDS.BOOKING_CONFIRMED,
+        propId: booking.propId,
+      },
+      buyer?.FCMtokens ?? [],
+    );
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: "Something went wrong." });
+    return sendServerError(res, err, "confirmPropertyBooking");
   }
 };
 
 // Reject booking by owner
 exports.rejectPropertyBooking = async (req, res) => {
   try {
-    const { token, _id } = req.body; // booking id
+    const { _id } = req.body;
+    const userId = req.userId;
 
-    if (!token || !_id) {
-      return res.status(400).json({ message: "Missing token or booking ID." });
+    if (!_id) {
+      return res.status(400).json({ message: "Missing booking ID." });
+    }
+    if (!isValidObjectId(_id)) {
+      return res.status(400).json({ message: "Invalid booking id." });
     }
 
-    const decode = jwt.verify(token, process.env.JWT_SECRET);
-
-    const booking = await BookingModel.findById(_id).populate("propId");
+    const booking = await BookingModel.findById(_id).lean();
     if (!booking) {
       return res.status(404).json({ message: "Booking not found." });
     }
 
-    const prop = await PropertyModel.findById(booking.propId).populate(
-      "owner",
-    );
+    const prop = await PropertyModel.findById(booking.propId)
+      .populate({ path: "owner", select: "_id" })
+      .lean();
 
     if (!prop) {
       return res.status(404).json({ message: "Property not found." });
     }
 
-    // Only owner can reject
-    if (prop.owner._id.toString() !== decode.id) {
+    if (String(prop.owner._id) !== String(userId)) {
       return res
         .status(403)
         .json({ message: "Not allowed to reject this booking." });
     }
 
-    booking.active = false;
-    booking.status = false;
-    await booking.save();
+    await Promise.all([
+      BookingModel.updateOne(
+        { _id },
+        { $set: { active: false, status: false } },
+      ),
+      UserModel.updateOne(
+        { _id: booking.userId },
+        { $pull: { bookedProperties: booking._id } },
+      ),
+      PropertyModel.updateOne(
+        { _id: booking.propId },
+        { $pull: { bookers: booking._id } },
+      ),
+    ]);
 
-    await UserModel.findByIdAndUpdate(booking.userId, {
-      $pull: { bookedProperties: booking._id },
-    });
+    const buyer = await UserModel.findById(booking.userId)
+      .select("FCMtokens")
+      .lean();
 
-    await PropertyModel.findByIdAndUpdate(booking.propId, {
-      $pull: { bookers: booking._id },
-    });
-
-    // Notify buyer about rejection
-    const buyer = await UserModel.findById(booking.userId);
-    if (buyer?.FCMtokens?.length > 0) {
-      const payload = {
-        notification: {
-          title: "Booking Rejected",
-          body: "Your booking has been rejected by the owner.",
-        },
-      };
-
-      await admin.messaging().sendEachForMulticast({
-        tokens: buyer.FCMtokens,
-        ...payload,
-      });
-    }
+    await pushUserNotification(
+      booking.userId,
+      {
+        title: "Booking not accepted",
+        body: "The owner rejected your booking for this listing.",
+        kind: NOTIFICATION_KINDS.BOOKING_REJECTED,
+        propId: booking.propId,
+      },
+      buyer?.FCMtokens ?? [],
+    );
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: "Something went wrong." });
+    return sendServerError(res, err, "rejectPropertyBooking");
   }
 };
 
-// Placeholder for future editing of a booking (date, note, etc.)
 exports.editPropertyBooking = async (req, res) => {
   return res
     .status(501)
