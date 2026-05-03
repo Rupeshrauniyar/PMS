@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Link, NavLink, useLocation, useParams } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  useLocation,
+  useMatch,
+  useParams,
+} from "react-router-dom";
 import {
   Book,
   Home,
@@ -15,7 +21,7 @@ import {
   ClipboardDocumentListIcon as ClipboardOutline,
   Bars3Icon as MenuOutline,
   PlayIcon as PlayOutline,
-  PlusCircleIcon  as PlusOutline,
+  PlusCircleIcon as PlusOutline,
   MagnifyingGlassIcon as SearchOutline,
   Cog6ToothIcon as SettingsOutline,
   UserIcon as UserOutline,
@@ -26,7 +32,7 @@ import {
   ClipboardDocumentListIcon as ClipboardSolid,
   Bars3Icon as MenuSolid,
   PlayIcon as PlaySolid,
-  PlusCircleIcon  as PlusSolid,
+  PlusCircleIcon as PlusSolid,
   MagnifyingGlassIcon as SearchSolid,
   Cog6ToothIcon as SettingsSolid,
   UserIcon as UserSolid,
@@ -85,14 +91,17 @@ const Navbar = () => {
       solid: UserSolid,
     },
   ];
+  const isBookPage = useMatch("/book/:id/:price");
   return location.pathname === "/signup" ||
     location.pathname === "/signin" ||
     location.pathname === "/reels" ||
-    location.pathname === "/intro" ? null : (
+    location.pathname === "/intro" ||
+    location.pathname.includes("/view") ||
+    isBookPage ? null : (
     <>
       {/* Top Nav */}
       <div
-        className={`xl:w-[75%] w-full fixed top-0  right-0 z-[2000] transition-transform duration-300 ${
+        className={`xl:w-[75%] w-full fixed top-0  right-0 z-[99] transition-transform duration-300 ${
           show ? "translate-y-0" : "-translate-y-full"
         }`}
       >
@@ -101,10 +110,7 @@ const Navbar = () => {
           <div className="h-19 bg-background/70 backdrop-blur-xl border border-border shadow-lg px-2 flex items-center justify-between">
             {/* Left: Menu + Logo */}
             <div className="flex items-center gap-3">
-              <Link
-                to="/"
-                className="flex items-center gap-2"
-              >
+              <Link to="/" className="flex items-center gap-2">
                 <img
                   className="w-12 h-12  object-contain ml-[4px]"
                   src="/web-app-manifest-512x512.png"
@@ -188,17 +194,19 @@ const Navbar = () => {
 
                   return (
                     <span className="flex items-center justify-center flex-col">
-                    
-                    <Icon
-                      className={`w-6 h-6 transition-all duration-200 ${
-                        isActive
-                          ? "text-foreground scale-110"
-                          : "text-muted-foreground"
-                      }`}
-                    />
-                    <p className={`font-medium text-xs text-center ${isActive ? "text-foreground" : "text-muted-foreground"}`}>{navLink.name}</p>
+                      <Icon
+                        className={`w-6 h-6 transition-all duration-200 ${
+                          isActive
+                            ? "text-foreground scale-110"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                      <p
+                        className={`font-medium text-xs text-center ${isActive ? "text-foreground" : "text-muted-foreground"}`}
+                      >
+                        {navLink.name}
+                      </p>
                     </span>
-
                   );
                 }}
               </NavLink>
@@ -207,7 +215,7 @@ const Navbar = () => {
         </div>
       </div>
       {/* Desktop sidebar*/}
-      <div className="hidden xl:block fixed left-22 top-0 h-full w-[25%] bg-background text-foreground  z-[2000] border-r border-border">
+      <div className="hidden xl:block fixed left-22 top-0 h-full w-[25%] bg-background text-foreground  z-[100] border-r border-border">
         <div className="w-full p-2 border-b border-border">
           <h3 className="font-bold text-3xl  ">Sidebar</h3>
           <p>Navigate through pages.</p>

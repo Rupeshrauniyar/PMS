@@ -22,7 +22,7 @@ const SearchBar = (props) => {
       {/* {console.log(props)} */}
 
       <div
-        className={`fixed  xl:left-22 left-0 right-0 ${
+        className={`chrome-fixed-top fixed xl:left-22 left-0 right-0 ${
           show ? "top-20" : "top-2"
         } transition-all px-2 z-[999]`}
       >

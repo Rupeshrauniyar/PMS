@@ -5,15 +5,15 @@ const AlertBox = ({ message, type, onClose }) => {
   const getColors = () => {
     switch (type) {
       case "success":
-        return " text-green-700";
+        return "text-emerald-600 dark:text-emerald-400";
       case "error":
-        return " text-red-700";
+        return "text-red-600 dark:text-red-400";
       case "warning":
-        return " text-yellow-700";
+        return "text-amber-600 dark:text-amber-400";
       case "info":
-        return "text-blue-700";
+        return "text-blue-600 dark:text-blue-400";
       default:
-        return "text-gray-700";
+        return "text-foreground";
     }
   };
 
@@ -45,13 +45,13 @@ const AlertBox = ({ message, type, onClose }) => {
           type: "tween",
           ease: ["easeIn", "easeOut"],
         }}
-        className={`fixed z-[3001] bottom-0 left-0 w-full h-30  py-6 px-3 shadow-2xl rounded-t-3xl  bg-white flex flex-col `}
+        className="fixed z-[3001] bottom-0 left-0 w-full h-30 py-6 px-3 shadow-2xl rounded-t-3xl bg-background text-foreground flex flex-col border-t border-border"
         role="alert"
       >
         <div className="flex items-center">
           {getIcon()}
           <span
-            className={`block sm:inline font-semibold  ml-2 text-sm ${getColors()}`}
+            className={`block sm:inline font-semibold ml-2 text-sm ${getColors()}`}
           >
             {message}
           </span>
@@ -59,7 +59,7 @@ const AlertBox = ({ message, type, onClose }) => {
         {onClose && (
           <button
             onClick={onClose}
-            className="mt-4 bg-zinc-800 hover:bg-zinc-700 text-white font-medium p-4 rounded-2xl  transition-all"
+            className="mt-4 bg-foreground hover:bg-foreground/90 text-background font-medium p-4 rounded-2xl transition-all"
           >
             OK
           </button>

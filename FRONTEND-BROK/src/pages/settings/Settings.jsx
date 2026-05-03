@@ -10,16 +10,16 @@ import {
   Lock,
 } from "lucide-react";
 import React, { useContext } from "react";
-import { AppContext } from "../contexts/AppContext";
+import { AppContext } from "../../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-// import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
-// GoogleAuth.initialize({
-//   clientId:
-//     "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
-//   scopes: ["profile", "email"],
-//   grantOfflineAccess: true,
-// });
+import api from "../../api/client";
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
+GoogleAuth.initialize({
+  clientId:
+    "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
+  scopes: ["profile", "email"],
+  grantOfflineAccess: true,
+});
 const Settings = () => {
   const { user, setUser } = useContext(AppContext);
   const navigate = useNavigate();
@@ -48,36 +48,34 @@ const Settings = () => {
     {
       icon: Sun,
       label: "Themes",
-      action: () => navigate("#"),
+      action: () => navigate("/themes"),
       section: "preferences",
     },
     {
       icon: Book,
       label: "Terms & Conditions",
-      action: () => navigate("#"),
+      action: () => navigate("/termsandcondition"),
       section: "legal",
     },
     {
       icon: Book,
       label: "Privacy & Policy",
-      action: () => navigate("#"),
+      action: () => navigate("/privacyandpolicy"),
       section: "legal",
     },
   ];
 
   const handleSignOut = async () => {
     try {
-      // await GoogleAuth.signOut();
+      await GoogleAuth.signOut();
       // console.log("Google sign-out successful");
     } catch (err) {
       console.warn("Google sign-out skipped or failed:", err.message);
     }
-    await axios.post(`${import.meta.env.VITE_backendUrl}/api/broker/auth/signout`, {
-      token: localStorage.getItem("token"),
+    await api.post("/api/broker/auth/signout", {
       fcmToken: localStorage.getItem("fcmToken"),
     });
     setUser(null);
-    localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/signup");
   };

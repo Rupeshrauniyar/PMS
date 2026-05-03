@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from "react";
-import SwiperComp from "../components/Swiper";
+import SwiperComp from "../../components/Swiper";
 import {
   Banknote,
   Building,
@@ -21,9 +21,9 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
-import AlertBox from "../components/AlertBox";
-import { AppContext } from "../contexts/AppContext";
+import api from "../../api/client";
+import AlertBox from "../../components/AlertBox";
+import { AppContext } from "../../contexts/AppContext";
 const AddProperty = () => {
   const { setUser } = useContext(AppContext);
   const navigate = useNavigate();
@@ -57,15 +57,15 @@ const AddProperty = () => {
       newErrors.description =
         "Property description must be at least 10 characters long";
     }
+    if (propertyDetails.propertyType !== "Plot") {
+      if (propertyDetails.rooms <= 0) {
+        newErrors.rooms = "Number of rooms must be a positive value";
+      }
 
-    if (propertyDetails.rooms <= 0) {
-      newErrors.rooms = "Number of rooms must be a positive value";
+      if (propertyDetails.washrooms <= 0) {
+        newErrors.washrooms = "Number of washrooms must be a positive value";
+      }
     }
-
-    if (propertyDetails.washrooms <= 0) {
-      newErrors.washrooms = "Number of washrooms must be a positive value";
-    }
-
     if (propertyDetails.propertyType !== "Room" && propertyDetails.area <= 0) {
       newErrors.area =
         "Area must be a positive value for selected property type";
@@ -136,7 +136,6 @@ const AddProperty = () => {
     area: 0,
     price: 0,
     location: "",
-    token: localStorage.getItem("token"),
   });
 
   const handlePropertyDetailsChange = (e) => {
@@ -170,10 +169,7 @@ const AddProperty = () => {
     });
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/broker/property/add-property`,
-        formData
-      );
+      const response = await api.post("/api/property/add-property", formData);
 
       if (response.status === 200) {
         setLoading(false);
@@ -434,59 +430,67 @@ const AddProperty = () => {
               <p className="text-red-500 text-xs mt-1">{errors.description}</p>
             )}
           </div>
+          {propertyDetails.propertyType === "Plot" ? (
+            <></>
+          ) : (
+            <>
+              <div className="grid grid-cols-2  gap-6">
+                <div>
+                  <label
+                    htmlFor="rooms"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Number of Rooms
+                  </label>
+                  <div className="relative">
+                    <DoorOpen
+                      size={22}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      type="number"
+                      id="rooms"
+                      placeholder="e.g., 3"
+                      className="input-field pl-10"
+                      value={propertyDetails.rooms}
+                      onChange={handlePropertyDetailsChange}
+                    />
+                  </div>
+                  {errors.rooms && (
+                    <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>
+                  )}
+                </div>
+                <div>
+                  <label
+                    htmlFor="washrooms"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Number of Washrooms
+                  </label>
+                  <div className="relative">
+                    <BathIcon
+                      size={22}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      type="number"
+                      id="washrooms"
+                      placeholder="e.g., 2"
+                      className="input-field pl-10"
+                      value={propertyDetails.washrooms}
+                      onChange={handlePropertyDetailsChange}
+                    />
+                  </div>
+                  {errors.washrooms && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.washrooms}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
-          <div className="grid grid-cols-2  gap-6">
-            <div>
-              <label
-                htmlFor="rooms"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Number of Rooms
-              </label>
-              <div className="relative">
-                <DoorOpen
-                  size={22}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="number"
-                  id="rooms"
-                  placeholder="e.g., 3"
-                  className="input-field pl-10"
-                  value={propertyDetails.rooms}
-                  onChange={handlePropertyDetailsChange}
-                />
-              </div>
-              {errors.rooms && (
-                <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>
-              )}
-            </div>
-            <div>
-              <label
-                htmlFor="washrooms"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Number of Washrooms
-              </label>
-              <div className="relative">
-                <BathIcon
-                  size={22}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="number"
-                  id="washrooms"
-                  placeholder="e.g., 2"
-                  className="input-field pl-10"
-                  value={propertyDetails.washrooms}
-                  onChange={handlePropertyDetailsChange}
-                />
-              </div>
-              {errors.washrooms && (
-                <p className="text-red-500 text-xs mt-1">{errors.washrooms}</p>
-              )}
-            </div>
-          </div>
           <div
             className={`${
               propertyDetails.propertyType !== "Room" ? "grid grid-cols-2" : ""
@@ -544,7 +548,7 @@ const AddProperty = () => {
                   value={
                     propertyDetails.price
                       ? new Intl.NumberFormat("en-In").format(
-                          propertyDetails.price
+                          propertyDetails.price,
                         )
                       : ""
                   }

@@ -1,12 +1,22 @@
-import { Eye, EyeClosed, Loader2, Lock, Mail, Phone } from "lucide-react";
-import React, { useContext, useState } from "react";
+import {
+  LocationEdit,
+  Lock,
+  Mail,
+  Phone,
+  User,
+  Eye,
+  EyeClosed,
+  Loader2,
+} from "lucide-react";
+import React, { useState, useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AppContext } from "../contexts/AppContext";
-import axios from "axios";
-import AlertBox from "../components/AlertBox";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../contexts/Firebase";
 
+import { AppContext } from "../contexts/AppContext";
+import api from "../../api/client";
+
+import AlertBox from "../components/AlertBox";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "../contexts/Firebase";
 // import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 // GoogleAuth.initialize({
 //   clientId:
@@ -14,89 +24,47 @@ import { auth } from "../contexts/Firebase";
 //   scopes: ["profile", "email"],
 //   grantOfflineAccess: true,
 // });
-const Signin = (props) => {
-  const { setUser } = useContext(AppContext);
-  const [showPass, setShowPass] = useState(false);
-  const fields = [
-    {
-      name: "Email",
-      type: "email",
-      placeholder: "you@example.com",
-      icon: <Mail size={20} />,
-    },
-    {
-      name: "Password",
-      type: "password",
-      placeholder: "********",
-      icon: <Lock size={20} />,
-    },
-  ];
-  const location = useLocation();
-  const from = props?.from ? props.from : location?.state?.from || "/";
+const Signup = (props) => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [fieldData, setFieldData] = useState([]);
-  const [errors, setErrors] = useState({});
-  const [backendError, setBackendError] = useState(null);
-  const navigate = useNavigate();
 
-  const validate = () => {
-    const newErrors = {};
-    if (!fieldData.Email) {
-      newErrors.Email = "Email is required";
-    } else if (!fieldData.Email.trim()) {
-      newErrors.Email = "Email cannot be empty";
-    } else if (!/^[\w.-]+@[\w.-]+\.[A-Z]{2,4}$/i.test(fieldData.Email.trim())) {
-      newErrors.Email = "Invalid email address";
-    }
-    if (!fieldData.Password) {
-      newErrors.Password = "Password is required";
-    } else if (!fieldData.Password.trim()) {
-      newErrors.Password = "Password cannot be empty";
-    } else if (fieldData.Password.length < 6) {
-      newErrors.Password = "Password must be at least 6 characters long";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const { setUser } = useContext(AppContext);
+  const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
+  const [showPass, setShowPass] = useState(false);
+  const [backendError, setBackendError] = useState(null);
+  const location = useLocation();
+  const from = props?.from ? props.from : location?.state?.from || "/";
 
   const handleGoogleAuth = async () => {
     const provider = new GoogleAuthProvider();
+    const auth = getAuth();
     setGoogleLoading(true);
     signInWithPopup(auth, provider)
       .then(async (result) => {
-        // console.log(result);
-        await axios
-          .post(
-            `${import.meta.env.VITE_backendUrl}/api/broker/auth/signinWithGoogle`,
-            {
-              email: result.user.providerData[0].email,
-              uuid: result.user.providerData[0].uid,
-              username: result.user.providerData[0].displayName,
-              pp: result.user.providerData[0].photoURL,
-              type: "google",
-            }
-          )
+        await api
+          .post("/api/broker/auth/signinWithGoogle", {
+            email: result.user.providerData[0].email,
+            uuid: result.user.providerData[0].uid,
+            username: result.user.providerData[0].displayName,
+            pp: result.user.providerData[0].photoURL,
+            type: "google",
+          })
           .then((res) => {
-            // console.log(res);
             setGoogleLoading(false);
-
             setUser(res.data.user);
-            localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.user));
             navigate(from);
           })
           .catch((err) => {
             setGoogleLoading(false);
-            setBackendError("Google sign-in failed.");
+            setBackendError("Google sign-up failed.");
+            // navigate("/signup");
           });
       })
       .catch((error) => {
         setGoogleLoading(false);
-        setBackendError("Google sign-in failed.");
-        // Handle Errors here.
-        // console.log(error);
-        // alert("Signup failed");
+        setBackendError("Google sign-up failed.");
       });
   };
 
@@ -104,10 +72,10 @@ const Signin = (props) => {
   //   try {
   //     setGoogleLoading(true);
   //     await GoogleAuth.signOut();
+
   //     const data = await GoogleAuth.signIn({});
   //     if (!data.idToken) {
   //       setGoogleLoading(false);
-
   //       setBackendError("Signin Failed due to token");
   //     }
 
@@ -128,21 +96,87 @@ const Signin = (props) => {
   //         navigate("/");
   //       })
   //       .catch((err) => {
-  //         alert(err.message);
-
   //         console.log(err);
+  //         alert(err.message);
   //         setGoogleLoading(false);
-  //         setBackendError("Google sign-in failed.");
+  //         setBackendError("Google sign-up failed.");
 
   //         // alert(err);
   //         // alert("Signin failed");
   //       });
   //   } catch (err) {
-  //     console.log(err);
   //     setGoogleLoading(false);
-  //     setBackendError("Google sign-in failed.");
+  //     setBackendError("Google sign-up failed.");
   //   }
   // };
+
+  const [fields, setFields] = useState([
+    {
+      name: "Email",
+      type: "text",
+      placeholder: "you@example.com",
+      icon: <Mail size={20} />,
+    },
+    {
+      name: "Username",
+      type: "text",
+      placeholder: "John Doe",
+      icon: <User size={20} />,
+    },
+    // {
+    //   name: "Phone",
+    //   type: "number",
+    //   placeholder: "+977 9812345678",
+    //   icon: <Phone size={20} />,
+    // },
+
+    // {
+    //   name: "Address",
+    //   type: "text",
+    //   placeholder: "Street 1",
+    //   icon: <LocationEdit size={20} />,
+    // },
+    {
+      name: "Password",
+      type: "password",
+      placeholder: "********",
+      icon: <Lock size={20} />,
+    },
+  ]);
+  const [fieldData, setFieldData] = useState([]);
+
+  const validate = () => {
+    const newErrors = {};
+    if (!fieldData.Email) {
+      newErrors.Email = "Email is required";
+    } else if (!fieldData.Email.trim()) {
+      newErrors.Email = "Email cannot be empty";
+    } else if (!/^[\w.-]+@[\w.-]+\.[A-Z]{2,4}$/i.test(fieldData.Email.trim())) {
+      newErrors.Email = "Invalid email address";
+    }
+    if (!fieldData.Username) {
+      newErrors.Username = "Username is required";
+    } else if (!fieldData.Username.trim()) {
+      newErrors.Username = "Username cannot be empty";
+    }
+    // if (!fieldData.Phone) {
+    //   newErrors.Phone = "Phone number is required";
+    // } else if (!/^\+?[0-9]{10,14}$/.test(fieldData.Phone)) {
+    //   newErrors.Phone = "Invalid phone number";
+    // }
+    // if (!fieldData.Address) {
+    //   newErrors.Address = "Address is required";
+    // }
+    if (!fieldData.Password) {
+      newErrors.Password = "Password is required";
+    } else if (!fieldData.Password.trim()) {
+      newErrors.Password = "Password cannot be empty";
+    } else if (fieldData.Password.length < 6) {
+      newErrors.Password = "Password must be at least 6 characters long";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -150,42 +184,42 @@ const Signin = (props) => {
       return;
     }
     setLoading(true);
-    await axios
-      .post(`${import.meta.env.VITE_backendUrl}/api/broker/auth/signin`, {
+    await api
+      .post("/api/broker/auth/signup", {
         email: fieldData.Email,
         password: fieldData.Password,
+        username: fieldData.Username,
+        address: fieldData.Address,
+        phone: fieldData.Phone,
       })
       .then((res) => {
-        // console.log(res);
         if (res.status === 200) {
           setLoading(false);
-
           setUser(res.data.user);
           localStorage.setItem("user", JSON.stringify(res.data.user));
-          localStorage.setItem("token", res.data.token);
           navigate(from);
         } else {
           setLoading(false);
-          setBackendError(res?.data?.message || "Sign-in failed.");
         }
       })
       .catch((err) => {
         console.log(err);
         setLoading(false);
-        setBackendError(err?.response?.data?.message || "Sign-in failed.");
-        // navigate("/signin");
+        setBackendError(err?.response?.data?.message || "Sign-up failed.");
+        // navigate("/signup");
       });
   };
   return (
     <>
       <div className="w-full h-full flex items-center justify-center  xl:px-4 px:2">
         <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
+          {/* {console.log(from)} */}
+
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold text-zinc-900">
-              {/* {console.log(from)} */}
               Welcome back
             </h1>
-            <p className="text-sm text-zinc-500 mt-1">Sign in to continue</p>
+            <p className="text-sm text-zinc-500 mt-1">Sign up to continue</p>
           </div>
           {backendError && (
             <AlertBox
@@ -230,11 +264,6 @@ const Signin = (props) => {
                             : "password"
                           : field.type
                       }
-                      value={
-                        fieldData[field?.name]?.length > 0
-                          ? fieldData[field.name]
-                          : ""
-                      }
                       autoComplete={field.type}
                       onChange={(e) => {
                         if (e.target.value.trim()) {
@@ -260,7 +289,7 @@ const Signin = (props) => {
                       } bg-white/80 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-zinc-200 focus:outline-none transition-all`}
                       placeholder={field.placeholder}
                     />
-                    {field.name === "Password" ? (
+                    {field.name === "Password" && (
                       <>
                         {showPass ? (
                           <Eye
@@ -276,21 +305,11 @@ const Signin = (props) => {
                           />
                         )}
                       </>
-                    ) : (
-                      <></>
                     )}
                   </div>
                 </div>
               ))}
-              <div className="text-right text-sm text-zinc-600">
-                <span>Forgot password? </span>
-                <Link
-                  to="/pass-reset-mail"
-                  className="text-zinc-900 font-medium hover:underline"
-                >
-                  click here
-                </Link>
-              </div>
+
               <button
                 disabled={loading ? true : false}
                 type="submit"
@@ -304,7 +323,7 @@ const Signin = (props) => {
                     className="animate-spin ml-1"
                   />
                 ) : (
-                  <>Sign in</>
+                  <>Sign up</>
                 )}
               </button>
 
@@ -366,14 +385,14 @@ const Signin = (props) => {
           </button>
 
           <div className="text-center text-sm text-zinc-600">
-            <span>Create an account? </span>
+            <span>Already have an account? </span>
             <button
               onClick={() => {
-                navigate("/signup", { state: { from } });
+                navigate("/signin", { state: { from } });
               }}
               className="text-zinc-900 font-medium hover:underline"
             >
-              Signup
+              Signin
             </button>
           </div>
         </div>
@@ -382,4 +401,4 @@ const Signin = (props) => {
   );
 };
 
-export default Signin;
+export default Signup;

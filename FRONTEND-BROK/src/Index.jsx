@@ -5,30 +5,47 @@ import {
   Route,
   useLocation,
   useNavigate,
+  useMatch,
 } from "react-router-dom";
 import { PushNotifications } from "@capacitor/push-notifications";
-import axios from "axios";
-import { AppContext } from "./contexts/AppContext";
 import { App as CapacitorApp } from "@capacitor/app";
+
+import { AppContext } from "./contexts/AppContext";
 import Navbar from "./components/Navbar";
-const Home = lazy(() => import("./pages/Home"));
-const Landing = lazy(() => import("./pages/Landing"));
-const ChangePassword = lazy(() => import("./pages/ChangePassword"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
-const PassResetMail = lazy(() => import("./pages/PassResetMail"));
-const Search = lazy(() => import("./pages/Search"));
-const EditProfile = lazy(() => import("./pages/EditProfile"));
-const Signin = lazy(() => import("./pages/Signin"));
-const Signup = lazy(() => import("./pages/Signup"));
-const AddProperty = lazy(() => import("./pages/AddProperty"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Settings = lazy(() => import("./pages/Settings"));
-const View = lazy(() => import("./pages/View"));
-const Book = lazy(() => import("./pages/Book"));
-const MyProp = lazy(() => import("./pages/MyProp"));
-const BookedProp = lazy(() => import("./pages/BookedProp"));
-const AuthUser = lazy(() => import("./middlewares/AuthUser"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+import Intro from "./pages/Intro";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Themes from "./pages/Themes";
+import PayFailure from "./pages/book/PayFailure";
+import PaySuccess from "./pages/book/PaySuccess";
+// import Pay from "./pages/book/Pay";
+const Home = lazy(() => import("@/pages/user/Home"));
+
+const ChangePassword = lazy(() => import("@/pages/auth/ChangePassword"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
+const PassResetMail = lazy(() => import("@/pages/auth/PassResetMail"));
+const EditProfile = lazy(() => import("@/pages/auth/EditProfile"));
+const Signin = lazy(() => import("@/pages/auth/Signin"));
+const Signup = lazy(() => import("@/pages/auth/Signup"));
+
+const Search = lazy(() => import("@/pages/user/Search"));
+// const Reel = lazy(() => import("@/pages/user/Reels"));
+const Profile = lazy(() => import("@/pages/user/Profile"));
+
+const AddProperty = lazy(() => import("@/pages/prop/AddProperty"));
+const View = lazy(() => import("@/pages/prop/View"));
+const MyProp = lazy(() => import("@/pages/prop/MyProp"));
+
+const Book = lazy(() => import("@/pages/book/Book"));
+const Bookings = lazy(() => import("@/pages/book/Bookings"));
+
+const BookedProp = lazy(() => import("@/pages/book/BookedProp"));
+const Pay = lazy(() => import("@/pages/book/Pay"));
+
+const Settings = lazy(() => import("@/pages/settings/Settings"));
+const NotFound = lazy(() => import("@/pages/settings/NotFound"));
+
+const AuthUser = lazy(() => import("@/middlewares/AuthUser"));
 
 const Index = () => {
   const { user } = useContext(AppContext);
@@ -85,7 +102,7 @@ const Index = () => {
   //           {
   //             fcmToken: token,
   //             token: localStorage.getItem("token"),
-  //           }
+  //           },
   //         );
   //       } catch (err) {
   //         console.error("Failed to get FCM token:", err.message);
@@ -123,82 +140,62 @@ const Index = () => {
     }, [pathname]);
   }
   useScrollTop();
+  const isBookPage = useMatch("/book/:id/:price");
+
   return (
     <>
       <Navbar />
       <div
         className={`${
-          location.pathname === "/signin" || location.pathname === "/signup"
+          location.pathname === "/signin" ||
+          location.pathname === "/signup" ||
+          location.pathname === "/reels" ||
+          location.pathname === "/intro" ||
+          location.pathname.includes("/view") ||
+          isBookPage
             ? "w-full min-h-screen"
-            : "xl:w-[40%] xl:ml-[33%] ml-0"
-        } min-h-screen text-black px-2`}
+            : "xl:w-[40%] xl:ml-[33%] ml-0 px-2"
+        } min-h-screen bg-background text-foreground `}
       >
         <Suspense>
           <Routes>
             <Route element={<AuthUser />}>
-              <Route
-                path="/add-property"
-                element={<AddProperty />}
-              />
-              <Route
-                path="/profile"
-                element={<Profile />}
-              />
-              <Route
-                path="/edit-profile"
-                element={<EditProfile />}
-              />
-              <Route
-                path="/my/:id"
-                element={<MyProp />}
-              />
-              <Route
-                path="/booked/:id"
-                element={<BookedProp />}
-              />
-              <Route
-                path="/change-password"
-                element={<ChangePassword />}
-              />
-              <Route
-                path="/"
-                element={<Home />}
-              />
-              <Route
-                path="/landing"
-                element={<Landing />}
-              />
-              <Route
-                path="/search"
-                element={<Search />}
-              />
-              <Route
-                path="/settings"
-                element={<Settings />}
-              />
-              <Route
-                path="*"
-                element={<NotFound />}
-              />
+              <Route path="/add-property" element={<AddProperty />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/my/:id" element={<MyProp />} />
+              <Route path="/booked/:id" element={<BookedProp />} />
+              <Route path="/bookings" element={<Bookings />} />
+              <Route path="/pay/:id/:price" element={<Pay />} />
+              <Route path="/payment-success" element={<PaySuccess />} />
+              <Route path="/payment-failure" element={<PayFailure />} />
+              <Route path="/change-password" element={<ChangePassword />} />
             </Route>
+            <Route path="/intro" element={<Intro />} />
+            <Route path="/themes" element={<Themes />} />
+            <Route path="/termsandcondition" element={<Terms />} />
+            <Route path="/privacyandpolicy" element={<Privacy />} />
+            <Route path="/themes" element={<Themes />} />
+            <Route path="/" element={<Home />} />
 
+            {/* <Route
+              path="/reels"
+              element={<Reel />}
+            /> */}
+
+            <Route path="/search" element={<Search />} />
             <Route
               path="/forgot-password/:token"
               element={<ForgotPassword />}
             />
-            <Route
-              path="/pass-reset-mail"
-              element={<PassResetMail />}
-            />
+            <Route path="/pass-reset-mail" element={<PassResetMail />} />
+            <Route path="/view/:id" element={<View />} />
+            <Route path="/book/:id/:price" element={<Book />} />
 
-            <Route
-              path="/signin"
-              element={<Signin />}
-            />
-            <Route
-              path="/signup"
-              element={<Signup />}
-            />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+            <Route path="/signin" element={<Signin />} />
+            <Route path="/signup" element={<Signup />} />
           </Routes>
         </Suspense>
       </div>

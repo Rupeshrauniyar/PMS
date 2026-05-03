@@ -1,8 +1,8 @@
 import React, { useContext, useState } from "react";
-import { AppContext } from "../contexts/AppContext";
+import { AppContext } from "../../contexts/AppContext";
 import { Loader2, Eye, EyeClosed, Lock } from "lucide-react";
-import AlertBox from "../components/AlertBox";
-import axios from "axios";
+import AlertBox from "../../components/AlertBox";
+import api from "../../api/client";
 import { useNavigate } from "react-router-dom";
 
 const EditProfile = () => {
@@ -43,14 +43,10 @@ const EditProfile = () => {
       }
 
       setLoading(true);
-      const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/broker/auth/edit-profile`,
-        {
-          token: localStorage.getItem("token"),
-          currentPassword: fieldData["Current Password"],
-          newPassword: fieldData["New Password"],
-        }
-      );
+      const res = await api.post("/api/broker/auth/edit-profile", {
+        currentPassword: fieldData["Current Password"],
+        newPassword: fieldData["New Password"],
+      });
       if (res.status === 200) {
         setLoading(false);
         setSuccess("Password changed Successfully.");

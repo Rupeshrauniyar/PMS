@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { getApiBase } from "../utils/apiBase";
 import { motion } from "framer-motion";
 import {
   Home,
@@ -14,7 +15,7 @@ const Intro = () => {
   return (
     <div className="relative min-h-screen w-full bg-white text-black overflow-hidden">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 w-full px-2 backdrop-blur-md bg-white/80 border-b border-zinc-200 z-50">
+      <nav className="chrome-fixed-top fixed top-0 left-0 right-0 w-full px-2 backdrop-blur-md bg-white/80 border-b border-zinc-200 z-50">
         <div className="max-w-6xl mx-auto flex justify-between items-center px- py-3">
           <Link
             to="/"
@@ -36,7 +37,7 @@ const Intro = () => {
             <AIShinyButton
               // className="bg-black text-white p-3 rounded-full flex gap-1 items-center justify-center cursor-pointer"
               as="a"
-              href={`${import.meta.env.VITE_backendUrl}/api/android/getapk`}
+              href={`${getApiBase()}/api/android/getapk`}
               download
             >
               <Download size={18} />

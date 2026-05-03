@@ -1,14 +1,22 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { getApiBase } from "../utils/apiBase";
 import { motion } from "framer-motion";
-import { Home, Building2, Calendar, Sparkles, Download } from "lucide-react";
+import {
+  Home,
+  Building2,
+  Calendar,
+  Sparkles,
+  Download,
+  Compass,
+} from "lucide-react";
 
-const Landing = () => {
+const Intro = () => {
   return (
     <div className="relative min-h-screen w-full bg-white text-black overflow-hidden">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 w-full backdrop-blur-md bg-white/80 border-b border-zinc-200 z-50">
-        <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-3">
+      <nav className="fixed top-0 left-0 w-full px-2 backdrop-blur-md bg-white/80 border-b border-zinc-200 z-50">
+        <div className="max-w-6xl mx-auto flex justify-between items-center px- py-3">
           <Link
             to="/"
             className="flex items-center gap-2"
@@ -22,25 +30,24 @@ const Landing = () => {
           </Link>
 
           <div className="flex gap-3 items-center">
-            <AIShinyButton to="/">Explore Properties</AIShinyButton>
-            <span className="absolute inset-0 overflow-hidden rounded-full">
-              <span className="absolute top-0 left-[-75%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[20deg] animate-shine"></span>
-            </span>
-            <button
-              className="bg-black text-white p-3 rounded-full flex gap-1 items-center justify-center"
+            <AIShinyButton to="/">
+              <Compass size={18} /> Explore
+            </AIShinyButton>
+
+            <AIShinyButton
+              // className="bg-black text-white p-3 rounded-full flex gap-1 items-center justify-center cursor-pointer"
               as="a"
-              href={`${import.meta.env.VITE_backendUrl}/api/broker/android/getapk`}
+              href={`${getApiBase()}/api/android/getapk`}
               download
             >
               <Download size={18} />
-              Download App
-            </button>
+            </AIShinyButton>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="flex flex-col justify-center items-center text-center min-h-[70vh] px-4 mt-20 relative z-10">
+      <section className="flex flex-col justify-center items-center text-center min-h-[70vh] px-2 mt-20 relative z-10">
         <motion.h1
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -72,7 +79,7 @@ const Landing = () => {
       </section>
 
       {/* Bento Grid Section */}
-      <section className="max-w-6xl mx-auto px-4 py-24 grid md:grid-cols-3 grid-cols-1 gap-6">
+      <section className="max-w-6xl mx-auto px-2 py-24 grid md:grid-cols-3 grid-cols-1 gap-6">
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="md:col-span-2 bg-black text-white rounded-3xl p-8 shadow-lg flex flex-col justify-between"
@@ -190,11 +197,11 @@ const AIShinyButton = ({
       <span className="absolute inset-0 overflow-hidden rounded-full">
         <span className="absolute top-0 left-[-75%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[20deg] animate-shine"></span>
       </span>
-      <span className="relative z-10 flex items-center gap-1">
-        <Sparkles className="h-4 w-4" /> {children}
+      <span className="relative z-10 flex items-center gap-1 justify-center">
+        {children}
       </span>
     </Comp>
   );
 };
 
-export default Landing;
+export default Intro;

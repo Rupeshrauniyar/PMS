@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { DoorOpen, LandPlot, Home as HomeIcon, Building2 } from "lucide-react";
 import Properties from "./Properties";
-import axios from "axios";
+import api from "../api/client";
 
 const Recommend = (prop) => {
   const [propData, setPropData] = useState([]);
@@ -12,16 +12,11 @@ const Recommend = (prop) => {
         setLoading(true);
         let response;
         if (prop.id) {
-          response = await axios.post(
-            `${import.meta.env.VITE_backendUrl}/api/fetching/get-property`,
-            {
-              filter: prop.id,
-            }
-          );
+          response = await api.post("/api/fetching/get-property", {
+            filter: prop.id,
+          });
         } else {
-          response = await axios.post(
-            `${import.meta.env.VITE_backendUrl}/api/fetching/get-property`
-          );
+          response = await api.post("/api/fetching/get-property", {});
         }
 
         // console.log(response.data)

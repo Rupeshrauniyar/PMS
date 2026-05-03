@@ -12,7 +12,7 @@ import {
 import React, { useContext } from "react";
 import { AppContext } from "../../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/client";
 import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 GoogleAuth.initialize({
   clientId:
@@ -72,12 +72,10 @@ const Settings = () => {
     } catch (err) {
       console.warn("Google sign-out skipped or failed:", err.message);
     }
-    await axios.post(`${import.meta.env.VITE_backendUrl}/api/auth/signout`, {
-      token: localStorage.getItem("token"),
+    await api.post("/api/auth/signout", {
       fcmToken: localStorage.getItem("fcmToken"),
     });
     setUser(null);
-    localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/signup");
   };

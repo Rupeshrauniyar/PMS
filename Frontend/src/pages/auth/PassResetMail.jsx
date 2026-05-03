@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../../api/client";
 import { Loader2, Mail } from "lucide-react";
 import React, { useState } from "react";
 import AlertBox from "../../components/AlertBox";
@@ -29,10 +29,7 @@ const PassResetMail = () => {
         return;
       }
       setLoading(true);
-      const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/cred/send-pass-reset-mail`,
-        { email }
-      );
+      const res = await api.post("/api/cred/send-pass-reset-mail", { email });
 
       if (res.status === 200) {
         setSuccess(res.data.message);

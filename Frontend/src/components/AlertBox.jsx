@@ -45,7 +45,7 @@ const AlertBox = ({ message, type, onClose }) => {
           type: "tween",
           ease: ["easeIn", "easeOut"],
         }}
-        className="fixed z-[3001] bottom-0 left-0 w-full h-30 py-6 px-3 shadow-2xl rounded-t-3xl bg-background text-foreground flex flex-col border-t border-border"
+        className="chrome-fixed-bottom chrome-fixed-inner fixed z-[3001] bottom-0 left-0 right-0 w-full min-h-[7.5rem] py-6 px-3 shadow-2xl rounded-t-3xl bg-background text-foreground flex flex-col border-t border-border shrink-0"
         role="alert"
       >
         <div className="flex items-center">

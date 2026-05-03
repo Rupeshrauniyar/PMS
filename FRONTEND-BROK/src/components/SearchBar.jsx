@@ -28,16 +28,16 @@ const SearchBar = (props) => {
       >
         <div className="max-w-xl mx-auto">
           <Link to="/search">
-            <div className="relative bg-white/70 backdrop-blur-xl border border-zinc-200/60 rounded-full shadow-lg">
+            <div className="relative bg-background/70 backdrop-blur-xl border border-border rounded-full shadow-lg">
               <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
                 size={20}
               />
               <input
                 type="text"
                 value={props.value}
                 readOnly={props.dis ? true : false}
-                className="w-full py-3 pl-12 pr-4 rounded-full bg-transparent focus:outline-none text-zinc-800 placeholder-zinc-400"
+                className="w-full py-3 pl-12 pr-4 rounded-full bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
                 placeholder="Search for houses, rooms, plots…"
               />
             </div>

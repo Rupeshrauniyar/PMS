@@ -1,23 +1,38 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import api from "../../api/client";
 
 const Pay = () => {
   const param = useParams();
   const [payment, setPayment] = useState(null);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_backendUrl}/api/payment/create-payment`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ amount: param.price, id: param.id }),
-    })
-      .then((res) => res.json())
-      .then((data) => setPayment(data));
-  }, []);
+    if (!param?.id || !param?.price) {
+      setPayment({ error: "Missing booking or amount." });
+      return;
+    }
+    api
+      .post("/api/payment/create-payment", {
+        amount: param.price,
+        id: param.id,
+      })
+      .then((res) => setPayment(res.data))
+      .catch((err) =>
+        setPayment({
+          message: err.response?.data?.message || "Payment setup failed.",
+        }),
+      );
+  }, [param?.id, param?.price]);
 
   if (!payment) return <div>Loading...</div>;
+
+  if (payment.message && !payment.signature) {
+    return (
+      <div className="flex justify-center items-center h-screen px-4 text-center text-red-600">
+        {payment.message}
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center items-center h-screen">

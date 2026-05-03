@@ -8,7 +8,12 @@ import "swiper/css/pagination";
 // Modules
 import { Pagination, Autoplay } from "swiper/modules";
 
-const SwiperComp = ({ title, images = [] }) => {
+const SwiperComp = ({
+  title,
+  images = [],
+  /** Tailwind aspect classes for slides (match parent crop box when embedding). */
+  aspectClassName = "aspect-[16/9]",
+}) => {
   if (images.length < 1) {
     return (
       <div className="flex flex-col items-center justify-center w-full h-full bg-card text-card-foreground p-6 rounded-lg border border-border">
@@ -45,7 +50,9 @@ const SwiperComp = ({ title, images = [] }) => {
       >
         {imagesToDisplay.map((item, index) => (
           <SwiperSlide key={index}>
-            <div className="flex items-center justify-center w-full h-full aspect-[16/9] relative z-[1]">
+            <div
+              className={`flex items-center justify-center relative z-[1] ${aspectClassName}`}
+            >
               <img
                 src={item.src}
                 loading="lazy"

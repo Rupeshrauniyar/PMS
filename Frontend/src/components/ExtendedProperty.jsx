@@ -8,6 +8,8 @@ import {
   Bath,
   Maximize,
   ImageIcon,
+  Building2,
+  Tag,
 } from "lucide-react";
 
 const ExtendedProperty = (props) => {
@@ -24,7 +26,7 @@ const ExtendedProperty = (props) => {
     setImageLoading(true);
     setCurrentImageIndex(
       (prev) =>
-        (prev - 1 + props.props.images?.length) % props.props.images?.length
+        (prev - 1 + props.props.images?.length) % props.props.images?.length,
     );
   };
 
@@ -37,13 +39,40 @@ const ExtendedProperty = (props) => {
       </div>
     );
   }
-
+  const detailItems = [
+   
+ 
+    {
+      label: "Rooms",
+      value:
+        props.props?.propertyType === "Plot"
+          ? "Not applicable"
+          : `${props.props?.rooms ?? 0} ${Number(props.props?.rooms) === 1 ? "Room" : "Rooms"}`,
+      icon: Bed,
+    },
+    {
+      label: "Washrooms",
+      value:
+        props.props?.propertyType === "Plot"
+          ? "Not applicable"
+          : `${props.props?.washrooms ?? 0} ${
+              Number(props.props?.washrooms) === 1 ? "Bathroom" : "Bathrooms"
+            }`,
+      icon: Bath,
+    },
+   
+    {
+      label: "Location",
+      value: props.props?.location || "N/A",
+      icon: MapPin,
+    },
+  ];
   return (
     <div className="max-w-7xl mx-auto grid grid-cols-1 gap-4">
       {/* Image Gallery */}
       <div className="overflow-hidden animate-[fadeIn_0.5s_ease-out]">
         <div className="relative group">
-          <div className="relative w-full h-[300px] md:h-[350px] rounded-2xl bg-muted overflow-hidden">
+          <div className="relative w-full h-[200px] md:h-[350px] rounded-2xl bg-muted overflow-hidden">
             {imageLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -161,30 +190,24 @@ const ExtendedProperty = (props) => {
         )}
 
         {/* Property Details */}
-        <div className="flex flex-wrap gap-2 mt-2 mb-2">
-          {props.props.area > 0 ? (
-            <div className="inline-flex items-center px-3 py-1.5 bg-muted rounded-md text-sm">
-              <Maximize className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-              <span>{props.props.area}</span>
-            </div>
-          ) : null}
-          <div className="inline-flex items-center px-3 py-1.5 bg-muted rounded-md text-sm">
-            <Bed className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-            <span>
-              {props.props.rooms} {props.props.rooms === 1 ? "Room" : "Rooms"}
-            </span>
-          </div>
-          <div className="inline-flex items-center px-3 py-1.5 bg-muted rounded-md text-sm w-40 ">
-            <MapPin className="w-4 h-4 mr-1 text-muted-foreground " />
-            <span className="truncate w-[85%]">{props.props.location}</span>
-          </div>
-          <div className="inline-flex items-center px-3 py-1.5 bg-muted rounded-md text-sm">
-            <Bath className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-            <span>
-              {props.props.washrooms}{" "}
-              {props.props.washrooms === 1 ? "Bathroom" : "Bathrooms"}
-            </span>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {detailItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.label}
+                className="rounded-xl border border-zinc-200 bg-white px-3 py-3"
+              >
+                <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1.5">
+                  <Icon className="w-3.5 h-3.5" />
+                  {item.label}
+                </p>
+                <p className="text-sm font-medium text-zinc-900 wrap-break-word">
+                  {item.value}
+                </p>
+              </div>
+            );
+          })}
         </div>
         {!props.price ? (
           <span className="text-foreground text-2xl font-bold">

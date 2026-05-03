@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Loader2, Eye, EyeClosed, Lock } from "lucide-react";
-import AlertBox from "../components/AlertBox";
-import axios from "axios";
+import AlertBox from "../../components/AlertBox";
+import api from "../../api/client";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 const ForgotPassword = () => {
@@ -61,13 +61,10 @@ const ForgotPassword = () => {
       }
 
       setLoading(true);
-      const res = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/broker/cred/forgot-password`,
-        {
-          token: params.token,
-          newPassword: fieldData["New Password"],
-        }
-      );
+      const res = await api.post("/api/cred/forgot-password", {
+        token: params.token,
+        newPassword: fieldData["New Password"],
+      });
       if (res.status === 200) {
         setLoading(false);
         setSuccess(
@@ -86,12 +83,9 @@ const ForgotPassword = () => {
   useEffect(() => {
     const verify = async () => {
       try {
-        const res = await axios.post(
-          `${import.meta.env.VITE_backendUrl}/api/broker/cred/verify-token`,
-          {
-            token: params?.token,
-          }
-        );
+        const res = await api.post("/api/cred/verify-token", {
+          token: params?.token,
+        });
         // console.log(res.data.success === true);
         if (res.data.success) {
           setPageLoad(false);

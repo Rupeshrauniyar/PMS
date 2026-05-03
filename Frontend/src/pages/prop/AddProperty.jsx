@@ -1,607 +1,491 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useState, useCallback, useRef } from "react";
 import SwiperComp from "../../components/Swiper";
 import {
   Banknote,
   Building,
-  HousePlus,
   MapPin,
   Tag,
   Bed,
   Bath,
   Ruler,
-  PlusCircle,
   Loader2,
-  BathIcon,
-  DoorClosed,
   DoorOpen,
-  Heading,
   LayoutDashboard,
-  Image,
   ImagePlus,
+  X,
+  GripVertical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import axios from "axios";
+import api from "../../api/client";
 import AlertBox from "../../components/AlertBox";
 import { AppContext } from "../../contexts/AppContext";
+
+const Field = ({ label, error, children, hint }) => (
+  <div>
+    <div className="flex items-center justify-between mb-1.5">
+      <label className="text-xs font-semibold tracking-widest uppercase text-zinc-500">
+        {label}
+        {hint && <span className="ml-1 font-normal normal-case tracking-normal text-zinc-400">{hint}</span>}
+      </label>
+      {error && <span className="text-xs text-red-500 font-medium">{error}</span>}
+    </div>
+    {children}
+  </div>
+);
+
+const inputCls = (error) =>
+  `w-full h-11 pl-10 pr-4 rounded-lg border text-sm bg-white outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all placeholder:text-zinc-300 ${
+    error ? "border-red-400 bg-red-50" : "border-zinc-200 hover:border-zinc-300"
+  }`;
+
+const Icon = ({ children }) => (
+  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none">
+    {children}
+  </span>
+);
+
+function makeImageEntry(file) {
+  return {
+    id:
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${file.name}-${file.size}-${file.lastModified}-${Date.now()}`,
+    file,
+    url: URL.createObjectURL(file),
+  };
+}
+
+const DT_REORDER = "application/x-pms-reorder-index";
+
 const AddProperty = () => {
   const { setUser } = useContext(AppContext);
   const navigate = useNavigate();
   const [images, setImages] = useState([]);
+  /** Synchronous source index — React state from dragStart is often still null when drop fires. */
+  const dragFromIndexRef = useRef(null);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState(null);
   const [loading, setLoading] = useState(false);
   const [backendError, setBackendError] = useState("");
   const [success, setSuccess] = useState("");
   const [errors, setErrors] = useState({});
-
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    // Store both file objects and their URLs for preview
-    setImages((prev) => [
-      ...prev,
-      ...files.map((file) => ({ file, url: URL.createObjectURL(file) })),
-    ]);
-  };
-
-  const validate = () => {
-    const newErrors = {};
-
-    if (!propertyDetails.title.trim()) {
-      newErrors.title = "Property title is required";
-    } else if (propertyDetails.title.trim().length < 3) {
-      newErrors.title = "Property title must be at least 3 characters long";
-    }
-
-    if (!propertyDetails.description.trim()) {
-      newErrors.description = "Property description is required";
-    } else if (propertyDetails.description.trim().length < 10) {
-      newErrors.description =
-        "Property description must be at least 10 characters long";
-    }
-    if (propertyDetails.propertyType !== "Plot") {
-      if (propertyDetails.rooms <= 0) {
-        newErrors.rooms = "Number of rooms must be a positive value";
-      }
-
-      if (propertyDetails.washrooms <= 0) {
-        newErrors.washrooms = "Number of washrooms must be a positive value";
-      }
-    }
-    if (propertyDetails.propertyType !== "Room" && propertyDetails.area <= 0) {
-      newErrors.area =
-        "Area must be a positive value for selected property type";
-    }
-
-    if (propertyDetails.price <= 0) {
-      newErrors.price = "Price must be a positive value";
-    }
-
-    if (!propertyDetails.location.trim()) {
-      newErrors.location = "Property location is required";
-    } else if (propertyDetails.location.trim().length < 5) {
-      newErrors.location =
-        "Property location must be at least 5 characters long";
-    }
-
-    if (images.length === 0) {
-      newErrors.images = "At least one image is required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = "copy";
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const files = Array.from(e.dataTransfer.files);
-    setImages((prev) => [
-      ...prev,
-      ...files.map((file) => ({ file, url: URL.createObjectURL(file) })),
-    ]);
-  };
-
-  // useEffect(() => {
-  //   const handleBeforeUnload = (event) => {
-  //     event.preventDefault();
-  //     const confirmed = window.confirm("Are you sure you want to go back?");
-  //     if (confirmed) {
-  //       navigate(-1); // Go back
-  //     } else {
-  //       window.history.pushState(null, "", window.location.href);
-  //     }
-  //   };
-
-  //   window.history.pushState(null, "", window.location.href);
-  //   window.addEventListener("popstate", handleBeforeUnload);
-
-  //   return () => {
-  //     window.removeEventListener("popstate", handleBeforeUnload);
-  //   };
-  // }, [navigate]);
 
   const [propertyDetails, setPropertyDetails] = useState({
     title: "",
     sellingType: "Rent System",
     propertyType: "Room",
     description: "",
-    rooms: 0,
-    washrooms: 0,
-    area: 0,
-    price: 0,
+    rooms: "",
+    washrooms: "",
+    area: "",
+    price: "",
     location: "",
-    token: localStorage.getItem("token"),
   });
 
-  const handlePropertyDetailsChange = (e) => {
-    const { id, value } = e.target;
-    if (id === "price") {
-      const rawValue = value.replace(/,/g, ""); // remove commas
-      if (!isNaN(rawValue)) {
-        setPropertyDetails((prev) => ({ ...prev, [id]: rawValue }));
-      }
-    } else {
-      setPropertyDetails((prev) => ({ ...prev, [id]: value }));
+  const isPlot = propertyDetails.propertyType === "Plot";
+  const isRoom = propertyDetails.propertyType === "Room";
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files).filter((f) => f.type.startsWith("image/"));
+    if (!files.length) return;
+    setImages((prev) => [...prev, ...files.map(makeImageEntry)]);
+    e.target.value = "";
+  };
+
+  const handleDrop = (e) => {
+    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+    if (files.length > 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      setImages((prev) => [...prev, ...files.map(makeImageEntry)]);
+    }
+    /* Thumbnail reorder drops are handled on each thumb (with stopPropagation). */
+  };
+
+  const removeImage = useCallback((index) => {
+    setImages((prev) => {
+      const row = prev[index];
+      if (row?.url) URL.revokeObjectURL(row.url);
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
+
+  const resetDragUi = useCallback(() => {
+    dragFromIndexRef.current = null;
+    setDragIndex(null);
+    setDropTargetIndex(null);
+  }, []);
+
+  const onThumbDragStart = (e, index) => {
+    dragFromIndexRef.current = index;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+    try {
+      e.dataTransfer.setData(DT_REORDER, String(index));
+    } catch {
+      /* some browsers restrict custom types */
+    }
+    setDragIndex(index);
+  };
+
+  const onThumbDragEnd = () => {
+    resetDragUi();
+  };
+
+  const onThumbDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const onThumbDragOver = (e, index) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    const from = dragFromIndexRef.current;
+    if (from !== null && from !== undefined && from !== index) {
+      setDropTargetIndex(index);
     }
   };
 
-  const handleAddProp = async (e) => {
+  const onThumbDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDropTargetIndex(null);
+    }
+  };
+
+  const onThumbDrop = (e, toIndex) => {
     e.preventDefault();
-    if (!validate()) {
+    e.stopPropagation();
+
+    let from = dragFromIndexRef.current;
+    if (from === null || from === undefined) {
+      from = parseInt(e.dataTransfer.getData(DT_REORDER), 10);
+    }
+    if (!Number.isFinite(from)) {
+      from = parseInt(e.dataTransfer.getData("text/plain"), 10);
+    }
+
+    dragFromIndexRef.current = null;
+
+    if (!Number.isFinite(from) || from < 0 || toIndex < 0 || from === toIndex) {
+      resetDragUi();
       return;
     }
+
+    setImages((prev) => {
+      if (from >= prev.length || toIndex > prev.length) return prev;
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      const insertAt = Math.min(toIndex, next.length);
+      next.splice(insertAt, 0, item);
+      return next;
+    });
+    resetDragUi();
+  };
+
+  const onGalleryDragOver = (e) => {
+    const types = [...e.dataTransfer.types];
+    if (types.includes("Files")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    } else if (types.includes("text/plain") || types.some((t) => t === DT_REORDER || t.endsWith(DT_REORDER))) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    }
+  };
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    if (id === "price") {
+      const raw = value.replace(/,/g, "");
+      if (!isNaN(raw)) setPropertyDetails((prev) => ({ ...prev, [id]: raw }));
+    } else {
+      setPropertyDetails((prev) => ({ ...prev, [id]: value }));
+    }
+    setErrors((prev) => ({ ...prev, [id]: "" }));
+  };
+
+  const validate = () => {
+    const e = {};
+    if (!propertyDetails.title.trim()) e.title = "Required";
+    else if (propertyDetails.title.trim().length < 3) e.title = "Min 3 characters";
+    if (!propertyDetails.description.trim()) e.description = "Required";
+    else if (propertyDetails.description.trim().length < 10) e.description = "Min 10 characters";
+    if (!isPlot) {
+      if (!propertyDetails.rooms || +propertyDetails.rooms <= 0) e.rooms = "Required";
+      if (!propertyDetails.washrooms || +propertyDetails.washrooms <= 0) e.washrooms = "Required";
+    }
+    if (!isRoom && (!propertyDetails.area || +propertyDetails.area <= 0)) e.area = "Required";
+    if (!propertyDetails.price || +propertyDetails.price <= 0) e.price = "Required";
+    if (!propertyDetails.location.trim()) e.location = "Required";
+    else if (propertyDetails.location.trim().length < 5) e.location = "Min 5 characters";
+    if (images.length === 0) e.images = "At least one image is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
     const formData = new FormData();
-
-    // Append property details
-    for (const key in propertyDetails) {
-      formData.append(key, propertyDetails[key]);
-    }
-
-    // Append images
-    images.forEach((image, index) => {
-      formData.append(`images`, image.file);
-    });
-
+    Object.entries(propertyDetails).forEach(([k, v]) => formData.append(k, v));
+    images.forEach(({ file }) => formData.append("images", file));
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_backendUrl}/api/property/add-property`,
-        formData,
-      );
-
-      if (response.status === 200) {
-        setLoading(false);
+      const res = await api.post("/api/property/add-property", formData);
+      if (res.status === 200) {
         setSuccess("Property added successfully");
         setUser((prev) => ({
           ...prev,
-          myProperties: [
-            ...prev.myProperties,
-            { propId: response.data.property },
-          ],
+          myProperties: [...prev.myProperties, { propId: res.data.property }],
         }));
-        // alert("Property added successfully!");
-        // Optionally navigate or reset form
       } else {
-        setLoading(false);
-        // alert("Failed to add property.");
-        setBackendError(response.data.message);
+        setBackendError(res.data.message);
       }
-    } catch (error) {
+    } catch {
+      setBackendError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      setBackendError("Something went wrong");
-      console.error("Error adding property:", error);
-      // alert("An error occurred while adding property.");
     }
   };
 
   return (
-    <div className="w-full min-h-screen mt-18 font-sans antialiased pb-12  ">
+    <div className="min-h-screen   pb-28">
       {success && (
         <AlertBox
           message={success}
           type="success"
-          onClose={() => {
-            navigate("/profile");
-            setBackendError(null);
-          }}
+          onClose={() => { navigate("/profile"); setSuccess(""); }}
         />
       )}
       {backendError && (
-        <AlertBox
-          message={backendError}
-          type="error"
-          onClose={() => setBackendError(null)}
-        />
+        <AlertBox message={backendError} type="error" onClose={() => setBackendError("")} />
       )}
-      <h3 className="text-3xl font-bold  ">Add Property</h3>
-      <p className=" text-gray-600 mb-2 ">
-        List your property for rent or sale. Fill in the details below to reach
-        potential buyers or tenants.
-      </p>
-      <div className=" grid grid-cols-1 gap-2">
-        <div className="w-full mb-8">
-          <div className="w-full flex items-center justify-center">
-            <div className="w-full bg-white/80 backdrop-blur-xl border rounded-3xl border-zinc-200/60 shadow-lg overflow-hidden transform hover:scale-[1.01] hover:shadow-2xl transition-all duration-300">
-              <div
-                className="flex items-start justify-center"
-                onDragOver={(e) => handleDragOver(e)}
-                onDrop={(e) => handleDrop(e)}
-              >
-                <label
-                  htmlFor="images"
-                  className="w-full h-full cursor-pointer border border-zinc-300 rounded-t-2xl overflow-hidden bg-zinc-50 hover:bg-zinc-100 transition-all"
-                >
-                  {images.length > 0 ? (
-                    <SwiperComp images={images.map((img) => img.url)} />
-                  ) : (
-                    <div className=" flex flex-col items-center justify-center h-[300px] py-16 text-zinc-600">
-                      <ImagePlus size={50} />
-                      <p className="mt-3 text-sm">
-                        Drag or click to add images
-                      </p>
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    id="images"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              {errors.images && (
-                <p className="text-red-500 text-xs text-center mt-1">
-                  {errors.images}
-                </p>
-              )}
-              <div className="p-3">
-                <h3 className="text-base font-semibold text-zinc-900 mb-1">
-                  {propertyDetails.title || "Add Property Title"}
-                </h3>
-                <p className="text-zinc-600 text-xs mb-2 truncate">
-                  {propertyDetails.description || "Add Property Description"}
-                </p>
-                <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-xs text-zinc-700 mb-2">
-                  <div className="flex items-center">
-                    <Tag
-                      size={12}
-                      className="mr-1 text-zinc-500"
-                    />
-                    <span className="truncate">
-                      {propertyDetails.sellingType}
-                    </span>
-                  </div>
 
-                  <div className="flex items-center">
-                    <Building
-                      size={12}
-                      className="mr-1 text-zinc-500"
-                    />
-                    <span className="truncate">
-                      {propertyDetails.propertyType}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <Bed
-                      size={12}
-                      className="mr-1 text-zinc-500"
-                    />
-                    <span className="truncate">
-                      {propertyDetails.rooms} Rooms
-                    </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <Bath
-                      size={12}
-                      className="mr-1 text-zinc-500"
-                    />
-                    <span className="truncate">
-                      {propertyDetails.washrooms} Baths
-                    </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <Ruler
-                      size={12}
-                      className="mr-1 text-zinc-500"
-                    />
-                    <span className="truncate">
-                      {propertyDetails.area} sq ft
-                    </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <MapPin
-                      size={12}
-                      className="mr-1 text-zinc-500"
-                    />
-                    <span className="truncate">
-                      {propertyDetails.location || "Add Property Location"}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-base font-bold text-zinc-900">
-                    रू.{propertyDetails.price || 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="max-w-2xl mx-auto ">
+        {/* Page header */}
+        <div className="py-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Add a property</h1>
+          <p className="text-sm text-zinc-400 mt-0.5">
+            Fill in the details below to list your property for rent or sale.
+          </p>
         </div>
-        <form
-          className=" space-y-6 pb-15"
-          onSubmit={handleAddProp}
-        >
-          <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-700 mb-1"
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+
+          {/* ── Images ── */}
+          <section>
+            <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500 mb-3">Photos</p>
+            <div
+              className={`rounded-xl border-2 border-dashed transition-colors ${
+                errors.images ? "border-red-300 bg-red-50" : "border-zinc-200 hover:border-zinc-300 bg-white"
+              }`}
+              onDragOver={onGalleryDragOver}
+              onDrop={handleDrop}
             >
-              Property Title
-            </label>
-            <div className="relative">
-              <LayoutDashboard
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                id="title"
-                placeholder="e.g., Beautiful Family House"
-                className="input-field pl-10"
-                value={propertyDetails.title}
-                onChange={handlePropertyDetailsChange}
-              />
-            </div>
-
-            {errors.title && (
-              <p className="text-red-500 text-xs mt-1">{errors.title}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Selling Type
-              </label>
-              <div className="relative">
-                <Tag
-                  size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <select
-                  id="sellingType"
-                  className="input-field px-10"
-                  value={propertyDetails.sellingType}
-                  onChange={handlePropertyDetailsChange}
-                >
-                  <option value={"Rent System"}>Rent System</option>
-                  <option value={"Selling System"}>Selling System</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Property Type
-              </label>
-              <div className="relative">
-                <Building
-                  size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <select
-                  id="propertyType"
-                  className="input-field px-10"
-                  value={propertyDetails.propertyType}
-                  onChange={handlePropertyDetailsChange}
-                >
-                  <option value={"Room"}>Room</option>
-                  <option value={"House"}>House</option>
-                  <option value={"Plot"}>Plot</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Property Description
-            </label>
-            <textarea
-              id="description"
-              placeholder="Enter property description"
-              rows="4"
-              style={{ resize: "none" }}
-              className=" py-1 no-resize  w-full h-21 rounded-xl border border-zinc-300  text-sm focus:ring-2 focus:ring-black px-2 outline-none"
-              value={propertyDetails.description}
-              onChange={handlePropertyDetailsChange}
-            ></textarea>
-            {errors.description && (
-              <p className="text-red-500 text-xs mt-1">{errors.description}</p>
-            )}
-          </div>
-          {propertyDetails.propertyType === "Plot" ? (
-            <></>
-          ) : (
-            <>
-              <div className="grid grid-cols-2  gap-6">
+              {images.length > 0 ? (
                 <div>
-                  <label
-                    htmlFor="rooms"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Number of Rooms
-                  </label>
-                  <div className="relative">
-                    <DoorOpen
-                      size={22}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                      type="number"
-                      id="rooms"
-                      placeholder="e.g., 3"
-                      className="input-field pl-10"
-                      value={propertyDetails.rooms}
-                      onChange={handlePropertyDetailsChange}
-                    />
+                  <div className="rounded-t-xl overflow-hidden">
+                    <SwiperComp images={images.map((img) => img.url)} />
                   </div>
-                  {errors.rooms && (
-                    <p className="text-red-500 text-xs mt-1">{errors.rooms}</p>
-                  )}
-                </div>
-                <div>
-                  <label
-                    htmlFor="washrooms"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Number of Washrooms
-                  </label>
-                  <div className="relative">
-                    <BathIcon
-                      size={22}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                      type="number"
-                      id="washrooms"
-                      placeholder="e.g., 2"
-                      className="input-field pl-10"
-                      value={propertyDetails.washrooms}
-                      onChange={handlePropertyDetailsChange}
-                    />
-                  </div>
-                  {errors.washrooms && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.washrooms}
+                  <div className="px-3 pt-2 pb-3 border-t border-zinc-100">
+                    <p className="text-[11px] text-zinc-400 mb-2 flex items-center gap-1">
+                      <GripVertical className="w-3 h-3 shrink-0" />
+                      Drag thumbnails to reorder · first photo is the cover
                     </p>
-                  )}
+                    <div className="flex flex-wrap gap-2">
+                    {images.map((img, i) => (
+                      <div
+                        key={img.id}
+                        draggable
+                        onDragStart={(e) => onThumbDragStart(e, i)}
+                        onDragEnd={onThumbDragEnd}
+                        onDragEnter={onThumbDragEnter}
+                        onDragOver={(e) => onThumbDragOver(e, i)}
+                        onDragLeave={onThumbDragLeave}
+                        onDrop={(e) => onThumbDrop(e, i)}
+                        className={`relative shrink-0 rounded-lg border-2 transition-all cursor-grab active:cursor-grabbing ${
+                          dragIndex === i
+                            ? "opacity-50 border-zinc-400 scale-95"
+                            : dropTargetIndex === i
+                              ? "border-emerald-500 ring-2 ring-emerald-200"
+                              : "border-zinc-200 hover:border-zinc-300"
+                        }`}
+                      >
+                        <img
+                          src={img.url}
+                          alt=""
+                          className="w-14 h-14 object-cover rounded-md pointer-events-none select-none"
+                        />
+                        <span
+                          className="absolute bottom-0.5 left-0.5 min-w-4.5 h-4 px-1 rounded bg-black/70 text-[10px] font-semibold text-white flex items-center justify-center tabular-nums"
+                          aria-hidden
+                        >
+                          {i + 1}
+                        </span>
+                        <button
+                          type="button"
+                          draggable={false}
+                          onDragStart={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeImage(i);
+                          }}
+                          className="absolute bottom-0.5 right-0.5 w-6 h-6 bg-zinc-900 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-10"
+                          aria-label={`Remove image ${i + 1}`}
+                        >
+                          <X size={12} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    ))}
+                    <label
+                      htmlFor="images"
+                      className="w-14 h-14 rounded-lg border-2 border-dashed border-zinc-200 flex items-center justify-center cursor-pointer hover:border-zinc-400 hover:bg-zinc-50 transition-colors shrink-0"
+                    >
+                      <ImagePlus size={16} className="text-zinc-400" />
+                      <input type="file" id="images" multiple accept="image/*" onChange={handleImageChange} className="hidden" />
+                    </label>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
-
-          <div
-            className={`${
-              propertyDetails.propertyType !== "Room" ? "grid grid-cols-2" : ""
-            } gap-6`}
-          >
-            {propertyDetails.propertyType !== "Room" ? (
-              <div>
-                <label
-                  htmlFor="area"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Area (sq ft)
+              ) : (
+                <label htmlFor="images" className="flex flex-col items-center justify-center h-48 cursor-pointer">
+                  <ImagePlus size={32} className="text-zinc-300 mb-3" />
+                  <p className="text-sm text-zinc-500 font-medium">Click or drag photos here</p>
+                  <p className="text-xs text-zinc-400 mt-1">PNG, JPG up to 10MB each</p>
+                  <input type="file" id="images" multiple accept="image/*" onChange={handleImageChange} className="hidden" />
                 </label>
-                <div className="relative">
-                  <Ruler
-                    size={22}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <input
-                    type="number"
-                    id="area"
-                    placeholder="e.g., 1500"
-                    className="input-field pl-10"
-                    value={propertyDetails.area}
-                    onChange={handlePropertyDetailsChange}
-                  />
-                </div>
-                {errors.area && (
-                  <p className="text-red-500 text-xs mt-1">{errors.area}</p>
-                )}
-              </div>
-            ) : undefined}
-            <div className="w-full ">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {propertyDetails.sellingType === "Rent System" ? (
-                  <h3 className="flex">
-                    Property Price/
-                    <p className="text-blue-500 font-bold">Month</p>
-                  </h3>
-                ) : (
-                  <>Property Price</>
-                )}
-              </label>
-              <div className="relative  w-full">
-                <Banknote
-                  size={22}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
+              )}
+            </div>
+            {errors.images && <p className="text-xs text-red-500 mt-1.5">{errors.images}</p>}
+          </section>
 
+          {/* ── Basic info ── */}
+          <section className="space-y-5">
+            <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500">Basic info</p>
+
+            <Field label="Title" error={errors.title}>
+              <div className="relative">
+                <Icon><LayoutDashboard size={16} /></Icon>
                 <input
                   type="text"
-                  id="price"
-                  placeholder="Property price"
-                  className="input-field pl-10 "
-                  value={
-                    propertyDetails.price
-                      ? new Intl.NumberFormat("en-In").format(
-                          propertyDetails.price,
-                        )
-                      : ""
-                  }
-                  onChange={handlePropertyDetailsChange}
+                  id="title"
+                  placeholder="e.g., Cozy 2BHK near city centre"
+                  className={inputCls(errors.title)}
+                  value={propertyDetails.title}
+                  onChange={handleChange}
                 />
               </div>
-              {errors.price && (
-                <p className="text-red-500 text-xs mt-1">{errors.price}</p>
-              )}
+            </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Listing type" error={errors.sellingType}>
+                <div className="relative">
+                  <Icon><Tag size={16} /></Icon>
+                  <select id="sellingType" className={inputCls(false)} value={propertyDetails.sellingType} onChange={handleChange}>
+                    <option value="Rent System">Rent</option>
+                    <option value="Selling System">Sale</option>
+                  </select>
+                </div>
+              </Field>
+              <Field label="Property type" error={errors.propertyType}>
+                <div className="relative">
+                  <Icon><Building size={16} /></Icon>
+                  <select id="propertyType" className={inputCls(false)} value={propertyDetails.propertyType} onChange={handleChange}>
+                    <option value="Room">Room</option>
+                    <option value="House">House</option>
+                    <option value="Plot">Plot</option>
+                  </select>
+                </div>
+              </Field>
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Property Location
-            </label>
-            <div className="relative">
-              <MapPin
-                size={22}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+
+            <Field label="Description" error={errors.description}>
+              <textarea
+                id="description"
+                placeholder="Describe the property — location highlights, nearby amenities, condition, etc."
+                rows={4}
+                style={{ resize: "none" }}
+                className={`w-full px-4 py-3 rounded-lg border text-sm bg-white outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all placeholder:text-zinc-300 ${
+                  errors.description ? "border-red-400 bg-red-50" : "border-zinc-200 hover:border-zinc-300"
+                }`}
+                value={propertyDetails.description}
+                onChange={handleChange}
               />
-              <input
-                type="text"
-                id="location"
-                placeholder="Enter property location"
-                className="input-field pl-10"
-                value={propertyDetails.location}
-                onChange={handlePropertyDetailsChange}
-              />
-            </div>
-            {errors.location && (
-              <p className="text-red-500 text-xs mt-1">{errors.location}</p>
+            </Field>
+          </section>
+
+          {/* ── Details ── */}
+          <section className="space-y-5">
+            <p className="text-xs font-semibold tracking-widest uppercase text-zinc-500">Property details</p>
+
+            {!isPlot && (
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Rooms" error={errors.rooms}>
+                  <div className="relative">
+                    <Icon><DoorOpen size={16} /></Icon>
+                    <input type="number" id="rooms" placeholder="e.g., 3" className={inputCls(errors.rooms)} value={propertyDetails.rooms} onChange={handleChange} min={0} />
+                  </div>
+                </Field>
+                <Field label="Washrooms" error={errors.washrooms}>
+                  <div className="relative">
+                    <Icon><Bath size={16} /></Icon>
+                    <input type="number" id="washrooms" placeholder="e.g., 2" className={inputCls(errors.washrooms)} value={propertyDetails.washrooms} onChange={handleChange} min={0} />
+                  </div>
+                </Field>
+              </div>
             )}
-          </div>
-          <div className="fixed bottom-14 xl:w-[75%] xl:left-[25%] xl:bottom-0 w-full left-0 transition-all bg-white border-t border-zinc-200 p-2">
-            <button
-              type="submit"
-              className={`w-full cursor-pointer bg-black hover:bg-zinc-800 text-white font-medium px-6 py-3 rounded-xl transition-colors flex items-center justify-center`}
-            >
-              {loading ? (
-                <Loader2
-                  size={18}
-                  className="animate-spin ml-1"
-                />
-              ) : (
-                <>Add property</>
+
+            <div className={`grid gap-4 ${!isRoom ? "grid-cols-2" : "grid-cols-1"}`}>
+              {!isRoom && (
+                <Field label="Area (sq ft)" error={errors.area}>
+                  <div className="relative">
+                    <Icon><Ruler size={16} /></Icon>
+                    <input type="number" id="area" placeholder="e.g., 1500" className={inputCls(errors.area)} value={propertyDetails.area} onChange={handleChange} min={0} />
+                  </div>
+                </Field>
               )}
-            </button>
-          </div>
+              <Field
+                label="Price"
+                hint={propertyDetails.sellingType === "Rent System" ? "(per month)" : ""}
+                error={errors.price}
+              >
+                <div className="relative">
+                  <Icon><Banknote size={16} /></Icon>
+                  <input
+                    type="text"
+                    id="price"
+                    placeholder="e.g., 15,000"
+                    className={inputCls(errors.price)}
+                    value={propertyDetails.price ? new Intl.NumberFormat("en-IN").format(propertyDetails.price) : ""}
+                    onChange={handleChange}
+                  />
+                </div>
+              </Field>
+            </div>
+
+            <Field label="Location" error={errors.location}>
+              <div className="relative">
+                <Icon><MapPin size={16} /></Icon>
+                <input type="text" id="location" placeholder="e.g., Lazimpat, Kathmandu" className={inputCls(errors.location)} value={propertyDetails.location} onChange={handleChange} />
+              </div>
+            </Field>
+          </section>
         </form>
+      </div>
+
+      {/* Sticky submit bar */}
+      <div className="chrome-fixed-bottom fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 px-4 py-3 z-50">
+        <div className="chrome-fixed-inner max-w-2xl mx-auto shrink-0">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full h-11 rounded-lg bg-zinc-900 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-zinc-700 disabled:opacity-60 active:scale-[0.99] transition-all"
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : "Publish listing"}
+          </button>
+        </div>
       </div>
     </div>
   );

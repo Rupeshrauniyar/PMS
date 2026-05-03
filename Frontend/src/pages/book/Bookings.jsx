@@ -1,135 +1,230 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { AppContext } from "../../contexts/AppContext";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
-  Mail,
-  User,
-  Phone,
-  MapPin,
-  Calendar,
-  Edit2,
   Building2,
+  Bookmark,
+  CalendarDays,
+  LayoutGrid,
+  Loader2,
   Plus,
-  ChevronDown,
 } from "lucide-react";
 import Properties from "../../components/Properties";
-import axios from "axios";
+import api from "../../api/client";
 
-const Profile = () => {
+const TAB_CONFIG = [
+  {
+    type: "myProperties",
+    backType: null,
+    label: "My listings",
+    description: "Properties you manage",
+    icon: LayoutGrid,
+  },
+  {
+    type: "bookedProperties",
+    backType: "propId",
+    label: "Booked",
+    description: "Your reservations",
+    icon: CalendarDays,
+  },
+  {
+    type: "saved",
+    backType: null,
+    label: "Saved",
+    description: "Properties you saved",
+    icon: Bookmark,
+  },
+];
+
+const EMPTY_COPY = {
+  myProperties: {
+    text: "You haven't listed any properties yet.",
+    cta: { label: "Add a property", to: "/add-property" },
+  },
+  bookedProperties: {
+    text: "When you book a visit or stay, it will appear here.",
+    cta: { label: "Browse properties", to: "/" },
+  },
+  saved: {
+    text: "Save properties while browsing to compare them later.",
+    cta: { label: "Browse properties", to: "/" },
+  },
+};
+
+const Bookings = () => {
   const { user } = useContext(AppContext);
   const [myProp, setMyProp] = useState([]);
-  const [Type, setType] = useState(null);
-  const btnMap = [
-    {
-      type: "myProperties",
-      backType: null,
-      text: "My Properties",
-    },
-    {
-      type: "bookedProperties",
-      backType: "propId",
-      text: "Booked Properties",
-    },
-    ,
-    {
-      type: "saved",
-      backType: null,
-      text: "Saved",
-    },
-  ];
-  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
-  const HandleType = async (e, backType) => {
-    setType(e);
-    if (user[e].length < 1) return setMyProp([]);
-    console.log(backType);
-    const res = await axios.post(
-      `${import.meta.env.VITE_backendUrl}/api/fetching/get-user-property`,
-      {
-        token: localStorage.getItem("token"),
-        Type: e,
-        NestedPop: backType,
-      },
-    );
-    // console.log(res.data.properties);
-    if (res.status === 200) {
-      setMyProp(res.data.properties);
-    } else {
-      setMyProp([]);
-    }
+  const fetchTab = useCallback(
+    async (tabType, backType) => {
+      if (!user?.[tabType]?.length) {
+        setMyProp([]);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await api.post("/api/fetching/get-user-property", {
+          Type: tabType,
+          NestedPop: backType,
+        });
+        setMyProp(res.status === 200 ? res.data.properties || [] : []);
+      } catch {
+        setMyProp([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user]
+  );
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab.type);
+    fetchTab(tab.type, tab.backType);
   };
+
+  useEffect(() => {
+    if (!user || initialLoadDone) return;
+    const first = TAB_CONFIG[0];
+    setActiveTab(first.type);
+    setInitialLoadDone(true);
+    if (user[first.type]?.length > 0) fetchTab(first.type, first.backType);
+    else setMyProp([]);
+  }, [user, initialLoadDone, fetchTab]);
+
+  const activeMeta = TAB_CONFIG.find((t) => t.type === activeTab);
+  const countForTab = activeTab && user?.[activeTab] ? user[activeTab].length : 0;
+
   return (
-    <div className="w-full min-h-screen pt-20 ">
-      {/* Cover Photo Section */}
-      {/* <div className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-64 relative">
-        <div className="absolute inset-0 bg-black/10"></div>
-      </div> */}
+    <div className="min-h-screen  pt-20 pb-20">
+      <div className="max-w-5xl mx-auto ">
 
-      {/* Main Content  */}
-      <div className=" mx-auto  pb-8">
-        {/* Profile Card */}
-       
-        <div className="flex gap-3 min-w-full overflow-x-auto no-scrollbar py-2 px-1">
-          {btnMap.map((btn, i) => (
-            <button
-              key={i}
-              onClick={() => HandleType(btn.type, btn.backType)}
-              className={`px-5 py-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border 
-        ${
-          btn.type === Type
-            ? "bg-black text-white border-black shadow-md scale-105"
-            : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 hover:border-gray-400"
-        }`}
-            >
-              {btn.text}
-            </button>
-          ))}
+        {/* Page header */}
+        <div className="flex items-center justify-between py-8">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+              My Space
+            </h1>
+            <p className="text-sm text-zinc-400 mt-0.5">
+              Listings, bookings, and saved properties
+            </p>
+          </div>
+          {/* <Link
+            to="/add-property"
+            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 text-white text-sm font-medium px-4 py-2.5 hover:bg-zinc-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add property
+          </Link> */}
         </div>
 
-        <div className="w-full  grid grid-cols-1  gap-3 mt-3 pb-12">
-          {Type ? (
-            myProp.length > 0 ? (
-              myProp.map((item, index) => (
-                <div key={index}>
-                  {item.propId ? (
-                    <Properties prop={item.propId} />
-                  ) : (
-                    <>
-                      <div className="w-full h-50 bg-white border border-zinc-200 rounded-3xl overflow-hidden hover:border-zinc-400 transition-all duration-200 group flex items-center justify-center text-zinc-600 text-lg font-medium">
-                        This property is no longer available.
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="   p-12 text-center">
-                <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-4">
-                  <Building2
-                    size={32}
-                    className="text-zinc-400"
-                  />
-                </div>
-                <h3 className="text-xl font-semibold text-zinc-900 mb-2">
-                  No Properties available
-                </h3>
-              </div>
-            )
-          ) : (
-            <div className="flex items-center justify-center">
+        {/* Tab bar */}
+        <div className="flex gap-1 border-b border-zinc-200 mb-8">
+          {TAB_CONFIG.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.type;
+            const count = user?.[tab.type]?.length ?? 0;
+            return (
               <button
-                className="flex items-center justify-center cursor-pointer group"
-                onClick={() => HandleType("myProperties")}
+                key={tab.type}
+                type="button"
+                onClick={() => handleTabChange(tab)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  isActive
+                    ? "border-zinc-900 text-zinc-900"
+                    : "border-transparent text-zinc-400 hover:text-zinc-700"
+                }`}
               >
-                <ChevronDown className="mr-1" />
-                <h3>Load Properties</h3>
+                <Icon className="w-4 h-4" />
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className={`text-xs rounded-full px-1.5 py-0.5 font-semibold ${
+                      isActive
+                        ? "bg-zinc-900 text-white"
+                        : "bg-zinc-100 text-zinc-500"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
               </button>
-            </div>
-          )}
+            );
+          })}
         </div>
+
+        {/* Content */}
+        {!user ? (
+          <div className="flex flex-col items-center justify-center py-32 gap-3">
+            <Loader2 className="w-7 h-7 animate-spin text-zinc-300" />
+            <p className="text-sm text-zinc-400">Loading your account…</p>
+          </div>
+        ) : loading ? (
+          <div className="grid grid-cols-1  gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-zinc-100 bg-white overflow-hidden animate-pulse"
+              >
+                <div className="aspect-video bg-zinc-100" />
+                <div className="p-4 space-y-2.5">
+                  <div className="h-4 bg-zinc-100 rounded w-3/4" />
+                  <div className="h-3 bg-zinc-100 rounded w-full" />
+                  <div className="h-3 bg-zinc-100 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : countForTab === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-zinc-100 flex items-center justify-center mb-5">
+              {activeMeta?.icon && (
+                <activeMeta.icon className="w-6 h-6 text-zinc-400" />
+              )}
+            </div>
+            <p className="text-zinc-500 text-sm max-w-xs mb-5">
+              {EMPTY_COPY[activeTab]?.text}
+            </p>
+            {EMPTY_COPY[activeTab]?.cta && (
+              <Link
+                to={EMPTY_COPY[activeTab].cta.to}
+                className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 text-white text-sm font-medium px-4 py-2.5 hover:bg-zinc-700 transition-colors"
+              >
+                {activeTab === "myProperties" && <Plus className="w-4 h-4" />}
+                {EMPTY_COPY[activeTab].cta.label}
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1  gap-5 pb-8">
+            {myProp.map((item, index) =>
+              item.propId ? (
+                <Properties
+                  key={item.propId._id || index}
+                  prop={item.propId}
+                />
+              ) : (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-zinc-200 bg-white px-6 py-10 text-center"
+                >
+                  <Building2 className="w-8 h-8 text-zinc-300 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-zinc-600">
+                    Property no longer available
+                  </p>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    It may have been removed by the owner.
+                  </p>
+                </div>
+              )
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default Profile;
+export default Bookings;

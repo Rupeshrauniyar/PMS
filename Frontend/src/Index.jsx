@@ -1,16 +1,20 @@
 import React, { lazy, Suspense, useContext, useEffect } from "react";
+import axios from "axios";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   useLocation,
   useNavigate,
+  useMatch,
+  Navigate,
 } from "react-router-dom";
 import { PushNotifications } from "@capacitor/push-notifications";
-import axios from "axios";
 import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 
 import { AppContext } from "./contexts/AppContext";
+import { universalLinkToAppPath } from "./utils/propertyShare";
 import Navbar from "./components/Navbar";
 import Intro from "./pages/Intro";
 import Terms from "./pages/Terms";
@@ -29,6 +33,7 @@ const Signin = lazy(() => import("@/pages/auth/Signin"));
 const Signup = lazy(() => import("@/pages/auth/Signup"));
 
 const Search = lazy(() => import("@/pages/user/Search"));
+const Notifications = lazy(() => import("@/pages/user/Notifications"));
 // const Reel = lazy(() => import("@/pages/user/Reels"));
 const Profile = lazy(() => import("@/pages/user/Profile"));
 
@@ -130,8 +135,36 @@ const Index = () => {
     };
   }, [location.pathname, navigate]);
 
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const openUrl = (url) => {
+      const path = universalLinkToAppPath(url);
+      if (!path) return;
+      navigate(path, { replace: true });
+    };
+
+    let cancelled = false;
+    const listenerPromise = (async () => {
+      try {
+        const launch = await CapacitorApp.getLaunchUrl();
+        if (!cancelled && launch?.url) openUrl(launch.url);
+      } catch (_) {
+        /* no cold-start URL */
+      }
+      return CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+        openUrl(url);
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+      listenerPromise.then((h) => h.remove()).catch(() => {});
+    };
+  }, [navigate]);
+
   if (location.pathname === "/landing") {
-    return <Landing />;
+    return <Navigate to="/" replace />;
   }
   function useScrollTop() {
     const { pathname } = useLocation();
@@ -140,6 +173,8 @@ const Index = () => {
     }, [pathname]);
   }
   useScrollTop();
+  const isBookPage = useMatch("/book/:id/:price");
+
   return (
     <>
       <Navbar />
@@ -148,122 +183,53 @@ const Index = () => {
           location.pathname === "/signin" ||
           location.pathname === "/signup" ||
           location.pathname === "/reels" ||
-          location.pathname === "/intro"
-            ? "w-full min-h-screen"
+          location.pathname === "/intro" ||
+          location.pathname.includes("/view") ||
+          isBookPage
+            ? "w-full min-h-svh"
             : "xl:w-[40%] xl:ml-[33%] ml-0 px-2"
-        } min-h-screen bg-background text-foreground `}
+        } min-h-svh bg-background text-foreground `}
       >
         <Suspense>
           <Routes>
             <Route element={<AuthUser />}>
-              <Route
-                path="/add-property"
-                element={<AddProperty />}
-              />
-              <Route
-                path="/profile"
-                element={<Profile />}
-              />
-              <Route
-                path="/edit-profile"
-                element={<EditProfile />}
-              />
-              <Route
-                path="/my/:id"
-                element={<MyProp />}
-              />
-              <Route
-                path="/booked/:id"
-                element={<BookedProp />}
-              />
-              <Route
-                path="/bookings"
-                element={<Bookings />}
-              />
-              <Route
-                path="/pay/:id/:price"
-                element={<Pay />}
-              />
-              <Route
-                path="/payment-success"
-                element={<PaySuccess />}
-              />
-              <Route
-                path="/payment-failure"
-                element={<PayFailure />}
-              />
-              <Route
-                path="/change-password"
-                element={<ChangePassword />}
-              />
+              <Route path="/add-property" element={<AddProperty />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/my/:id" element={<MyProp />} />
+              <Route path="/booked/:id" element={<BookedProp />} />
+              <Route path="/bookings" element={<Bookings />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/pay/:id/:price" element={<Pay />} />
+              <Route path="/payment-success" element={<PaySuccess />} />
+              <Route path="/payment-failure" element={<PayFailure />} />
+              <Route path="/change-password" element={<ChangePassword />} />
             </Route>
-            <Route
-              path="/intro"
-              element={<Intro />}
-            />
-            <Route
-              path="/themes"
-              element={<Themes />}
-            />
-            <Route
-              path="/termsandcondition"
-              element={<Terms />}
-            />
-            <Route
-              path="/privacyandpolicy"
-              element={<Privacy />}
-            />
-            <Route
-              path="/themes"
-              element={<Themes />}
-            />
-            <Route
-              path="/"
-              element={<Home />}
-            />
+            <Route path="/intro" element={<Intro />} />
+            <Route path="/themes" element={<Themes />} />
+            <Route path="/termsandcondition" element={<Terms />} />
+            <Route path="/privacyandpolicy" element={<Privacy />} />
+            <Route path="/themes" element={<Themes />} />
+            <Route path="/" element={<Home />} />
 
             {/* <Route
               path="/reels"
               element={<Reel />}
             /> */}
 
-            <Route
-              path="/search"
-              element={<Search />}
-            />
+            <Route path="/search" element={<Search />} />
             <Route
               path="/forgot-password/:token"
               element={<ForgotPassword />}
             />
-            <Route
-              path="/pass-reset-mail"
-              element={<PassResetMail />}
-            />
-            <Route
-              path="/view/:id"
-              element={<View />}
-            />
-            <Route
-              path="/book/:id/:price"
-              element={<Book />}
-            />
+            <Route path="/pass-reset-mail" element={<PassResetMail />} />
+            <Route path="/view/:id" element={<View />} />
+            <Route path="/book/:id/:price" element={<Book />} />
 
-            <Route
-              path="/settings"
-              element={<Settings />}
-            />
-            <Route
-              path="*"
-              element={<NotFound />}
-            />
-            <Route
-              path="/signin"
-              element={<Signin />}
-            />
-            <Route
-              path="/signup"
-              element={<Signup />}
-            />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+            <Route path="/signin" element={<Signin />} />
+            <Route path="/signup" element={<Signup />} />
           </Routes>
         </Suspense>
       </div>
