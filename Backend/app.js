@@ -15,7 +15,7 @@ assertJwtSecret();
 
 // Import services
 const { connectDB, disconnectDB } = require("./DB/db");
-const { connectRedis, disconnectRedis } = require("./DB/Redis");
+// const { connectRedis, disconnectRedis } = require("./DB/Redis");
 
 // Express app setup
 const app = express();
@@ -99,30 +99,30 @@ const fetchBroking = require("./Routes/Broker/FetchBroking");
   try {
     await connectDB(); // MongoDB connection — required for the API
 
-    try {
-      await connectRedis(); // Redis: cache invalidation paths use try/catch; optional at boot
-    } catch (redisErr) {
-      console.warn(
-        `[PID ${process.pid}] Redis unavailable (continuing):`,
-        redisErr?.message || redisErr,
-      );
-    }
-    async function gracefulShutdown() {
-      try {
-        await disconnectDB();
-      } catch (_) {
-        /* ignore */
-      }
-      try {
-        await disconnectRedis();
-      } catch (_) {
-        /* Redis may never have connected */
-      }
-      process.exit(0);
-    }
+    // try {
+    //   await connectRedis(); // Redis: cache invalidation paths use try/catch; optional at boot
+    // } catch (redisErr) {
+    //   console.warn(
+    //     `[PID ${process.pid}] Redis unavailable (continuing):`,
+    //     redisErr?.message || redisErr,
+    //   );
+    // }
+    // async function gracefulShutdown() {
+    //   try {
+    //     await disconnectDB();
+    //   } catch (_) {
+    //     /* ignore */
+    //   }
+    //   try {
+    //     await disconnectRedis();
+    //   } catch (_) {
+    //     /* Redis may never have connected */
+    //   }
+    //   process.exit(0);
+    // }
 
-    process.on("SIGTERM", () => gracefulShutdown());
-    process.on("SIGINT", () => gracefulShutdown());
+    // process.on("SIGTERM", () => gracefulShutdown());
+    // process.on("SIGINT", () => gracefulShutdown());
 
     // --- Express setup ---
     app.get("/", (req, res) => {
