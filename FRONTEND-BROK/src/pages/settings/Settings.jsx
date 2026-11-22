@@ -1,232 +1,205 @@
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 import {
   ArrowLeft,
-  Book,
-  LogOut,
-  Pen,
-  Sun,
-  TableProperties,
   User,
-  ChevronRight,
+  Edit3,
   Lock,
+  Sun,
+  Moon,
+  BookOpen,
+  Shield,
+  LogOut,
+  ChevronRight,
+  Bell,
+  Compass,
 } from "lucide-react";
-import React, { useContext } from "react";
-import { AppContext } from "../../contexts/AppContext";
-import { useNavigate } from "react-router-dom";
-import api from "../../api/client";
-import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
-GoogleAuth.initialize({
-  clientId:
-    "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
-  scopes: ["profile", "email"],
-  grantOfflineAccess: true,
-});
-const Settings = () => {
-  const { user, setUser } = useContext(AppContext);
-  const navigate = useNavigate();
 
-  const settingsItems = [
-    {
-      icon: User,
-      label: "Your Profile",
-      action: () => navigate("/profile"),
-      section: "account",
-    },
-    {
-      icon: Pen,
-      label: "Edit Profile",
-      action: () => navigate("/edit-profile"),
-      section: "account",
-    },
-    !user?.uuid
-      ? {
-          icon: Lock,
-          label: "Change Password",
-          action: () => navigate("/change-password"),
-          section: "account",
-        }
-      : {},
-    {
-      icon: Sun,
-      label: "Themes",
-      action: () => navigate("/themes"),
-      section: "preferences",
-    },
-    {
-      icon: Book,
-      label: "Terms & Conditions",
-      action: () => navigate("/termsandcondition"),
-      section: "legal",
-    },
-    {
-      icon: Book,
-      label: "Privacy & Policy",
-      action: () => navigate("/privacyandpolicy"),
-      section: "legal",
-    },
-  ];
+import { useApp } from "@/contexts/AppContext";
+import { useTheme } from "@/lib/theme";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { RoleBadge } from "@/components/broker/BrokerBrand";
+
+export default function Settings() {
+  const { user, signOut } = useApp();
+  const { theme, isDark, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   const handleSignOut = async () => {
-    try {
-      await GoogleAuth.signOut();
-      // console.log("Google sign-out successful");
-    } catch (err) {
-      console.warn("Google sign-out skipped or failed:", err.message);
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await GoogleAuth.signOut();
+      } catch {
+        /* ignore native Google sign-out if not signed in via Google */
+      }
     }
-    await api.post("/api/broker/auth/signout", {
-      fcmToken: localStorage.getItem("fcmToken"),
-    });
-    setUser(null);
-    localStorage.removeItem("user");
-    navigate("/signup");
+    await signOut();
+    navigate("/signin", { replace: true });
   };
 
   return (
-    <div className="w-full min-h-screen bg-white py-16">
-      {/* Header */}
-      <div className="border-b border-zinc-200 bg-white sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto  py-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-zinc-700 hover:text-zinc-900 transition-colors mb-3"
-          >
-            <ArrowLeft size={20} />
-            <span className="text-sm font-medium">Back</span>
-          </button>
-          <h1 className="text-2xl font-bold text-zinc-900">Settings</h1>
-          <p className="text-sm text-zinc-600 mt-1">
-            Manage your account and preferences
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          <span>Back</span>
+        </Button>
+        <div>
+          <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+            Settings
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Manage your Propatyc Broker account, theme, and policies
           </p>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-3xl mx-auto">
-        {/* Account Section */}
-        <div className=" py-6 border-b border-zinc-200">
-          <h2 className="text-sm font-semibold text-zinc-900 mb-3">Account</h2>
-          <div className="space-y-1">
-            {settingsItems
-              .filter((item) => item.section === "account")
-              .map((item, index) => (
-                <button
-                  key={index}
-                  onClick={item.action}
-                  className="w-full flex items-center justify-between py-3 px-3 -mx-3 text-zinc-700 hover:bg-zinc-50 rounded-lg transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-zinc-100 flex items-center justify-center group-hover:bg-zinc-200 transition-colors">
-                      <item.icon
-                        size={18}
-                        className="text-zinc-700"
-                      />
-                    </div>
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </div>
-                  <ChevronRight
-                    size={18}
-                    className="text-zinc-400 group-hover:text-zinc-600 transition-colors"
-                  />
-                </button>
-              ))}
-          </div>
-        </div>
-
-        {/* Preferences Section */}
-        <div className=" py-6 border-b border-zinc-200">
-          <h2 className="text-sm font-semibold text-zinc-900 mb-3">
-            Preferences
-          </h2>
-          <div className="space-y-1">
-            {settingsItems
-              .filter((item) => item.section === "preferences")
-              .map((item, index) => (
-                <button
-                  key={index}
-                  onClick={item.action}
-                  className="w-full flex items-center justify-between py-3 px-3 -mx-3 text-zinc-700 hover:bg-zinc-50 rounded-lg transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-zinc-100 flex items-center justify-center group-hover:bg-zinc-200 transition-colors">
-                      <item.icon
-                        size={18}
-                        className="text-zinc-700"
-                      />
-                    </div>
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </div>
-                  <ChevronRight
-                    size={18}
-                    className="text-zinc-400 group-hover:text-zinc-600 transition-colors"
-                  />
-                </button>
-              ))}
-          </div>
-        </div>
-
-        {/* Legal Section */}
-        <div className=" py-6 border-b border-zinc-200">
-          <h2 className="text-sm font-semibold text-zinc-900 mb-3">Legal</h2>
-          <div className="space-y-1">
-            {settingsItems
-              .filter((item) => item.section === "legal")
-              .map((item, index) => (
-                <button
-                  key={index}
-                  onClick={item.action}
-                  className="w-full flex items-center justify-between py-3 px-3 -mx-3 text-zinc-700 hover:bg-zinc-50 rounded-lg transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-zinc-100 flex items-center justify-center group-hover:bg-zinc-200 transition-colors">
-                      <item.icon
-                        size={18}
-                        className="text-zinc-700"
-                      />
-                    </div>
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </div>
-                  <ChevronRight
-                    size={18}
-                    className="text-zinc-400 group-hover:text-zinc-600 transition-colors"
-                  />
-                </button>
-              ))}
-          </div>
-        </div>
-
-        {/* Sign Out Section */}
-        {user?._id && (
-          <div className=" py-6">
-            <button
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-between py-3 px-3 -mx-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
-                  <LogOut
-                    size={18}
-                    className="text-red-600"
-                  />
+      {/* Signed-in summary */}
+      {user ? (
+        <Card>
+          <CardContent className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <Avatar src={user.pp} name={user.username} size="default" />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate text-sm font-bold text-foreground">
+                    {user.username || "Broker"}
+                  </p>
+                  <RoleBadge role={user.role} />
                 </div>
-                <span className="text-sm font-semibold">Sign Out</span>
+                <p className="truncate text-xs text-muted-foreground">{user.email}</p>
               </div>
-              <ChevronRight
-                size={18}
-                className="text-red-400 group-hover:text-red-600 transition-colors"
-              />
-            </button>
-          </div>
-        )}
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/profile">View</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
-        {/* App Info */}
-        <div className="px-4 py-6 text-center border-t border-zinc-200">
-          {/* <p className="text-xs text-zinc-500">Version 1.0.0</p> */}
-          <p className="text-xs text-zinc-400 mt-1">
-            © 2025 Property Management System
-          </p>
-        </div>
-      </div>
+      {/* Account */}
+      {user ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">
+              Account
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <SettingsRow icon={User} label="Your Broker Profile" to="/profile" />
+            <SettingsRow icon={Edit3} label="Edit Name & Phone" to="/edit-profile" />
+            <SettingsRow icon={Bell} label="Notifications" to="/notifications" />
+            {!user.uuid ? (
+              <SettingsRow icon={Lock} label="Change Password" to="/change-password" />
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Appearance */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">
+            Preferences
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          <div className="flex items-center justify-between rounded-2xl px-3 py-2.5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-muted text-foreground">
+                {isDark ? (
+                  <Moon className="size-4.5 text-brand" aria-hidden="true" />
+                ) : (
+                  <Sun className="size-4.5 text-brand" aria-hidden="true" />
+                )}
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Quick Dark Mode</p>
+                <p className="text-xs text-muted-foreground capitalize">
+                  Preference: {theme}
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={toggleTheme}>
+              Switch to {isDark ? "Light" : "Dark"}
+            </Button>
+          </div>
+          <SettingsRow icon={Sun} label="Theme Options (Light / Dark / System)" to="/themes" />
+        </CardContent>
+      </Card>
+
+      {/* Legal & About */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">
+            About &amp; Legal
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          <SettingsRow icon={Compass} label="About Propatyc Broker Console" to="/intro" />
+          <SettingsRow icon={BookOpen} label="Terms & Conditions" to="/termsandcondition" />
+          <SettingsRow icon={Shield} label="Privacy Policy" to="/privacyandpolicy" />
+        </CardContent>
+      </Card>
+
+      {/* Sign out */}
+      {user?._id ? (
+        <Card className="border-destructive/25">
+          <CardContent>
+            <button
+              type="button"
+              onClick={() => setConfirmSignOut(true)}
+              className="flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-bold text-destructive transition-colors hover:bg-danger-soft/50"
+            >
+              <span className="inline-flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-danger-soft text-destructive">
+                  <LogOut className="size-4.5" aria-hidden="true" />
+                </span>
+                <span>Sign Out</span>
+              </span>
+              <ChevronRight className="size-4" aria-hidden="true" />
+            </button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <p className="pb-4 text-center text-xs text-muted-foreground">
+        Propatyc Broker — Site Visit Console · © {new Date().getFullYear()} Propatyc
+      </p>
+
+      <ConfirmDialog
+        open={confirmSignOut}
+        onOpenChange={setConfirmSignOut}
+        title="Sign out of Broker Console?"
+        description="You will stop receiving push notifications on this device until you sign back in."
+        confirmLabel="Sign out"
+        destructive
+        onConfirm={handleSignOut}
+      />
     </div>
   );
-};
+}
 
-export default Settings;
+function SettingsRow({ icon, label, to }) {
+  const Icon = icon;
+  return (
+    <Link
+      to={to}
+      className="flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+    >
+      <span className="inline-flex items-center gap-3">
+        <span className="flex size-9 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+          <Icon className="size-4.5" aria-hidden="true" />
+        </span>
+        <span>{label}</span>
+      </span>
+      <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+    </Link>
+  );
+}

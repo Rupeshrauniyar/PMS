@@ -1,140 +1,72 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, BookOpen } from "lucide-react";
 
-const Terms = () => {
-  const lastUpdated = "Jan 2026";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
+const SECTIONS = [
+  {
+    title: "1. Broker Eligibility & Conduct",
+    body: "Propatyc Broker Console is restricted to authorized brokers and superbrokers coordinating verified property site visits. Brokers agree to represent listings accurately and treat buyers and property owners respectfully.",
+  },
+  {
+    title: "2. Open Pool & Claiming Visits",
+    body: "Visit requests appear in the Open Pool only after the property owner approves them. When you claim a visit, you commit to contacting both parties promptly and scheduling a confirmed 3-way meeting.",
+  },
+  {
+    title: "3. Confidentiality of Contact Details",
+    body: "Buyer and property owner phone numbers and email addresses unlocked upon claiming a visit may be used solely for coordinating the Propatyc site visit and may not be shared or repurposed outside the platform.",
+  },
+  {
+    title: "4. Scheduling, Releases & Cancellations",
+    body: "If you cannot conduct a claimed visit, release it back to the Open Pool promptly so another broker can assist. Outcomes (completed or no-show) must be recorded truthfully after the scheduled start window.",
+  },
+  {
+    title: "5. Account Security & Termination",
+    body: "You are responsible for safeguarding your broker credentials. Propatyc may suspend or revoke broker or superbroker access for misuse of client data, repeated unannounced no-shows, or policy violations.",
+  },
+];
+
+export default function Terms() {
+  const navigate = useNavigate();
 
   return (
-    <div className="mx-auto w-full max-w-4xl  py-16">
-      <div className="border-b border-zinc-200  py-5">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Terms &amp; Conditions
-        </h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Last updated: {lastUpdated}
-        </p>
-      </div>
-
-      <div className=" py-6">
-        <div className="prose prose-zinc max-w-none">
-          <p>
-            These Terms &amp; Conditions (&ldquo;Terms&rdquo;) govern your
-            access to and use of this application and related services
-            (&ldquo;App&rdquo;). By using the App, you agree to these Terms.
-          </p>
-
-          <h2>1. Eligibility</h2>
-          <p>
-            You must be able to form a binding contract and comply with all
-            applicable laws. If you are using the App on behalf of an
-            organization, you represent that you have authority to bind that
-            organization.
-          </p>
-
-          <h2>2. Account &amp; Security</h2>
-          <ul>
-            <li>
-              You are responsible for maintaining the confidentiality of your
-              login credentials and for all activity under your account.
-            </li>
-            <li>You agree to provide accurate and up-to-date information.</li>
-          </ul>
-
-          <h2>3. Listings, Bookings &amp; Payments</h2>
-          <ul>
-            <li>
-              Property information (pricing, availability, images, descriptions)
-              is provided by owners/agents and may change.
-            </li>
-            <li>
-              Booking requests may require owner confirmation. The App may
-              record booking status (e.g., pending/confirmed/cancelled).
-            </li>
-            <li>
-              If payments are supported, fees, refunds, and payment timing will
-              depend on the specific flow shown in the App at checkout or
-              booking time.
-            </li>
-          </ul>
-
-          <h2>4. Acceptable Use</h2>
-          <p>You agree not to:</p>
-          <ul>
-            <li>Use the App for unlawful, harmful, or abusive purposes.</li>
-            <li>
-              Post or transmit false, misleading, infringing, or offensive
-              content.
-            </li>
-            <li>
-              Attempt to interfere with the App, probe its security, or access
-              data you are not authorized to access.
-            </li>
-          </ul>
-
-          <h2>5. Content &amp; Intellectual Property</h2>
-          <ul>
-            <li>
-              The App and its original content, features, and functionality are
-              owned by the App operator and are protected by applicable laws.
-            </li>
-            <li>
-              You retain ownership of content you submit, but you grant the App
-              a limited license to host, store, and display it for the purpose
-              of operating the service.
-            </li>
-          </ul>
-
-          <h2>6. Third-Party Services</h2>
-          <p>
-            The App may integrate third-party services (e.g., authentication,
-            maps, analytics, notifications, payment providers). Their terms and
-            policies may apply.
-          </p>
-
-          <h2>7. Disclaimers</h2>
-          <p>
-            The App is provided on an &ldquo;as is&rdquo; and &ldquo;as
-            available&rdquo; basis. We do not guarantee that the App will be
-            uninterrupted, secure, or error-free, or that listings will be
-            accurate or available at all times.
-          </p>
-
-          <h2>8. Limitation of Liability</h2>
-          <p>
-            To the maximum extent permitted by law, we are not liable for
-            indirect, incidental, special, consequential, or punitive damages,
-            or any loss of profits, data, or goodwill arising from your use of
-            the App.
-          </p>
-
-          <h2>9. Termination</h2>
-          <p>
-            We may suspend or terminate your access if you violate these Terms
-            or if required to do so by law. You may stop using the App at any
-            time.
-          </p>
-
-          <h2>10. Changes to These Terms</h2>
-          <p>
-            We may update these Terms from time to time. Continued use of the
-            App after changes means you accept the updated Terms.
-          </p>
-
-          <h2>11. Contact</h2>
-          <p>
-            If you have questions about these Terms, contact us through the
-            support options available in the App.
-          </p>
-        </div>
-
-        <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-          <p className="text-sm text-zinc-700">
-            By continuing to use the App, you acknowledge that you have read and
-            agree to these Terms.
+    <div className="mx-auto max-w-3xl space-y-6 py-4">
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          <span>Back</span>
+        </Button>
+        <div>
+          <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+            Terms &amp; Conditions
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Propatyc Broker Portal · Updated 2026
           </p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="size-5 text-brand" aria-hidden="true" />
+            <span>Propatyc Broker Service Agreement</span>
+          </CardTitle>
+          <CardDescription>
+            These terms govern your access to and use of the Propatyc Broker Site Visit Console.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5 text-sm leading-relaxed">
+          {SECTIONS.map((s) => (
+            <section key={s.title} className="space-y-1.5">
+              <h2 className="text-base font-bold text-foreground">{s.title}</h2>
+              <p className="text-muted-foreground">{s.body}</p>
+            </section>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default Terms;
+}

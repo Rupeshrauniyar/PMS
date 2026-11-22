@@ -1,205 +1,98 @@
-import React, { lazy, Suspense, useContext, useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useLocation,
-  useNavigate,
-  useMatch,
-} from "react-router-dom";
-import { PushNotifications } from "@capacitor/push-notifications";
-import { App as CapacitorApp } from "@capacitor/app";
+import React, { lazy, Suspense, useEffect } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
-import { AppContext } from "./contexts/AppContext";
-import Navbar from "./components/Navbar";
-import Intro from "./pages/Intro";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import Themes from "./pages/Themes";
-import PayFailure from "./pages/book/PayFailure";
-import PaySuccess from "./pages/book/PaySuccess";
-// import Pay from "./pages/book/Pay";
-const Home = lazy(() => import("@/pages/user/Home"));
+import AuthUser, { SuperbrokerRoute } from "@/middlewares/AuthUser";
+import { BrokerShell } from "@/components/broker/BrokerShell";
+import { PageTransition } from "@/components/ui/page-transition";
+import { useNativeBridge } from "@/hooks/useNativeBridge";
 
-const ChangePassword = lazy(() => import("@/pages/auth/ChangePassword"));
-const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
-const PassResetMail = lazy(() => import("@/pages/auth/PassResetMail"));
+const Dashboard = lazy(() => import("@/pages/broker/Dashboard"));
+const Pool = lazy(() => import("@/pages/broker/Pool"));
+const MyVisits = lazy(() => import("@/pages/broker/MyVisits"));
+const VisitDetail = lazy(() => import("@/pages/broker/VisitDetail"));
+const Calendar = lazy(() => import("@/pages/broker/Calendar"));
+const AllVisits = lazy(() => import("@/pages/broker/AllVisits"));
+const Notifications = lazy(() => import("@/pages/broker/Notifications"));
+
+const Profile = lazy(() => import("@/pages/account/Profile"));
 const EditProfile = lazy(() => import("@/pages/auth/EditProfile"));
+const ChangePassword = lazy(() => import("@/pages/auth/ChangePassword"));
+
 const Signin = lazy(() => import("@/pages/auth/Signin"));
 const Signup = lazy(() => import("@/pages/auth/Signup"));
-
-const Search = lazy(() => import("@/pages/user/Search"));
-// const Reel = lazy(() => import("@/pages/user/Reels"));
-const Profile = lazy(() => import("@/pages/user/Profile"));
-
-const AddProperty = lazy(() => import("@/pages/prop/AddProperty"));
-const View = lazy(() => import("@/pages/prop/View"));
-const MyProp = lazy(() => import("@/pages/prop/MyProp"));
-
-const Book = lazy(() => import("@/pages/book/Book"));
-const Bookings = lazy(() => import("@/pages/book/Bookings"));
-
-const BookedProp = lazy(() => import("@/pages/book/BookedProp"));
-const Pay = lazy(() => import("@/pages/book/Pay"));
+const PassResetMail = lazy(() => import("@/pages/auth/PassResetMail"));
+const ForgotPassword = lazy(() => import("@/pages/auth/ForgotPassword"));
 
 const Settings = lazy(() => import("@/pages/settings/Settings"));
+const Themes = lazy(() => import("@/pages/Themes"));
+const Intro = lazy(() => import("@/pages/Intro"));
+const Terms = lazy(() => import("@/pages/Terms"));
+const Privacy = lazy(() => import("@/pages/Privacy"));
 const NotFound = lazy(() => import("@/pages/settings/NotFound"));
 
-const AuthUser = lazy(() => import("@/middlewares/AuthUser"));
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[50svh] w-full items-center justify-center">
+      <Loader2 className="size-6 animate-spin text-brand" aria-hidden="true" />
+      <span className="sr-only">Loading page</span>
+    </div>
+  );
+}
 
 const Index = () => {
-  const { user } = useContext(AppContext);
-  const navigate = useNavigate();
   const location = useLocation();
+  useNativeBridge();
 
-  // useEffect(() => {
-  //   console.log("Trying FCM");
-  //   const token = localStorage.getItem("token");
-  //   console.log("your-token", token);
-  //   console.log("your-fcm-token", localStorage.getItem("fcmToken"));
-
-  //   const checkPermission = async () => {
-  //     let permStatus = await PushNotifications.checkPermissions();
-  //     if (permStatus.receive !== "granted") {
-  //       permStatus = await PushNotifications.requestPermissions();
-  //     }
-  //     return permStatus.receive === "granted";
-  //   };
-
-  //   if (token?.length > 0) {
-  //     const getFCMToken = () => {
-  //       return new Promise((resolve, reject) => {
-  //         const timeout = setTimeout(() => {
-  //           reject(new Error("FCM token timeout"));
-  //         }, 10000); // 10 second timeout
-
-  //         PushNotifications.addListener("registration", (tokenData) => {
-  //           clearTimeout(timeout);
-  //           resolve(tokenData.value);
-  //         });
-
-  //         PushNotifications.addListener("registrationError", (error) => {
-  //           console.log("FCM ERROR", error);
-  //           clearTimeout(timeout);
-  //           reject(error);
-  //         });
-
-  //         PushNotifications.register();
-  //       });
-  //     };
-  //     const tryIt = async () => {
-  //       try {
-  //         const granted = await checkPermission();
-  //         if (!granted)
-  //           return console.warn("Push notifications permission not granted");
-  //         const token = await getFCMToken();
-  //         // if (token === localStorage.getItem("fcmToken")) return;
-  //         console.log("FCM Token:", token);
-  //         // const token = "njdjndhsbbj"
-  //         localStorage.setItem("fcmToken", token);
-  //         await axios.post(
-  //           `${import.meta.env.VITE_backendUrl}/api/auth/update-fcm-token`,
-  //           {
-  //             fcmToken: token,
-  //             token: localStorage.getItem("token"),
-  //           },
-  //         );
-  //       } catch (err) {
-  //         console.error("Failed to get FCM token:", err.message);
-  //       }
-  //     };
-  //     tryIt();
-  //   } else {
-  //     console.log("No token available");
-  //   }
-  // }, [user]);
-
-  // useEffect(() => {
-  //   // Listen for hardware back button
-  //   const backHandler = CapacitorApp.addListener("backButton", (event) => {
-  //     // If not on the root, go back
-  //     if (location.pathname !== "/") {
-  //       navigate(-1);
-  //     } else {
-  //       // On root, exit the app
-  //       CapacitorApp.exitApp();
-  //     }
-  //   });
-  //   return () => {
-  //     backHandler.remove && backHandler.remove();
-  //   };
-  // }, [location.pathname, navigate]);
-
-  if (location.pathname === "/landing") {
-    return <Landing />;
-  }
-  function useScrollTop() {
-    const { pathname } = useLocation();
-    useEffect(() => {
-      window.scrollTo(0, 0);
-    }, [pathname]);
-  }
-  useScrollTop();
-  const isBookPage = useMatch("/book/:id/:price");
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
-    <>
-      <Navbar />
-      <div
-        className={`${
-          location.pathname === "/signin" ||
-          location.pathname === "/signup" ||
-          location.pathname === "/reels" ||
-          location.pathname === "/intro" ||
-          location.pathname.includes("/view") ||
-          isBookPage
-            ? "w-full min-h-screen"
-            : "xl:w-[40%] xl:ml-[33%] ml-0 px-2"
-        } min-h-screen bg-background text-foreground `}
-      >
-        <Suspense>
-          <Routes>
-            <Route element={<AuthUser />}>
-              <Route path="/add-property" element={<AddProperty />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/edit-profile" element={<EditProfile />} />
-              <Route path="/my/:id" element={<MyProp />} />
-              <Route path="/booked/:id" element={<BookedProp />} />
-              <Route path="/bookings" element={<Bookings />} />
-              <Route path="/pay/:id/:price" element={<Pay />} />
-              <Route path="/payment-success" element={<PaySuccess />} />
-              <Route path="/payment-failure" element={<PayFailure />} />
-              <Route path="/change-password" element={<ChangePassword />} />
-            </Route>
-            <Route path="/intro" element={<Intro />} />
-            <Route path="/themes" element={<Themes />} />
-            <Route path="/termsandcondition" element={<Terms />} />
-            <Route path="/privacyandpolicy" element={<Privacy />} />
-            <Route path="/themes" element={<Themes />} />
-            <Route path="/" element={<Home />} />
+    <BrokerShell>
+      <Suspense fallback={<RouteFallback />}>
+        <AnimatePresence mode="wait" initial={false}>
+          <PageTransition key={location.pathname}>
+            <Routes location={location}>
+              {/* Protected Broker Console Routes */}
+              <Route element={<AuthUser />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/pool" element={<Pool />} />
+                <Route path="/visits" element={<MyVisits />} />
+                <Route path="/visits/:id" element={<VisitDetail />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route
+                  path="/all"
+                  element={
+                    <SuperbrokerRoute>
+                      <AllVisits />
+                    </SuperbrokerRoute>
+                  }
+                />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/edit-profile" element={<EditProfile />} />
+                <Route path="/change-password" element={<ChangePassword />} />
+              </Route>
 
-            {/* <Route
-              path="/reels"
-              element={<Reel />}
-            /> */}
+              {/* Auth & Public Portal Routes */}
+              <Route path="/signin" element={<Signin />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/pass-reset-mail" element={<PassResetMail />} />
+              <Route path="/forgot-password/:token" element={<ForgotPassword />} />
 
-            <Route path="/search" element={<Search />} />
-            <Route
-              path="/forgot-password/:token"
-              element={<ForgotPassword />}
-            />
-            <Route path="/pass-reset-mail" element={<PassResetMail />} />
-            <Route path="/view/:id" element={<View />} />
-            <Route path="/book/:id/:price" element={<Book />} />
-
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-            <Route path="/signin" element={<Signin />} />
-            <Route path="/signup" element={<Signup />} />
-          </Routes>
-        </Suspense>
-      </div>
-    </>
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/themes" element={<Themes />} />
+              <Route path="/intro" element={<Intro />} />
+              <Route path="/termsandcondition" element={<Terms />} />
+              <Route path="/privacyandpolicy" element={<Privacy />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PageTransition>
+        </AnimatePresence>
+      </Suspense>
+    </BrokerShell>
   );
 };
 

@@ -1,6 +1,6 @@
 {
-  "name": "Propatyc",
-  "short_name": "Propatyc",
+  "name": "Propatyc Broker — Site Visit Console",
+  "short_name": "Propatyc Broker",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -15,7 +15,7 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#18181b",
+  "background_color": "#fafaf9",
   "display": "standalone"
 }

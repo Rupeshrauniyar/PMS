@@ -13,4 +13,23 @@ const api = axios.create({
   withCredentials: true,
 });
 
+/**
+ * Broadcast session expiry so the auth context can sign the broker out.
+ * `checkAuth` / sign-in endpoints are excluded because a 401 there is an
+ * expected answer, not an expired session.
+ */
+export const UNAUTHORIZED_EVENT = "broker:unauthorized";
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const status = err?.response?.status;
+    const url = err?.config?.url || "";
+    if (status === 401 && !/\/auth\/(checkAuth|signin|signup|signinWithGoogle|signout)/.test(url)) {
+      window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
+    }
+    return Promise.reject(err);
+  },
+);
+
 export default api;

@@ -1,7 +1,15 @@
 import { createRoot } from "react-dom/client";
+import { Capacitor } from "@capacitor/core";
+import { inject } from "@vercel/analytics";
 import "./index.css";
 import App from "./App.jsx";
-// import { inject } from "@vercel/analytics";
+
 createRoot(document.getElementById("root")).render(<App />);
-// 👇 Initialize Vercel Analytics
-// inject();
+
+if (!Capacitor.isNativePlatform()) {
+  try {
+    inject();
+  } catch {
+    // Ignore analytics errors in restricted browsers/environments
+  }
+}

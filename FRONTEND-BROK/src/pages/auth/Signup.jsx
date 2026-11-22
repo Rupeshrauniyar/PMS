@@ -1,404 +1,277 @@
-import {
-  LocationEdit,
-  Lock,
-  Mail,
-  Phone,
-  User,
-  Eye,
-  EyeClosed,
-  Loader2,
-} from "lucide-react";
-import React, { useState, useContext } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeClosed, Lock, Mail, Phone, User } from "lucide-react";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 
-import { AppContext } from "../contexts/AppContext";
-import api from "../../api/client";
+import { authApi } from "@/api/broker";
+import { useApp } from "@/contexts/AppContext";
+import { auth } from "@/contexts/Firebase";
+import { getErrorMessage } from "@/lib/errors";
+import { Button } from "@/components/ui/button";
+import { Field, Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
+import { AuthLayout, GoogleMark } from "@/components/broker/AuthLayout";
 
-import AlertBox from "../components/AlertBox";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../contexts/Firebase";
-// import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
-// GoogleAuth.initialize({
-//   clientId:
-//     "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
-//   scopes: ["profile", "email"],
-//   grantOfflineAccess: true,
-// });
-const Signup = (props) => {
+export default function Signup(props) {
+  const { user, setUser } = useApp();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const rawFrom = props?.from || location?.state?.from || "/";
+  const from = typeof rawFrom === "string" ? rawFrom : rawFrom?.pathname || "/";
+
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { setUser } = useContext(AppContext);
-  const navigate = useNavigate();
-  const [errors, setErrors] = useState({});
-  const [showPass, setShowPass] = useState(false);
-  const [backendError, setBackendError] = useState(null);
-  const location = useLocation();
-  const from = props?.from ? props.from : location?.state?.from || "/";
-
-  const handleGoogleAuth = async () => {
-    const provider = new GoogleAuthProvider();
-    const auth = getAuth();
-    setGoogleLoading(true);
-    signInWithPopup(auth, provider)
-      .then(async (result) => {
-        await api
-          .post("/api/broker/auth/signinWithGoogle", {
-            email: result.user.providerData[0].email,
-            uuid: result.user.providerData[0].uid,
-            username: result.user.providerData[0].displayName,
-            pp: result.user.providerData[0].photoURL,
-            type: "google",
-          })
-          .then((res) => {
-            setGoogleLoading(false);
-            setUser(res.data.user);
-            localStorage.setItem("user", JSON.stringify(res.data.user));
-            navigate(from);
-          })
-          .catch((err) => {
-            setGoogleLoading(false);
-            setBackendError("Google sign-up failed.");
-            // navigate("/signup");
-          });
-      })
-      .catch((error) => {
-        setGoogleLoading(false);
-        setBackendError("Google sign-up failed.");
-      });
-  };
-
-  // const handleGoogleAuth = async () => {
-  //   try {
-  //     setGoogleLoading(true);
-  //     await GoogleAuth.signOut();
-
-  //     const data = await GoogleAuth.signIn({});
-  //     if (!data.idToken) {
-  //       setGoogleLoading(false);
-  //       setBackendError("Signin Failed due to token");
-  //     }
-
-  //     await axios
-  //       .post(`${import.meta.env.VITE_backendUrl}/api/auth/signinWithGoogle`, {
-  //         email: data.email,
-  //         uuid: data.id,
-  //         username: data.displayName,
-  //         pp: data.imageUrl,
-  //         type: "google",
-  //       })
-  //       .then((res) => {
-  //         setGoogleLoading(false);
-
-  //         setUser(res.data.user);
-  //         localStorage.setItem("token", res.data.token);
-  //         localStorage.setItem("user", JSON.stringify(res.data.user));
-  //         navigate("/");
-  //       })
-  //       .catch((err) => {
-  //         console.log(err);
-  //         alert(err.message);
-  //         setGoogleLoading(false);
-  //         setBackendError("Google sign-up failed.");
-
-  //         // alert(err);
-  //         // alert("Signin failed");
-  //       });
-  //   } catch (err) {
-  //     setGoogleLoading(false);
-  //     setBackendError("Google sign-up failed.");
-  //   }
-  // };
-
-  const [fields, setFields] = useState([
-    {
-      name: "Email",
-      type: "text",
-      placeholder: "you@example.com",
-      icon: <Mail size={20} />,
-    },
-    {
-      name: "Username",
-      type: "text",
-      placeholder: "John Doe",
-      icon: <User size={20} />,
-    },
-    // {
-    //   name: "Phone",
-    //   type: "number",
-    //   placeholder: "+977 9812345678",
-    //   icon: <Phone size={20} />,
-    // },
-
-    // {
-    //   name: "Address",
-    //   type: "text",
-    //   placeholder: "Street 1",
-    //   icon: <LocationEdit size={20} />,
-    // },
-    {
-      name: "Password",
-      type: "password",
-      placeholder: "********",
-      icon: <Lock size={20} />,
-    },
-  ]);
-  const [fieldData, setFieldData] = useState([]);
+  if (user?._id) {
+    return <Navigate to={from} replace />;
+  }
 
   const validate = () => {
-    const newErrors = {};
-    if (!fieldData.Email) {
-      newErrors.Email = "Email is required";
-    } else if (!fieldData.Email.trim()) {
-      newErrors.Email = "Email cannot be empty";
-    } else if (!/^[\w.-]+@[\w.-]+\.[A-Z]{2,4}$/i.test(fieldData.Email.trim())) {
-      newErrors.Email = "Invalid email address";
+    const next = {};
+    if (!username.trim()) {
+      next.username = "Full name is required.";
     }
-    if (!fieldData.Username) {
-      newErrors.Username = "Username is required";
-    } else if (!fieldData.Username.trim()) {
-      newErrors.Username = "Username cannot be empty";
+    if (!email.trim()) {
+      next.email = "Email address is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      next.email = "Enter a valid email address.";
     }
-    // if (!fieldData.Phone) {
-    //   newErrors.Phone = "Phone number is required";
-    // } else if (!/^\+?[0-9]{10,14}$/.test(fieldData.Phone)) {
-    //   newErrors.Phone = "Invalid phone number";
-    // }
-    // if (!fieldData.Address) {
-    //   newErrors.Address = "Address is required";
-    // }
-    if (!fieldData.Password) {
-      newErrors.Password = "Password is required";
-    } else if (!fieldData.Password.trim()) {
-      newErrors.Password = "Password cannot be empty";
-    } else if (fieldData.Password.length < 6) {
-      newErrors.Password = "Password must be at least 6 characters long";
+    if (phone.trim() && phone.replace(/\D/g, "").length < 10) {
+      next.phone = "Enter a valid 10+ digit phone number.";
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (!password) {
+      next.password = "Password is required.";
+    } else if (password.length < 6) {
+      next.password = "Password must be at least 6 characters.";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) {
-      return;
-    }
+    if (!validate() || loading) return;
+
     setLoading(true);
-    await api
-      .post("/api/broker/auth/signup", {
-        email: fieldData.Email,
-        password: fieldData.Password,
-        username: fieldData.Username,
-        address: fieldData.Address,
-        phone: fieldData.Phone,
-      })
-      .then((res) => {
-        if (res.status === 200) {
-          setLoading(false);
-          setUser(res.data.user);
-          localStorage.setItem("user", JSON.stringify(res.data.user));
-          navigate(from);
-        } else {
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setLoading(false);
-        setBackendError(err?.response?.data?.message || "Sign-up failed.");
-        // navigate("/signup");
+    try {
+      const res = await authApi.signup({
+        username: username.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        password,
       });
+      if (res?.user) {
+        setUser(res.user);
+        toast({
+          variant: "success",
+          title: "Broker account created!",
+          description: "Welcome to Propatyc Site Visit Console.",
+        });
+        navigate(from, { replace: true });
+      }
+    } catch (err) {
+      toast({
+        variant: "error",
+        title: "Sign-up failed",
+        description: getErrorMessage(err, "Couldn't create broker account."),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleGoogleAuth = async () => {
+    if (googleLoading || loading) return;
+    const provider = new GoogleAuthProvider();
+    setGoogleLoading(true);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const profile = result?.user?.providerData?.[0] || result?.user;
+      const res = await authApi.signinWithGoogle({
+        email: profile?.email,
+        uuid: profile?.uid,
+        username: profile?.displayName,
+        pp: profile?.photoURL,
+      });
+      if (res?.user) {
+        setUser(res.user);
+        toast({
+          variant: "success",
+          title: `Welcome, ${res.user.username || "Broker"}!`,
+        });
+        navigate(from, { replace: true });
+      }
+    } catch (err) {
+      toast({
+        variant: "error",
+        title: "Google sign-up failed",
+        description: getErrorMessage(err, "Couldn't complete Google authentication."),
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
-    <>
-      <div className="w-full h-full flex items-center justify-center  xl:px-4 px:2">
-        <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
-          {/* {console.log(from)} */}
-
-          <div className="mb-6 text-center">
-            <h1 className="text-2xl font-semibold text-zinc-900">
-              Welcome back
-            </h1>
-            <p className="text-sm text-zinc-500 mt-1">Sign up to continue</p>
-          </div>
-          {backendError && (
-            <AlertBox
-              message={backendError}
-              type="error"
-              onClose={() => setBackendError(null)}
-            />
-          )}
-          <form
-            onSubmit={handleSubmit}
-            noValidate
-          >
-            <div className="space-y-2">
-              {fields.map((field, index) => (
-                <div
-                  className="w-full"
-                  key={index}
-                >
-                  <label
-                    htmlFor={field.name}
-                    className="flex items-center text-sm font-medium text-zinc-700"
-                  >
-                    {field.name}
-                    {errors[field.name] && (
-                      <p className="text-red-500 text-xs ml-1 font-medium ">
-                        ({errors[field.name]})
-                      </p>
-                    )}
-                  </label>
-                  <div className="relative mt-1">
-                    <span className="absolute z-10 left-4 top-1/2 -translate-y-1/2  text-gray-400 pointer-events-none">
-                      {field.icon}
-                    </span>
-
-                    <input
-                      id={field.name}
-                      name={field.name}
-                      type={
-                        field.name === "Password"
-                          ? showPass
-                            ? "text"
-                            : "password"
-                          : field.type
-                      }
-                      autoComplete={field.type}
-                      onChange={(e) => {
-                        if (e.target.value.trim()) {
-                          setFieldData((prev) => ({
-                            ...prev,
-                            [field.name]: e.target.value,
-                          }));
-                          setErrors((prev) => ({
-                            ...prev,
-                            [field.name]: "",
-                          }));
-                        } else {
-                          setFieldData((prev) => ({
-                            ...prev,
-                            [field.name]: "",
-                          }));
-                        }
-                      }}
-                      className={`w-full py-3 pl-12 pr-4 rounded-xl border ${
-                        errors[field.name]
-                          ? "border-red-500"
-                          : "border-gray-200"
-                      } bg-white/80 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-zinc-200 focus:outline-none transition-all`}
-                      placeholder={field.placeholder}
-                    />
-                    {field.name === "Password" && (
-                      <>
-                        {showPass ? (
-                          <Eye
-                            onClick={() => setShowPass(false)}
-                            className="absolute z-20 right-4 top-1/2 -translate-y-1/2 text-gray-400 "
-                            size={20}
-                          />
-                        ) : (
-                          <EyeClosed
-                            onClick={() => setShowPass(true)}
-                            className="absolute z-20  top-1/2 right-4 -translate-y-1/2 text-gray-400 "
-                            size={20}
-                          />
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              <button
-                disabled={loading ? true : false}
-                type="submit"
-                className={`w-full ${
-                  loading ? "bg-zinc-600" : "bg-zinc-900"
-                } hover:bg-zinc-800 text-white font-medium px-6 py-3 rounded-xl transition-colors flex items-center justify-center`}
-              >
-                {loading ? (
-                  <Loader2
-                    size={18}
-                    className="animate-spin ml-1"
-                  />
-                ) : (
-                  <>Sign up</>
-                )}
-              </button>
-
-              <div className="flex items-center gap-3 my-2">
-                <div className="h-px bg-zinc-200 w-full"></div>
-                <span className="text-xs text-zinc-500">or</span>
-                <div className="h-px bg-zinc-200 w-full"></div>
-              </div>
-            </div>
-          </form>
-
+    <AuthLayout
+      title="Join as a Broker"
+      subtitle="Propatyc Broker Portal — Coordinate verified property visits."
+      footer={
+        <>
+          <span>Already registered as a broker? </span>
           <button
-            disabled={googleLoading ? true : false}
-            onClick={handleGoogleAuth}
-            className={`w-full border ${
-              googleLoading ? "bg-zinc-200" : ""
-            } border-zinc-200 rounded-xl px-6 py-3 hover:bg-zinc-50 focus:bg-zinc-50 transition-colors flex items-center justify-center gap-3`}
+            type="button"
+            onClick={() => navigate("/signin", { state: { from } })}
+            className="font-bold text-brand hover:underline"
           >
-            {googleLoading ? (
-              <Loader2
-                size={18}
-                className="animate-spin ml-1"
-              />
-            ) : (
-              <>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 18 18"
-                  aria-hidden="true"
-                >
-                  <g
-                    id="logo_googleg_48dp"
-                    transform="translate(0, 0)"
-                  >
-                    <path
-                      d="M17.64,9.20454545 C17.64,8.56636364 17.5827273,7.95272727 17.4763636,7.36363636 L9,7.36363636 L9,10.845 L13.8436364,10.845 C13.635,11.97 13.0009091,12.9231818 12.0477273,13.5613636 L12.0477273,15.8195455 L14.9563636,15.8195455 C16.6581818,14.2527273 17.64,11.9454545 17.64,9.20454545 L17.64,9.20454545 Z"
-                      fill="#4285F4"
-                    ></path>
-                    <path
-                      d="M9,18 C11.43,18 13.4672727,17.1940909 14.9563636,15.8195455 L12.0477273,13.5613636 C11.2418182,14.1013636 10.2109091,14.4204545 9,14.4204545 C6.65590909,14.4204545 4.67181818,12.8372727 3.96409091,10.71 L0.957272727,10.71 L0.957272727,13.0418182 C2.43818182,15.9831818 5.48181818,18 9,18 L9,18 Z"
-                      fill="#34A853"
-                    ></path>
-                    <path
-                      d="M3.96409091,10.71 C3.78409091,10.17 3.68181818,9.59318182 3.68181818,9 C3.68181818,8.40681818 3.78409091,7.83 3.96409091,7.29 L3.96409091,4.95818182 L0.957272727,4.95818182 C0.347727273,6.17318182 0,7.54772727 0,9 C0,10.4522727 0.347727273,11.8268182 0.957272727,13.0418182 L3.96409091,10.71 L3.96409091,10.71 Z"
-                      fill="#FBBC05"
-                    ></path>
-                    <path
-                      d="M9,3.57954545 C10.3213636,3.57954545 11.5077273,4.03363636 12.4404545,4.92545455 L15.0218182,2.34409091 C13.4631818,0.891818182 11.4259091,0 9,0 C5.48181818,0 2.43818182,2.01681818 0.957272727,4.95818182 L3.96409091,7.29 C4.67181818,5.16272727 6.65590909,3.57954545 9,3.57954545 L9,3.57954545 Z"
-                      fill="#EA4335"
-                    ></path>
-                  </g>
-                </svg>
-                <span className="text-sm font-medium text-zinc-700 flex items-center justify-center">
-                  Continue with Google
-                </span>
-              </>
-            )}
+            Sign in
           </button>
-
-          <div className="text-center text-sm text-zinc-600">
-            <span>Already have an account? </span>
-            <button
-              onClick={() => {
-                navigate("/signin", { state: { from } });
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <Field label="Full Name" required error={errors.username}>
+          <div className="relative">
+            <User
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              type="text"
+              autoComplete="name"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setErrors((p) => ({ ...p, username: undefined }));
               }}
-              className="text-zinc-900 font-medium hover:underline"
+              placeholder="Aarav Sharma"
+              className="pl-10"
+            />
+          </div>
+        </Field>
+
+        <Field label="Work Email" required error={errors.email}>
+          <div className="relative">
+            <Mail
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setErrors((p) => ({ ...p, email: undefined }));
+              }}
+              placeholder="broker@propatyc.com"
+              className="pl-10"
+            />
+          </div>
+        </Field>
+
+        <Field
+          label="Phone Number"
+          error={errors.phone}
+          hint="Shared with buyers & owners once you claim a visit"
+        >
+          <div className="relative">
+            <Phone
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              type="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                setErrors((p) => ({ ...p, phone: undefined }));
+              }}
+              placeholder="+977 9812345678"
+              className="pl-10"
+            />
+          </div>
+        </Field>
+
+        <Field label="Password" required error={errors.password}>
+          <div className="relative">
+            <Lock
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              type={showPass ? "text" : "password"}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setErrors((p) => ({ ...p, password: undefined }));
+              }}
+              placeholder="Minimum 6 characters"
+              className="pl-10 pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass((s) => !s)}
+              aria-label={showPass ? "Hide password" : "Show password"}
+              className="absolute right-2.5 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
             >
-              Signin
+              {showPass ? (
+                <Eye className="size-4" aria-hidden="true" />
+              ) : (
+                <EyeClosed className="size-4" aria-hidden="true" />
+              )}
             </button>
           </div>
-        </div>
-      </div>
-    </>
-  );
-};
+        </Field>
 
-export default Signup;
+        <p className="text-xs text-muted-foreground">
+          By creating an account, you agree to our{" "}
+          <Link to="/termsandcondition" className="font-semibold text-foreground underline">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link to="/privacyandpolicy" className="font-semibold text-foreground underline">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+
+        <Button
+          type="submit"
+          variant="brand"
+          loading={loading}
+          className="w-full"
+        >
+          Create Broker Account
+        </Button>
+
+        <div className="flex items-center gap-3 py-1">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs font-medium text-muted-foreground">or</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          loading={googleLoading}
+          onClick={handleGoogleAuth}
+          className="w-full"
+        >
+          <GoogleMark />
+          <span>Continue with Google</span>
+        </Button>
+      </form>
+    </AuthLayout>
+  );
+}

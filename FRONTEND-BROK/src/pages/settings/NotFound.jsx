@@ -1,24 +1,29 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { Compass } from "lucide-react";
 
-const NotFound = () => {
+import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+
+export default function NotFound() {
   return (
-    <div className="w-full min-h-screen flex items-center justify-center xl:bg-gradient-to-br from-zinc-50 to-zinc-100 xl:px-4 px:2">
-      <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8 text-center">
-        <h1 className="text-6xl font-bold text-zinc-900">404</h1>
-        <p className="text-xl text-zinc-700 mt-4">Page Not Found</p>
-        <p className="text-sm text-zinc-500 mt-2">
-          The page you are looking for does not exist.
-        </p>
-        <Link
-          to="/"
-          className="mt-8 inline-block bg-zinc-900 hover:bg-zinc-800 text-white font-medium px-6 py-3 rounded-xl transition-colors"
-        >
-          Go to Home
-        </Link>
-      </div>
+    <div className="flex min-h-[65svh] items-center justify-center py-10">
+      <EmptyState
+        icon={Compass}
+        title="404 — Page not found"
+        description="The broker console screen you requested doesn't exist or may have moved."
+        action={
+          <>
+            <Button variant="brand" asChild>
+              <Link to="/">Back to Dashboard</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/pool">Open Pool</Link>
+            </Button>
+          </>
+        }
+        className="w-full max-w-md"
+      />
     </div>
   );
-};
-
-export default NotFound;
+}

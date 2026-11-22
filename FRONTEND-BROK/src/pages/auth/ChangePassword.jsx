@@ -1,201 +1,188 @@
-import React, { useContext, useState } from "react";
-import { AppContext } from "../../contexts/AppContext";
-import { Loader2, Eye, EyeClosed, Lock } from "lucide-react";
-import AlertBox from "../../components/AlertBox";
-import api from "../../api/client";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Eye, EyeClosed, Lock, ShieldAlert } from "lucide-react";
 
-const EditProfile = () => {
-  const [errors, setErrors] = useState([]);
-  const [backendError, setBackendError] = useState(null);
-  const [success, setSuccess] = useState(null);
+import { authApi } from "@/api/broker";
+import { useApp } from "@/contexts/AppContext";
+import { getErrorMessage } from "@/lib/errors";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Field, Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
+
+export default function ChangePassword() {
+  const { user } = useApp();
+  const { toast } = useToast();
   const navigate = useNavigate();
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const { user, setUser } = useContext(AppContext);
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [fields] = useState([
-    {
-      name: "Current Password",
-      type: "password",
-      placeholder: "********",
-      icon: <Lock size={20} />,
-    },
-    {
-      name: "New Password",
-      type: "password",
-      placeholder: "********",
-      icon: <Lock size={20} />,
-    },
-  ]);
-  const [fieldData, setFieldData] = useState([]);
 
-  const validate = () => {
-    const newErrors = {};
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  const handleSubmit = async (e) => {
-    try {
-      e.preventDefault();
-      if (!validate()) {
-        return;
-      }
-
-      setLoading(true);
-      const res = await api.post("/api/broker/auth/edit-profile", {
-        currentPassword: fieldData["Current Password"],
-        newPassword: fieldData["New Password"],
-      });
-      if (res.status === 200) {
-        setLoading(false);
-        setSuccess("Password changed Successfully.");
-      } else {
-        setLoading(false);
-      }
-    } catch (err) {
-      setLoading(false);
-      setBackendError(err.response.data.message);
-    }
-  };
-  if (user?.uuid)
+  if (user?.uuid) {
     return (
-      <div className="flex flex-col items-center justify-center w-full h-screen">
-        <h2 className="text-xl font-bold ">Your password cannot be changed</h2>
-        <p className="text-center">Since you are signed in with Google account, you can't change your password :(</p>
+      <div className="mx-auto max-w-xl space-y-4">
+        <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          <span>Back</span>
+        </Button>
+        <EmptyState
+          icon={ShieldAlert}
+          title="Managed by Google Sign-In"
+          description="Your broker account authenticates via Google, so password management is handled directly in your Google Account."
+        />
       </div>
     );
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const next = {};
+    if (!currentPassword) next.currentPassword = "Enter your current password.";
+    if (!newPassword || newPassword.length < 6) {
+      next.newPassword = "New password must be at least 6 characters.";
+    }
+    if (confirmPassword !== newPassword) {
+      next.confirmPassword = "Passwords do not match.";
+    }
+    setErrors(next);
+    if (Object.keys(next).length > 0 || loading) return;
+
+    setLoading(true);
+    try {
+      await authApi.changePassword({ currentPassword, newPassword });
+      toast({
+        variant: "success",
+        title: "Password changed successfully",
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      navigate("/profile");
+    } catch (err) {
+      toast({
+        variant: "error",
+        title: "Couldn't change password",
+        description: getErrorMessage(err),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="w-full h-screen pt-20">
-      {/* Main Content */}
-      <div className="max-w-2xl mx-auto flex flex-col items-center justify-center h-full">
-        {/* Alert Messages */}
-        {backendError && (
-          <div className="px-4 pt-4">
-            <AlertBox
-              message={backendError}
-              type="error"
-              onClose={() => setBackendError(null)}
-            />
-          </div>
-        )}
-        {success && (
-          <div className="px-4 pt-4">
-            <AlertBox
-              message={success}
-              type="success"
-              onClose={() => setSuccess(null)}
-            />
-          </div>
-        )}
-        {/* {console.log(fieldData["Current Password"])} */}
-
-        {/* Edit Form */}
-        <div className="w-full py-6 border-b border-zinc-200">
-          <h2 className="text-3xl font-bold ">Change your Password</h2>
-
-          <form
-            onSubmit={(e) => handleSubmit(e)}
-            className="space-y-4"
-          >
-            {fields.map((field, i) => (
-              <div
-                className="relative "
-                key={i}
-              >
-                <h4>{field.name}</h4>
-                <span className="absolute z-10 left-4 top-1/2 -translate-y-1/2 mt-2  text-gray-400 pointer-events-none">
-                  {field.icon}
-                </span>
-
-                <input
-                  id={field.name}
-                  name={field.name}
-                  type={showPass ? "text" : "password"}
-                  value={
-                    fieldData[field?.name]?.length > 0
-                      ? fieldData[field.name]
-                      : ""
-                  }
-                  autoComplete={field.type}
-                  onChange={(e) => {
-                    if (e.target.value.trim()) {
-                      setFieldData((prev) => ({
-                        ...prev,
-                        [field.name]: e.target.value,
-                      }));
-                      setErrors((prev) => ({
-                        ...prev,
-                        [field.name]: "",
-                      }));
-                    } else {
-                      setFieldData((prev) => ({
-                        ...prev,
-                        [field.name]: "",
-                      }));
-                    }
-                  }}
-                  className={`w-full py-3 pl-12 pr-4 rounded-xl border ${
-                    errors[field.name] ? "border-red-500" : "border-gray-200"
-                  } bg-white/80 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-zinc-200 focus:outline-none transition-all`}
-                  placeholder={field.placeholder}
-                />
-
-                {showPass ? (
-                  <Eye
-                    onClick={() => setShowPass(false)}
-                    className="absolute z-20 right-4 top-1/2 -translate-y-1/2 mt-2 text-gray-400 "
-                    size={20}
-                  />
-                ) : (
-                  <EyeClosed
-                    onClick={() => setShowPass(true)}
-                    className="absolute z-20  top-1/2 right-4 -translate-y-1/2 mt-2 text-gray-400 "
-                    size={20}
-                  />
-                )}
-              </div>
-            ))}
-          </form>
-        </div>
-
-        {/* Action Buttons */}
-        <div className=" py-4 bg-white border-t border-zinc-200 sticky bottom-0 md:static">
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="flex-1 h-10 px-4 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              disabled={loading}
-              type="submit"
-              onClick={handleSubmit}
-              className={`w-full  cursor-pointer h-10 px-4 text-sm font-medium text-white rounded-lg transition-all flex items-center justify-center gap-2 ${
-                loading
-                  ? "bg-zinc-400 cursor-not-allowed"
-                  : "bg-black hover:bg-zinc-800 active:scale-[0.98]"
-              }`}
-            >
-              {loading ? (
-                <>
-                  <Loader2
-                    size={16}
-                    className="animate-spin"
-                  />
-                  Saving...
-                </>
-              ) : (
-                "Save"
-              )}
-            </button>
-          </div>
-        </div>
+    <div className="mx-auto max-w-xl space-y-6">
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          <span>Back</span>
+        </Button>
+        <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">
+          Change Password
+        </h1>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Update Broker Password</CardTitle>
+          <CardDescription>
+            Keep your Propatyc Broker Console credentials secure.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <Field label="Current Password" required error={errors.currentPassword}>
+              <div className="relative">
+                <Lock
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  type={showPass ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(e) => {
+                    setCurrentPassword(e.target.value);
+                    setErrors((p) => ({ ...p, currentPassword: undefined }));
+                  }}
+                  placeholder="••••••••"
+                  className="pl-10 pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass((s) => !s)}
+                  aria-label={showPass ? "Hide passwords" : "Show passwords"}
+                  className="absolute right-2.5 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  {showPass ? (
+                    <Eye className="size-4" aria-hidden="true" />
+                  ) : (
+                    <EyeClosed className="size-4" aria-hidden="true" />
+                  )}
+                </button>
+              </div>
+            </Field>
+
+            <Field label="New Password" required error={errors.newPassword}>
+              <div className="relative">
+                <Lock
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  type={showPass ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setErrors((p) => ({ ...p, newPassword: undefined }));
+                  }}
+                  placeholder="At least 6 characters"
+                  className="pl-10"
+                />
+              </div>
+            </Field>
+
+            <Field label="Confirm New Password" required error={errors.confirmPassword}>
+              <div className="relative">
+                <Lock
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  type={showPass ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setErrors((p) => ({ ...p, confirmPassword: undefined }));
+                  }}
+                  placeholder="Repeat new password"
+                  className="pl-10"
+                />
+              </div>
+            </Field>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(-1)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="brand" loading={loading}>
+                Update Password
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default EditProfile;
+}

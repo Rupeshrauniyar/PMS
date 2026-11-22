@@ -2,30 +2,32 @@ import React, { useEffect } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { SplashScreen } from "@capacitor/splash-screen";
-import Index from "./Index";
-import Navbar from "./components/Navbar";
+
 import { AppProvider } from "./contexts/AppContext";
-// import { Analytics } from "@vercel/analytics/next";
+import { LiveProvider } from "./contexts/LiveContext";
+import { ToastProvider } from "./components/ui/toast";
+import { applyThemePreference } from "./lib/theme";
+import Index from "./Index";
+
 const App = () => {
   useEffect(() => {
-    // Apply persisted theme ASAP
-    const savedTheme = localStorage.getItem("theme");
-    const theme = savedTheme === "dark" ? "dark" : "light";
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    applyThemePreference();
 
     if (Capacitor.isNativePlatform()) {
-      SplashScreen.hide();
+      SplashScreen.hide().catch(() => {});
     }
   }, []);
 
   return (
-    <div className="w-full overflow-x-hidden bg-background text-foreground">
-      {/* FCM:{FCM} */}
-      {/* <Analytics /> */}
+    <div className="min-h-svh w-full bg-background text-foreground">
       <AppProvider>
-        <Router>
-          <Index />
-        </Router>
+        <ToastProvider withTabbar>
+          <Router>
+            <LiveProvider>
+              <Index />
+            </LiveProvider>
+          </Router>
+        </ToastProvider>
       </AppProvider>
     </div>
   );

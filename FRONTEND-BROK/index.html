@@ -4,165 +4,86 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
+    <meta name="color-scheme" content="light dark" />
     <meta
       name="google-site-verification"
       content="xWX5to9dHEfGfWIhL3Mkb9dZtmWR0SrE9AIQEzW177A"
     />
-    <!-- Title (keep under 60 chars for SEO) -->
-    <title>Propatyc BROKER- Deal with Properties Online</title>
+    <title>Propatyc Broker — Site Visit Console</title>
 
-    <!-- Description (150–160 chars for search engines) -->
     <meta
       name="description"
-      content="Propatyc is a web app for buying, selling, and renting properties online, making real estate transactions easy and efficient."
+      content="Propatyc Broker Console — claim owner-approved property visit requests, coordinate 3-way site visits, and manage schedules in real time."
     />
     <meta
       name="keywords"
-      content="Propatyc, Property Management System, Real Estate, Buy Property, Sell Property, Rent Property, Online Property Portal, Web App"
+      content="Propatyc Broker, Site Visit Console, Real Estate Broker Portal, Property Visit Scheduling"
     />
-    <meta
-      name="author"
-      content="Propatyc Team"
-    />
+    <meta name="author" content="Propatyc Team" />
 
     <!-- Open Graph -->
     <meta
       property="og:title"
-      content="Propatyc - Property Management System"
+      content="Propatyc Broker — Site Visit Console"
     />
     <meta
       property="og:description"
-      content="Buy, sell, and rent properties online easily with Propatyc — your all-in-one property management web app."
+      content="Coordinate verified 3-way property visits between buyers and owners with Propatyc Broker."
     />
-    <meta
-      property="og:image"
-      content="/Propatyc-og-image.png"
-    />
-    <meta
-      property="og:url"
-      content="https://Propatycnepal.vercel.app"
-    />
-    <meta
-      property="og:type"
-      content="website"
-    />
+    <meta property="og:image" content="/web-app-manifest-512x512.png" />
+    <meta property="og:type" content="website" />
 
     <!-- Twitter Card -->
-    <meta
-      name="twitter:card"
-      content="summary_large_image"
-    />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="Propatyc - Property Management System"
+      content="Propatyc Broker — Site Visit Console"
     />
     <meta
       name="twitter:description"
-      content="Explore Propatyc, the web app that allows you to buy, sell, and rent properties online with ease."
+      content="Coordinate verified 3-way property visits between buyers and owners with Propatyc Broker."
     />
-    <meta
-      name="twitter:image"
-      content="/Propatyc-og-image.png"
-    />
+    <meta name="twitter:image" content="/web-app-manifest-512x512.png" />
 
     <!-- Icons -->
     <link
       rel="icon"
       type="image/png"
-      href="/Propatyc-favicon.png"
+      href="/favicon-96x96.png"
       sizes="96x96"
     />
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="/favicon.svg"
-    />
-    <link
-      rel="shortcut icon"
-      href="/favicon.ico"
-    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
     <link
       rel="apple-touch-icon"
       sizes="180x180"
       href="/apple-touch-icon.png"
     />
-    <link
-      rel="manifest"
-      href="/site.webmanifest"
-    />
+    <link rel="manifest" href="/site.webmanifest" />
 
-    <meta
-      name="theme-color"
-      content="#0f172a"
-    />
+    <meta name="theme-color" content="#18181b" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
 
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Propatyc - Property Management System",
-        "url": "https://Propatycnepal.vercel.app",
-        "description": "Propatyc is a web app that enables users to buy, sell, and rent properties online, simplifying real estate transactions.",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web",
-        "sameAs": [
-          "https://facebook.com/yourapp",
-          "https://twitter.com/yourapp",
-          "https://linkedin.com/company/yourapp"
-        ],
-        "image": "https://Propatycnepal.vercel.app/Propatyc-og-image.png"
-      }
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var prefersDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var isDark =
+            saved === "dark" || ((saved === "system" || !saved) && prefersDark);
+          document.documentElement.classList.toggle("dark", isDark);
+          document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+        } catch (e) {}
+      })();
     </script>
   </head>
 
   <body>
     <div id="root"></div>
-
-    <!-- <script>
-      (function () {
-        const appLink = "Propatycnepal://open";
-        const fallbackLink = window.location.pathname; // or your deployed site
-        try {
-          
-          const isMobile = /Android|iPhone|iPad|iPod/i.test(
-            navigator.userAgent
-          );
-
-          if (!isMobile) return;
-
-          // check if we already attempted to open the app
-          const urlParams = new URLSearchParams(window.location.search);
-          const triedApp = urlParams.get("triedApp");
-
-          if (!triedApp) {
-            const start = Date.now();
-            // Try to open the app
-            window.location = appLink;
-
-            // Fallback if app not installed
-            setTimeout(() => {
-              const elapsed = Date.now() - start;
-              if (elapsed < 2000) {
-                // add ?triedApp=1 to URL so it won't try again
-                const separator = fallbackLink.includes("?") ? "&" : "?";
-                window.location = fallbackLink + separator + "triedApp=1";
-              }
-            }, 1000);
-          } 
-        } catch (err) {
-          // console.log(err);
-          const separator = fallbackLink.includes("?") ? "&" : "?";
-          window.location = fallbackLink + separator + "triedApp=1";
-        }
-      })();
-    </script> -->
-
-    <script
-      type="module"
-      src="/src/main.jsx"
-    ></script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
