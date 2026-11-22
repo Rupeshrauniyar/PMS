@@ -10,6 +10,7 @@ const {
   signout,
   getNotifications,
   markNotificationRead,
+  markAllNotificationsRead,
 } = require("../Controllers/Auth");
 const { requireUserAuth } = require("../middleware/requireAuth");
 
@@ -25,6 +26,7 @@ router.patch(
   requireUserAuth,
   markNotificationRead,
 );
+router.post("/notifications/read-all", requireUserAuth, markAllNotificationsRead);
 router.post("/edit-profile", requireUserAuth, editProfile);
 router.post("/update-fcm-token", requireUserAuth, updateFCM);
 

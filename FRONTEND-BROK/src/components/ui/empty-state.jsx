@@ -12,29 +12,29 @@ export function EmptyState({
   const renderedIcon = React.isValidElement(Icon) ? (
     Icon
   ) : typeof Icon === "function" || typeof Icon === "object" ? (
-    <Icon className="size-6 text-muted-foreground" aria-hidden="true" />
+    <Icon className="size-5 text-muted-foreground" aria-hidden="true" />
   ) : null;
 
   return (
     <div
       data-slot="empty-state"
       className={cn(
-        "flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 bg-card/60 px-6 py-12 text-center",
+        "flex flex-col items-center justify-center py-16 px-4 text-center",
         className,
       )}
     >
       {renderedIcon ? (
-        <div className="mb-4 flex size-13 items-center justify-center rounded-2xl bg-muted/80 ring-1 ring-border/60">
+        <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-secondary">
           {renderedIcon}
         </div>
       ) : null}
-      <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
+      <h3 className="text-[15px] font-semibold text-foreground">{title}</h3>
       {description ? (
-        <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-1 max-w-xs text-xs text-muted-foreground">
           {description}
         </p>
       ) : null}
-      {action ? <div className="mt-5 flex flex-wrap justify-center gap-2">{action}</div> : null}
+      {action ? <div className="mt-4 flex justify-center gap-2">{action}</div> : null}
     </div>
   );
 }

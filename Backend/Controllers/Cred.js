@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const UserModel = require("../Models/UserModel");
+const BrokerModel = require("../Models/Broker/UserModel");
 const PasswordResetModel = require("../Models/PasswordResetModel");
 const sgMail = require("@sendgrid/mail");
 const {
@@ -31,7 +32,9 @@ exports.sendPassResetMail = async (req, res) => {
       return res.status(400).json({ message: "Invalid email address." });
     }
 
-    const user = await UserModel.findOne({ email }).select("_id email");
+    const isBroker = req.body?.accountType === "broker";
+    const Model = isBroker ? BrokerModel : UserModel;
+    const user = await Model.findOne({ email }).select("_id email");
 
     const genericOk = () =>
       res.status(200).json({
@@ -45,6 +48,7 @@ exports.sendPassResetMail = async (req, res) => {
 
     const reset = await PasswordResetModel.create({
       user: user._id,
+      accountType: isBroker ? "broker" : "user",
       expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     });
 
@@ -52,7 +56,10 @@ exports.sendPassResetMail = async (req, res) => {
       expiresIn: "15m",
     });
 
-    const resetURL = `${process.env.FRONTEND2}/forgot-password/${token}`;
+    const baseUrl = isBroker
+      ? process.env.BROKER_FRONTEND || process.env.FRONTEND3
+      : process.env.FRONTEND2;
+    const resetURL = `${baseUrl}/forgot-password/${token}`;
 
     await sgMail.send({
       from: "PMS <propertymanagementsystem.pms@gmail.com>",
@@ -124,7 +131,8 @@ exports.verifyCreds = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-    await UserModel.updateOne(
+    const Model = resetDoc.accountType === "broker" ? BrokerModel : UserModel;
+    await Model.updateOne(
       { _id: resetDoc.user },
       { password: hashedPassword },
     );

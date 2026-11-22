@@ -6,6 +6,7 @@ const {
   pushUserNotification,
   NOTIFICATION_KINDS,
 } = require("../utils/notificationsHelper");
+const visits = require("../services/visitService");
 
 require("dotenv").config();
 
@@ -59,6 +60,17 @@ exports.bookProperty = async (req, res) => {
     }
     if (bType !== "visit" && bType !== "pay") {
       return res.status(400).json({ message: "Invalid booking type." });
+    }
+
+    // Visits go through the visit workflow (owner approval -> broker scheduling).
+    if (bType === "visit") {
+      try {
+        const slots = req.body.preferredSlots ?? (date ? [date] : []);
+        const visit = await visits.createVisit({ userId, propId, preferredSlots: slots, note, price });
+        return res.status(200).json({ success: true, message: "Visit requested", booking: visit, visit });
+      } catch (err) {
+        return visits.handleVisitError(res, err, "bookProperty(visit)");
+      }
     }
 
     const [prop, existingActiveBooking, userExists] = await Promise.all([
@@ -159,6 +171,15 @@ exports.canclePropertyBooking = async (req, res) => {
         .json({ message: "Not allowed to cancel this booking." });
     }
 
+    if (booking.bType === "visit") {
+      try {
+        const visit = await visits.cancelVisit(_id, { actor: "user", actorId: userId, reason: req.body.reason });
+        return res.status(200).json({ success: true, visit });
+      } catch (err) {
+        return visits.handleVisitError(res, err, "canclePropertyBooking(visit)");
+      }
+    }
+
     await BookingModel.updateOne({ _id }, { $set: { active: false } });
 
     await Promise.all([
@@ -224,6 +245,16 @@ exports.confirmPropertyBooking = async (req, res) => {
       return res.status(404).json({ message: "Booking not found." });
     }
 
+    // Approving a visit must NOT mark the property as booked.
+    if (booking.bType === "visit") {
+      try {
+        const visit = await visits.ownerDecision(_id, userId, true, req.body.note);
+        return res.status(200).json({ success: true, visit });
+      } catch (err) {
+        return visits.handleVisitError(res, err, "confirmPropertyBooking(visit)");
+      }
+    }
+
     const prop = await PropertyModel.findById(booking.propId)
       .populate({ path: "owner", select: "_id" })
       .lean();
@@ -280,6 +311,16 @@ exports.rejectPropertyBooking = async (req, res) => {
     const booking = await BookingModel.findById(_id).lean();
     if (!booking) {
       return res.status(404).json({ message: "Booking not found." });
+    }
+
+    // Visits use the visit workflow.
+    if (booking.bType === "visit") {
+      try {
+        const visit = await visits.ownerDecision(_id, userId, false, req.body.note);
+        return res.status(200).json({ success: true, visit });
+      } catch (err) {
+        return visits.handleVisitError(res, err, "rejectPropertyBooking(visit)");
+      }
     }
 
     const prop = await PropertyModel.findById(booking.propId)

@@ -10,6 +10,11 @@ const notificationEntrySchema = mongoose.Schema(
       ref: "property",
       default: null,
     },
+    bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "bookings",
+      default: null,
+    },
     read: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: true, updatedAt: false } },

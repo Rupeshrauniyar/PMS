@@ -1,5 +1,25 @@
 const mongoose = require("mongoose");
 
+const notificationEntrySchema = mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    body: { type: String, default: "" },
+    kind: { type: String, required: true },
+    propId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "property",
+      default: null,
+    },
+    bookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "bookings",
+      default: null,
+    },
+    read: { type: Boolean, default: false },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
+
 const userSchema = mongoose.Schema(
   {
     email: { type: String, required: true, unique: true },
@@ -21,8 +41,10 @@ const userSchema = mongoose.Schema(
     role: {
       type: String,
       enum: ["superbroker", "broker"],
-      default: "superbroker",
+      // New sign-ups are regular brokers; promote to superbroker manually in the DB.
+      default: "broker",
     },
+    isActive: { type: Boolean, default: true },
     brokings: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -30,6 +52,7 @@ const userSchema = mongoose.Schema(
       },
     ],
     FCMtokens: [{ type: String }],
+    notifications: [notificationEntrySchema],
   },
   { timestamps: true },
 );

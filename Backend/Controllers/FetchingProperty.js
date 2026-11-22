@@ -1,10 +1,15 @@
 const PropertyModel = require("../Models/PropertyModel");
 const UserModel = require("../Models/UserModel");
+const BookingModel = require("../Models/BookingModel");
 require("dotenv").config();
-const { sendServerError } = require("../utils/authHelpers");
+const {
+  sendServerError,
+  isValidObjectId,
+  decodeAccessFromRequest,
+} = require("../utils/authHelpers");
 
 const SEARCH_PUBLIC_FIELDS =
-  "title description location propertyType price rooms area washrooms sellingType images status createdAt";
+  "title description location propertyType price rooms area washrooms sellingType images video amenities views status createdAt";
 
 exports.getProperty = async (req, res) => {
   try {
@@ -15,13 +20,14 @@ exports.getProperty = async (req, res) => {
     }
 
     if (Data.type) {
+      const limit = Math.min(Math.max(parseInt(Data.limit, 10) || 100, 1), 200);
       const Properties = await PropertyModel.find({
         propertyType: Data.type,
         status: false,
       })
         .select("-owner -bookers -ownerModel")
         .lean()
-        .limit(10)
+        .limit(limit)
         .sort({ createdAt: -1 });
 
       return res.status(200).json({
@@ -31,21 +37,70 @@ exports.getProperty = async (req, res) => {
     }
 
     if (Data._id) {
+      if (!isValidObjectId(Data._id)) {
+        return res.status(400).json({ message: "Invalid property id." });
+      }
       const Property = await PropertyModel.findById(Data._id)
-        .select("-owner -ownerModel ")
+        .select("-ownerModel")
+        .populate({ path: "owner", select: "_id username pp createdAt" })
         .lean();
 
       if (!Property) {
         return res.status(200).json({ message: "No property found." });
       }
 
+      // Optional viewer context (works for signed-out visitors too).
+      const viewer = decodeAccessFromRequest(req, "user");
+      const ownerId = Property.owner?._id ? String(Property.owner._id) : null;
+      const isOwner = !!(viewer?.id && ownerId && viewer.id === ownerId);
+      let myBooking = null;
+      if (viewer?.id && !isOwner) {
+        myBooking = await BookingModel.findOne({
+          propId: Property._id,
+          userId: viewer.id,
+          active: true,
+        })
+          .select("_id bType visitStatus status schedule")
+          .lean();
+      }
+
+      if (!isOwner) {
+        PropertyModel.updateOne({ _id: Property._id }, { $inc: { views: 1 } }).catch(() => {});
+      }
+
+      Property.ownerInfo = Property.owner
+        ? {
+            _id: Property.owner._id,
+            username: Property.owner.username,
+            pp: Property.owner.pp || null,
+            memberSince: Property.owner.createdAt,
+          }
+        : null;
+      delete Property.owner;
       Property.bookers = Property.bookers?.length ?? 0;
+      Property.viewer = { isOwner, myBooking };
 
       return res.status(200).json({
         Property: Property || [],
         success: !!Property,
         message: Property ? undefined : "No properties available yet",
       });
+    }
+
+    if (Data.recent) {
+      const limit = Math.min(Math.max(parseInt(Data.limit, 10) || 100, 1), 200);
+      const query = { status: false };
+      if (Data.sellingType && ["Rent System", "Selling System"].includes(Data.sellingType)) {
+        query.sellingType = Data.sellingType;
+      }
+      if (Data.withVideo) query["video.url"] = { $ne: null };
+      const sort = Data.sort === "popular" ? { views: -1, createdAt: -1 } : { createdAt: -1 };
+      const Properties = await PropertyModel.find(query)
+        .select("-owner -bookers -ownerModel")
+        .sort(sort)
+        .limit(limit)
+        .lean();
+      return res.status(200).json({ Properties, success: true });
     }
 
     if (Data.filter) {
@@ -77,24 +132,32 @@ exports.getBookers = async (req, res) => {
   try {
     const Data = req.body;
 
-    if (!Data?._id) {
+    if (!Data?._id || !isValidObjectId(Data._id)) {
       return res.status(400).json({ error: "Property id is required." });
     }
 
-    const Property = await PropertyModel.findOne({ _id: Data._id })
+    // Only the owner may see who booked their property.
+    const Property = await PropertyModel.findOne({ _id: Data._id, owner: req.userId })
       .populate({
         path: "bookers",
-        populate: {
-          path: "userId",
-          select: "username",
-        },
+        populate: [
+          { path: "userId", select: "username pp" },
+          { path: "broker", select: "username pp phone" },
+        ],
       })
       .lean();
 
+    if (!Property) {
+      return res.status(403).json({
+        Property: null,
+        success: false,
+        message: "Not authorized or property not found.",
+      });
+    }
+
     return res.status(200).json({
-      Property: Property || null,
-      success: !!Property,
-      message: Property ? undefined : "No property available.",
+      Property,
+      success: true,
     });
   } catch (err) {
     console.error(err);
@@ -106,6 +169,10 @@ exports.getUserProperty = async (req, res) => {
   try {
     const { Type, NestedPop } = req.body;
     const userId = req.userId;
+
+    if (!["myProperties", "saved", "bookedProperties"].includes(Type)) {
+      return res.status(400).json({ error: "Invalid Type." });
+    }
 
     const toPop = `${Type}`;
     if (NestedPop) {

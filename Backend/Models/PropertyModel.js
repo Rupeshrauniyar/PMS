@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { UserModel } = require("./UserModel");
 
 const PropertySchema = mongoose.Schema(
   {
@@ -8,6 +7,13 @@ const PropertySchema = mongoose.Schema(
         type: String,
       },
     ],
+    /** Single walkthrough video (Cloudinary). */
+    video: {
+      url: { type: String, default: null },
+      publicId: { type: String, default: null },
+      thumbnail: { type: String, default: null },
+      duration: { type: Number, default: null },
+    },
     title: {
       type: String,
       required: true,
@@ -46,6 +52,8 @@ const PropertySchema = mongoose.Schema(
       type: String,
       required: false,
     },
+    amenities: [{ type: String, trim: true }],
+    views: { type: Number, default: 0 },
     status: {
       type: Boolean,
       default: false,
@@ -64,6 +72,9 @@ const PropertySchema = mongoose.Schema(
   },
   { timestamps: true },
 );
+
+PropertySchema.index({ propertyType: 1, status: 1, createdAt: -1 });
+PropertySchema.index({ owner: 1 });
 
 const PropertyModel = mongoose.model("property", PropertySchema);
 module.exports = PropertyModel;

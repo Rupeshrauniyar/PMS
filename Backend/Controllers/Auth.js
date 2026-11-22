@@ -382,3 +382,15 @@ exports.updateFCM = async (req, res) => {
     return sendServerError(res, err, "updateFCM");
   }
 };
+
+exports.markAllNotificationsRead = async (req, res) => {
+  try {
+    await UserModel.updateOne(
+      { _id: req.userId },
+      { $set: { "notifications.$[].read": true } },
+    );
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    return sendServerError(res, err, "markAllNotificationsRead");
+  }
+};

@@ -1,26 +1,16 @@
 import * as React from "react";
-import {
-  Check,
-  Clock,
-  UserCheck,
-  CalendarCheck,
-  CheckCircle2,
-  XCircle,
-  Ban,
-  AlertTriangle,
-} from "lucide-react";
+import { Check, XCircle, Ban, AlertTriangle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "./badge";
-import { VISIT_HAPPY_STEPS, VISIT_STATUS_META } from "@/lib/visit";
+import { VISIT_STATUS_META } from "@/lib/visit";
 
-const STEP_ICONS = {
-  requested: Clock,
-  owner_approved: Check,
-  claimed: UserCheck,
-  scheduled: CalendarCheck,
-  completed: CheckCircle2,
-};
+const COMPACT_STEPS = [
+  { key: "requested", label: "Requested" },
+  { key: "owner_approved", label: "Approved" },
+  { key: "claimed", label: "Broker" },
+  { key: "scheduled", label: "Scheduled" },
+];
 
 const TERMINAL_ICONS = {
   rejected: XCircle,
@@ -28,127 +18,89 @@ const TERMINAL_ICONS = {
   no_show: AlertTriangle,
 };
 
-export function VisitStatusPill({ status, short = false, className }) {
+export function VisitStatusPill({ status, className }) {
   const meta = VISIT_STATUS_META[status] || {
-    label: status || "Unknown",
-    shortLabel: status || "Unknown",
-    variant: "muted",
+    shortLabel: status || "Pending",
+    variant: "secondary",
   };
   return (
     <Badge variant={meta.variant} className={cn("gap-1.5", className)}>
-      <span
-        aria-hidden="true"
-        className="size-1.5 rounded-full bg-current opacity-85"
-      />
-      <span>{short ? meta.shortLabel : meta.label}</span>
+      <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+      <span>{meta.shortLabel || meta.label}</span>
     </Badge>
   );
 }
 
-const STEP_DESCRIPTIONS = {
-  requested: "Buyer submitted preferred visit slots",
-  owner_approved: "Owner approved — open in broker pool",
-  claimed: "Broker claimed & coordinating meet",
-  scheduled: "In-person site visit confirmed for all 3",
-  completed: "Site visit completed",
-};
-
 /**
- * Visual status stepper for a visit (`requested -> owner_approved -> claimed -> scheduled -> completed`),
- * with distinct banners for terminal states (`rejected`, `cancelled`, `no_show`).
+ * Minimal horizontal 4-dot progress bar (zero paragraphs, zero boxy clutter).
  */
 export function VisitStepper({ visit, className }) {
   const status = visit?.visitStatus || "requested";
   const meta = VISIT_STATUS_META[status] || VISIT_STATUS_META.requested;
   const isTerminal = Boolean(meta.terminal);
 
-  // Determine the furthest happy-path step reached from the timeline when terminal.
-  const reachedSet = React.useMemo(() => {
-    const actions = new Set((visit?.timeline || []).map((t) => t.action));
-    actions.add("requested");
-    if (actions.has("rescheduled")) actions.add("scheduled");
-    return actions;
-  }, [visit?.timeline]);
+  if (isTerminal) {
+    const Icon = TERMINAL_ICONS[status] || Ban;
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-2.5 rounded-xl border border-border/80 bg-secondary/40 px-3.5 py-2.5 text-sm",
+          className,
+        )}
+      >
+        <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <span className="font-semibold text-foreground">{meta.shortLabel}</span>
+        {visit?.cancelledBy ? (
+          <span className="text-muted-foreground">by {visit.cancelledBy}</span>
+        ) : null}
+      </div>
+    );
+  }
 
-  const activeIdx = VISIT_HAPPY_STEPS.indexOf(status);
+  const order = ["requested", "owner_approved", "claimed", "scheduled", "completed"];
+  const currentIdx = order.indexOf(status);
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
-      {isTerminal ? (
-        <div
-          className={cn(
-            "flex items-start gap-3 rounded-2xl border p-4",
-            status === "cancelled"
-              ? "border-border bg-muted/60 text-foreground"
-              : "border-destructive/30 bg-danger-soft text-destructive",
-          )}
-        >
-          {React.createElement(TERMINAL_ICONS[status] || Ban, {
-            className: "mt-0.5 size-5 shrink-0",
-            "aria-hidden": "true",
-          })}
-          <div className="min-w-0 text-sm">
-            <p className="font-semibold">{meta.label}</p>
-            <p className="mt-0.5 text-muted-foreground">
-              {meta.description}
-              {visit?.cancelledBy ? ` (by ${visit.cancelledBy})` : ""}
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      <ol className="grid grid-cols-1 gap-3 sm:grid-cols-5 sm:gap-2">
-        {VISIT_HAPPY_STEPS.map((step, idx) => {
-          const stepMeta = VISIT_STATUS_META[step];
-          const Icon = STEP_ICONS[step] || Clock;
-          const done = isTerminal
-            ? reachedSet.has(step)
-            : idx < activeIdx || status === "completed";
-          const current = !isTerminal && idx === activeIdx && status !== "completed";
-
+    <div className={cn("py-2", className)}>
+      <ol className="flex items-center justify-between">
+        {COMPACT_STEPS.map((s, idx) => {
+          const done = status === "completed" || idx < currentIdx;
+          const active = status !== "completed" && idx === currentIdx;
           return (
-            <li
-              key={step}
-              className={cn(
-                "relative flex items-center gap-3 rounded-2xl border p-3.5 transition-colors sm:flex-col sm:items-start sm:gap-2",
-                current
-                  ? "border-foreground bg-foreground text-background"
-                  : done
-                    ? "border-border bg-secondary/70 text-foreground"
-                    : "border-border/50 bg-transparent text-muted-foreground",
-              )}
-            >
-              <div
-                className={cn(
-                  "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                  current
-                    ? "bg-background text-foreground"
-                    : done
+            <React.Fragment key={s.key}>
+              <li className="flex flex-col items-center gap-1.5">
+                <span
+                  className={cn(
+                    "flex size-6 items-center justify-center rounded-full text-[11px] font-bold transition-colors",
+                    done || active
                       ? "bg-foreground text-background"
-                      : "bg-muted text-muted-foreground",
-                )}
-              >
-                <Icon className="size-3.5" aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <p
-                  className={cn(
-                    "text-xs font-semibold leading-snug",
-                    current ? "text-background" : "text-foreground",
+                      : "border border-border bg-background text-muted-foreground",
+                    active && "ring-4 ring-foreground/10",
                   )}
                 >
-                  {stepMeta.shortLabel}
-                </p>
-                <p
+                  {done ? <Check className="size-3.5" aria-hidden="true" /> : idx + 1}
+                </span>
+                <span
                   className={cn(
-                    "mt-0.5 text-[11px] leading-snug sm:line-clamp-2",
-                    current ? "text-background/75" : "text-muted-foreground",
+                    "text-[11px] font-medium",
+                    done || active ? "text-foreground font-semibold" : "text-muted-foreground",
                   )}
                 >
-                  {STEP_DESCRIPTIONS[step]}
-                </p>
-              </div>
-            </li>
+                  {s.label}
+                </span>
+              </li>
+              {idx < COMPACT_STEPS.length - 1 ? (
+                <div
+                  aria-hidden="true"
+                  className={cn(
+                    "mx-1 -mt-4 h-px flex-1",
+                    idx < currentIdx || status === "completed"
+                      ? "bg-foreground"
+                      : "bg-border",
+                  )}
+                />
+              ) : null}
+            </React.Fragment>
           );
         })}
       </ol>

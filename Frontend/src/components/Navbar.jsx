@@ -35,10 +35,10 @@ import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const DESKTOP_LINKS = [
-  { to: "/", label: "Residences", end: true },
+  { to: "/", label: "Explore", end: true },
   { to: "/search", label: "Search" },
   { to: "/visits", label: "Visits" },
-  { to: "/bookings", label: "Saved" },
+  { to: "/profile", label: "Profile" },
 ];
 
 const MOBILE_TABS = [

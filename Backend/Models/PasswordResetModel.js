@@ -1,12 +1,16 @@
 const mongoose = require("mongoose");
-const { UserModel } = require("../Models/UserModel");
 
 const PassResetSchema = mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: "users", // single User collection
+      // Points at `users` or `brokers` depending on accountType.
+    },
+    accountType: {
+      type: String,
+      enum: ["user", "broker"],
+      default: "user",
     },
     expiresAt: {
       type: Date,

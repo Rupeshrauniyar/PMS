@@ -6,17 +6,9 @@ import {
   Share2,
   MapPin,
   Building2,
-  Eye,
-  CalendarCheck,
-  CreditCard,
   Edit3,
-  Settings2,
   Plus,
   Trash2,
-  ExternalLink,
-  CheckCircle2,
-  Film,
-  ChevronDown,
 } from "lucide-react";
 
 import { AppContext } from "../../contexts/AppContext";
@@ -26,8 +18,6 @@ import Recommend from "../../components/Recomended";
 import PropertyShareSheet from "../../components/PropertyShareSheet";
 import { MediaGallery } from "@/components/ui/media-gallery";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Sheet } from "@/components/ui/sheet";
 import { Input, Textarea, Field } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
@@ -65,7 +55,7 @@ const View = () => {
   const [saveBusy, setSaveBusy] = useState(false);
   const [expandedDesc, setExpandedDesc] = useState(false);
 
-  // Request site visit Sheet state
+  // Visit request state
   const [visitSheetOpen, setVisitSheetOpen] = useState(false);
   const [slots, setSlots] = useState(() => [defaultTomorrowSlot(26)]);
   const [visitNote, setVisitNote] = useState("");
@@ -74,38 +64,29 @@ const View = () => {
 
   useEffect(() => {
     let cancelled = false;
-    const loadProperty = async () => {
+    (async () => {
       setLoading(true);
       try {
         const res = await api.post("/api/fetching/get-property", { _id: id });
         if (!cancelled) {
-          if (res?.status === 200 && res.data?.Property?._id) {
-            setProperty(res.data.Property);
-          } else {
-            setProperty(null);
-          }
+          setProperty(res?.status === 200 && res.data?.Property?._id ? res.data.Property : null);
         }
       } catch {
         if (!cancelled) setProperty(null);
       } finally {
         if (!cancelled) setLoading(false);
       }
-    };
-    loadProperty();
+    })();
     return () => {
       cancelled = true;
     };
   }, [id]);
 
-  const isSaved = Boolean(
-    user?.saved?.some((s) => String(s?.propId) === String(id)),
-  );
-
+  const isSaved = Boolean(user?.saved?.some((s) => String(s?.propId) === String(id)));
   const isOwner = Boolean(
     property?.viewer?.isOwner ||
       user?.myProperties?.some((m) => String(m?.propId) === String(id)),
   );
-
   const myBooking =
     property?.viewer?.myBooking ||
     user?.bookedProperties?.find((b) => String(b?.propId) === String(id)) ||
@@ -113,20 +94,13 @@ const View = () => {
 
   const handleSave = async () => {
     if (!user?._id) {
-      toast({
-        title: "Sign in to bookmark",
-        description: "Create an account or sign in to save listings.",
-      });
       navigate("/signin", { state: { from: location } });
       return;
     }
     const nextAction = !isSaved;
     try {
       setSaveBusy(true);
-      const res = await api.post("/api/booking/save-property", {
-        id,
-        action: nextAction,
-      });
+      const res = await api.post("/api/booking/save-property", { id, action: nextAction });
       if (res.status === 200) {
         setUser((prev) => {
           if (!prev) return prev;
@@ -141,17 +115,7 @@ const View = () => {
           }
           return updated;
         });
-        toast({
-          title: nextAction ? "Saved to your bookmarks" : "Removed from bookmarks",
-          variant: "success",
-        });
       }
-    } catch (err) {
-      toast({
-        title: "Could not save property",
-        description: err.response?.data?.message || "Please try again.",
-        variant: "error",
-      });
     } finally {
       setSaveBusy(false);
     }
@@ -159,10 +123,6 @@ const View = () => {
 
   const openVisitSheet = () => {
     if (!user?._id) {
-      toast({
-        title: "Sign in required",
-        description: "Sign in to request an in-person site visit.",
-      });
       navigate("/signin", { state: { from: location } });
       return;
     }
@@ -170,43 +130,22 @@ const View = () => {
     setVisitSheetOpen(true);
   };
 
-  const handleSlotChange = (idx, val) => {
-    setVisitError("");
-    setSlots((prev) => prev.map((s, i) => (i === idx ? val : s)));
-  };
-
-  const addSlot = () => {
-    if (slots.length >= 3) return;
-    setSlots((prev) => [...prev, defaultTomorrowSlot(26 + prev.length * 24)]);
-  };
-
-  const removeSlot = (idx) => {
-    if (slots.length <= 1) return;
-    setSlots((prev) => prev.filter((_, i) => i !== idx));
-  };
-
   const handleSubmitVisit = async (e) => {
     e?.preventDefault();
     setVisitError("");
-
     const validIso = [];
     const now = Date.now();
     for (const raw of slots) {
       if (!raw) continue;
       const d = new Date(raw);
-      if (Number.isNaN(d.getTime())) {
-        setVisitError("Please enter valid dates and times.");
-        return;
-      }
-      if (d.getTime() <= now + 5 * 60 * 1000) {
-        setVisitError("Every preferred slot must be in the future.");
+      if (Number.isNaN(d.getTime()) || d.getTime() <= now + 5 * 60 * 1000) {
+        setVisitError("Choose a future date and time.");
         return;
       }
       validIso.push(d.toISOString());
     }
-
     if (validIso.length === 0) {
-      setVisitError("Select at least one preferred date and time.");
+      setVisitError("Choose a date and time.");
       return;
     }
 
@@ -217,34 +156,12 @@ const View = () => {
         preferredSlots: validIso.slice(0, 3),
         note: visitNote.trim(),
       });
-      const newVisit = data?.visit;
       setVisitSheetOpen(false);
       refreshUser?.();
-      toast({
-        title: "Site visit requested!",
-        description:
-          "The owner has been notified. Once approved, a broker will confirm the schedule.",
-        variant: "success",
-      });
-      if (newVisit?._id) {
-        navigate(`/visits/${newVisit._id}`);
-      } else {
-        navigate("/visits");
-      }
+      toast({ title: "Visit requested", variant: "success" });
+      navigate(data?.visit?._id ? `/visits/${data.visit._id}` : "/visits");
     } catch (err) {
-      const code = err.response?.data?.code;
-      const msg =
-        err.response?.data?.message || "Could not submit visit request.";
-      setVisitError(msg);
-      toast({
-        title: code === "DUPLICATE" ? "Visit already requested" : "Request failed",
-        description: msg,
-        variant: "error",
-      });
-      if (code === "DUPLICATE") {
-        setVisitSheetOpen(false);
-        navigate("/visits");
-      }
+      setVisitError(err.response?.data?.message || "Could not request visit.");
     } finally {
       setVisitSubmitting(false);
     }
@@ -252,46 +169,25 @@ const View = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6 py-5 sm:py-8">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-9 w-24 rounded-full" />
-          <div className="flex gap-2">
-            <Skeleton className="size-10 rounded-full" />
-            <Skeleton className="size-10 rounded-full" />
-          </div>
-        </div>
+      <div className="mx-auto flex max-w-5xl flex-col gap-6 py-4">
         <Skeleton className="aspect-[16/9] w-full rounded-3xl" />
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-2/3" />
-            <Skeleton className="h-5 w-1/3" />
-            <div className="grid grid-cols-3 gap-3">
-              <Skeleton className="h-20 rounded-2xl" />
-              <Skeleton className="h-20 rounded-2xl" />
-              <Skeleton className="h-20 rounded-2xl" />
-            </div>
-            <Skeleton className="h-32 rounded-2xl" />
-          </div>
-          <Skeleton className="h-64 rounded-3xl" />
-        </div>
+        <Skeleton className="h-7 w-1/2" />
+        <Skeleton className="h-4 w-1/3" />
       </div>
     );
   }
 
   if (!property?._id) {
     return (
-      <div className="py-12">
-        <EmptyState
-          icon={Building2}
-          title="Listing not found"
-          description="This property may have been removed or is no longer available."
-          action={
-            <Button asChild variant="brand">
-              <Link to="/">Browse available properties</Link>
-            </Button>
-          }
-        />
-      </div>
+      <EmptyState
+        icon={Building2}
+        title="Listing unavailable"
+        action={
+          <Button asChild size="sm" className="rounded-full px-5">
+            <Link to="/">Back home</Link>
+          </Button>
+        }
+      />
     );
   }
 
@@ -304,24 +200,32 @@ const View = () => {
   const amenities = Array.isArray(property.amenities)
     ? property.amenities.filter(Boolean)
     : [];
-  const ownerInfo = property.ownerInfo || null;
   const description = property.description || "";
-  const isLongDesc = description.length > 280;
+  const isLongDesc = description.length > 220;
 
-  const renderActionButtons = (compact = false) => {
+  const specs = [isRent ? "For Rent" : "For Sale"];
+  if (property.propertyType) specs.push(property.propertyType);
+  if (property.propertyType !== "Plot" && Number(property.rooms) > 0) {
+    specs.push(`${property.rooms} Rooms`);
+  }
+  if (property.propertyType !== "Plot" && Number(property.washrooms) > 0) {
+    specs.push(`${property.washrooms} Baths`);
+  }
+  if (Number(property.area) > 0) {
+    specs.push(`${property.area} sq.ft`);
+  }
+
+  const renderActions = () => {
     if (isOwner) {
       return (
-        <div className={cn("flex gap-2.5", compact ? "flex-1" : "flex-col")}>
-          <Button asChild variant="brand" className="w-full">
-            <Link to={`/my/${property._id}`}>
-              <Settings2 className="size-4" aria-hidden="true" />
-              <span>Manage listing</span>
-            </Link>
+        <div className="flex flex-1 gap-2">
+          <Button asChild className="flex-1 rounded-full">
+            <Link to={`/my/${property._id}`}>Manage</Link>
           </Button>
-          <Button asChild variant="outline" className="w-full">
+          <Button asChild variant="outline" className="rounded-full px-4">
             <Link to={`/edit-property/${property._id}`}>
               <Edit3 className="size-4" aria-hidden="true" />
-              <span>Edit listing</span>
+              <span>Edit</span>
             </Link>
           </Button>
         </div>
@@ -331,117 +235,73 @@ const View = () => {
     if (myBooking) {
       if (myBooking.bType === "visit") {
         return (
-          <div className={cn("flex gap-2.5", compact ? "flex-1 items-center" : "flex-col")}>
-            {!compact ? (
-              <div className="flex flex-col gap-1.5 rounded-2xl border border-border/70 bg-muted/50 p-3.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    Your visit request
-                  </span>
-                  <VisitStatusPill status={myBooking.visitStatus || "requested"} short />
-                </div>
-                {myBooking.schedule?.startAt ? (
-                  <p className="text-xs font-medium text-foreground">
-                    {formatVisitDate(myBooking.schedule.startAt)}
-                  </p>
-                ) : null}
-              </div>
-            ) : (
-              <VisitStatusPill status={myBooking.visitStatus || "requested"} short />
-            )}
-            <Button asChild variant="brand" className="flex-1">
-              <Link to={`/visits/${myBooking._id}`}>
-                <CalendarCheck className="size-4" aria-hidden="true" />
-                <span>View visit status</span>
-              </Link>
+          <div className="flex flex-1 items-center justify-between gap-3">
+            <VisitStatusPill status={myBooking.visitStatus || "requested"} />
+            <Button asChild className="rounded-full px-5">
+              <Link to={`/visits/${myBooking._id}`}>View visit</Link>
             </Button>
           </div>
         );
       }
-
       return (
-        <div className={cn("flex gap-2.5", compact ? "flex-1" : "flex-col")}>
-          <Button asChild variant="brand" className="w-full">
-            <Link to={`/booked/${property._id}`}>
-              <CheckCircle2 className="size-4" aria-hidden="true" />
-              <span>View booking</span>
-            </Link>
-          </Button>
-        </div>
+        <Button asChild className="flex-1 rounded-full">
+          <Link to={`/booked/${property._id}`}>View booking</Link>
+        </Button>
       );
     }
 
     return (
-      <div className={cn("flex gap-2.5", compact ? "flex-1" : "flex-col")}>
-        <Button
-          variant="brand"
-          onClick={openVisitSheet}
-          className={cn(compact ? "flex-1" : "w-full")}
-        >
-          <CalendarCheck className="size-4" aria-hidden="true" />
-          <span>Request site visit</span>
+      <div className="flex flex-1 gap-2">
+        <Button onClick={openVisitSheet} className="flex-1 rounded-full">
+          Schedule visit
         </Button>
-        <Button
-          asChild
-          variant="outline"
-          className={cn(compact ? "shrink-0 px-3.5" : "w-full")}
-        >
-          <Link to={`/book/${property._id}/${property.price}`}>
-            <CreditCard className="size-4" aria-hidden="true" />
-            <span>{compact ? "Reserve" : "Book / Reserve"}</span>
-          </Link>
+        <Button asChild variant="outline" className="rounded-full px-5">
+          <Link to={`/book/${property._id}/${property.price}`}>Book</Link>
         </Button>
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col gap-8 py-4 pb-28 sm:py-6 lg:pb-12">
-      {/* Top Action Bar */}
-      <div className="flex items-center justify-between gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
+    <div className="mx-auto flex max-w-5xl flex-col gap-7 py-4 pb-28 sm:py-6 lg:pb-12">
+      {/* Minimal Top Bar */}
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="-ml-2 gap-1.5"
+          aria-label="Go back"
+          className="inline-flex size-9 items-center justify-center rounded-full border border-border hover:bg-accent"
         >
-          <ChevronLeft className="size-4" aria-hidden="true" />
-          <span>Back</span>
-        </Button>
+          <ChevronLeft className="size-5" aria-hidden="true" />
+        </button>
 
         <div className="flex items-center gap-2">
-          {isOwner ? (
-            <Button asChild variant="outline" size="sm">
-              <Link to={`/edit-property/${property._id}`}>
-                <Edit3 className="size-3.5" aria-hidden="true" />
-                <span>Edit</span>
-              </Link>
-            </Button>
-          ) : null}
-          <Button
-            variant={isSaved ? "default" : "outline"}
-            size="sm"
+          <button
+            type="button"
             disabled={saveBusy}
             onClick={handleSave}
+            aria-label={isSaved ? "Unsave" : "Save"}
+            className={cn(
+              "inline-flex size-9 items-center justify-center rounded-full border transition-colors",
+              isSaved
+                ? "border-foreground bg-foreground text-background"
+                : "border-border hover:bg-accent",
+            )}
           >
-            <Bookmark
-              className={cn("size-4", isSaved && "fill-current")}
-              aria-hidden="true"
-            />
-            <span>{isSaved ? "Saved" : "Save"}</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+            <Bookmark className={cn("size-4", isSaved && "fill-current")} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
             onClick={() => setShareOpen(true)}
+            aria-label="Share"
+            className="inline-flex size-9 items-center justify-center rounded-full border border-border hover:bg-accent"
           >
             <Share2 className="size-4" aria-hidden="true" />
-            <span>Share</span>
-          </Button>
+          </button>
         </div>
       </div>
 
-      {/* MediaGallery — Walkthrough Video First, Then Photos */}
+      {/* Video First + Photo Gallery */}
       <div className="-mx-4 sm:mx-0">
         <MediaGallery
           images={images}
@@ -450,122 +310,39 @@ const View = () => {
         />
       </div>
 
-      {/* Two-column Details + Sticky Booking/Visit Sidebar */}
-      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_380px]">
-        {/* Left Column */}
+      {/* Calm Two-Column Content */}
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_320px]">
         <div className="flex min-w-0 flex-col gap-6">
-          {/* Header Badges + Title + Location */}
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={isRent ? "info" : "brand"}>
-                {isRent ? "For Rent" : "For Sale"}
-              </Badge>
-              {property.propertyType ? (
-                <Badge variant="secondary">{property.propertyType}</Badge>
-              ) : null}
-              {property.video?.url ? (
-                <Badge variant="outline" className="gap-1">
-                  <Film className="size-3.5 text-brand" aria-hidden="true" />
-                  <span>Video tour included</span>
-                </Badge>
-              ) : null}
-              {typeof property.views === "number" ? (
-                <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground tabular-nums">
-                  <Eye className="size-3.5" aria-hidden="true" />
-                  <span>{property.views.toLocaleString()} views</span>
-                </span>
-              ) : null}
-            </div>
-
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-              {property.title || "Property"}
+          {/* Title, Location & Compact Specs */}
+          <div className="space-y-2 border-b border-border/60 pb-5">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              {property.title}
             </h1>
 
             {property.location ? (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5 font-medium text-foreground/90">
-                  <MapPin className="size-4 shrink-0 text-brand" aria-hidden="true" />
-                  <span>{property.location}</span>
-                </span>
-                <a
-                  href={buildMapsUrl(property.location)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
-                >
-                  <span>Open in Maps</span>
-                  <ExternalLink className="size-3" aria-hidden="true" />
-                </a>
-              </div>
+              <a
+                href={buildMapsUrl(property.location)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
+                <span>{property.location}</span>
+              </a>
             ) : null}
 
-            {/* Mobile Price Summary */}
-            <div className="mt-1 flex items-baseline gap-1.5 lg:hidden">
-              <span className="text-2xl font-extrabold tracking-tight text-foreground tabular-nums">
-                {formatPrice(property.price)}
-              </span>
-              {isRent ? (
-                <span className="text-sm font-medium text-muted-foreground">
-                  / month
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Architectural Key Facts Strip (No Heavy Boxes) */}
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-y border-border/70 py-5">
-            <div>
-              <p className="text-xs text-muted-foreground">Type</p>
-              <p className="mt-0.5 text-[15px] font-semibold text-foreground">
-                {property.propertyType || "Residence"}
-              </p>
-            </div>
-
-            {property.propertyType !== "Plot" ? (
-              <>
-                <div className="h-7 w-px bg-border/70" aria-hidden="true" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Rooms</p>
-                  <p className="mt-0.5 text-[15px] font-semibold text-foreground tabular-nums">
-                    {property.rooms ?? 0}{" "}
-                    {Number(property.rooms) === 1 ? "Room" : "Rooms"}
-                  </p>
-                </div>
-
-                <div className="h-7 w-px bg-border/70" aria-hidden="true" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Washrooms</p>
-                  <p className="mt-0.5 text-[15px] font-semibold text-foreground tabular-nums">
-                    {property.washrooms ?? 0}{" "}
-                    {Number(property.washrooms) === 1 ? "Bath" : "Baths"}
-                  </p>
-                </div>
-              </>
-            ) : null}
-
-            {Number(property.area) > 0 ? (
-              <>
-                <div className="h-7 w-px bg-border/70" aria-hidden="true" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Area</p>
-                  <p className="mt-0.5 text-[15px] font-semibold text-foreground tabular-nums">
-                    {property.area} sq.ft
-                  </p>
-                </div>
-              </>
-            ) : null}
+            <p className="pt-1 text-sm font-medium text-foreground/85">
+              {specs.join("  ·  ")}
+            </p>
           </div>
 
           {/* Description */}
           {description ? (
-            <div className="flex flex-col gap-2.5 border-b border-border/70 pb-6">
-              <h2 className="text-base font-bold tracking-tight text-foreground">
-                Overview
-              </h2>
+            <div className="space-y-2 border-b border-border/60 pb-5">
               <p
                 className={cn(
                   "selectable whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground",
-                  !expandedDesc && isLongDesc && "line-clamp-4",
+                  !expandedDesc && isLongDesc && "line-clamp-3",
                 )}
               >
                 {description}
@@ -574,16 +351,9 @@ const View = () => {
                 <button
                   type="button"
                   onClick={() => setExpandedDesc((v) => !v)}
-                  className="inline-flex items-center gap-1 self-start text-xs font-semibold text-foreground underline underline-offset-4"
+                  className="text-xs font-semibold text-foreground underline underline-offset-4"
                 >
-                  <span>{expandedDesc ? "Show less" : "Read full description"}</span>
-                  <ChevronDown
-                    className={cn(
-                      "size-3.5 transition-transform",
-                      expandedDesc && "rotate-180",
-                    )}
-                    aria-hidden="true"
-                  />
+                  {expandedDesc ? "Less" : "More"}
                 </button>
               ) : null}
             </div>
@@ -591,122 +361,74 @@ const View = () => {
 
           {/* Amenities */}
           {amenities.length > 0 ? (
-            <div className="flex flex-col gap-3.5 border-b border-border/70 pb-6">
-              <h2 className="text-base font-bold tracking-tight text-foreground">
-                Amenities &amp; Highlights
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {amenities.map((item) => (
-                  <span
-                    key={item}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/40 px-3.5 py-1.5 text-xs font-medium text-foreground"
-                  >
-                    <CheckCircle2
-                      className="size-3.5 text-foreground"
-                      aria-hidden="true"
-                    />
-                    <span>{item}</span>
-                  </span>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2 border-b border-border/60 pb-5">
+              {amenities.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-border px-3 py-1 text-xs font-medium text-foreground"
+                >
+                  {item}
+                </span>
+              ))}
             </div>
           ) : null}
 
-          {/* Owner Info Row */}
-          {ownerInfo ? (
-            <div className="flex items-center justify-between gap-4 py-1">
-              <div className="flex min-w-0 items-center gap-3.5">
-                <Avatar
-                  src={ownerInfo.pp}
-                  name={ownerInfo.username || "Owner"}
-                  size="default"
-                />
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Listed by</p>
-                  <p className="truncate text-[15px] font-semibold text-foreground">
-                    {ownerInfo.username || "Verified Owner"}
-                  </p>
-                  {ownerInfo.memberSince ? (
-                    <p className="text-xs text-muted-foreground">
-                      Member since{" "}
-                      {new Date(ownerInfo.memberSince).toLocaleDateString("en-IN", {
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
-                  ) : null}
-                </div>
+          {/* Host */}
+          {property.ownerInfo ? (
+            <div className="flex items-center gap-3">
+              <Avatar
+                src={property.ownerInfo.pp}
+                name={property.ownerInfo.username || "Owner"}
+                size="sm"
+              />
+              <div className="min-w-0 text-sm">
+                <span className="text-muted-foreground">Hosted by </span>
+                <strong className="font-semibold text-foreground">
+                  {property.ownerInfo.username || "Owner"}
+                </strong>
               </div>
-              <Badge variant="outline">Verified Host</Badge>
             </div>
           ) : null}
         </div>
 
-        {/* Right Column — Desktop Sticky Sidebar */}
-        <aside className="hidden lg:sticky lg:top-24 lg:block">
-          <Card className="border-border/80 shadow-card">
-            <CardContent className="flex flex-col gap-5">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {isRent ? "Monthly rent" : "Asking price"}
-                </p>
-                <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
-                    {formatPrice(property.price)}
-                  </span>
-                  {isRent ? (
-                    <span className="text-sm font-medium text-muted-foreground">
-                      / month
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-
-              {renderActionButtons(false)}
-
-              <div className="rounded-2xl bg-muted/60 p-3.5 text-xs leading-relaxed text-muted-foreground">
-                <p className="font-semibold text-foreground">
-                  How site visits work
-                </p>
-                <p className="mt-1">
-                  Submit up to 3 preferred time slots for free. Once the owner approves, a verified Propatyc broker coordinates the in-person visit.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Desktop Sticky Action Box */}
+        <aside className="hidden rounded-2xl border border-border p-5 lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-4">
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-bold tabular-nums text-foreground">
+              {formatPrice(property.price)}
+            </span>
+            {isRent ? <span className="text-sm text-muted-foreground">/mo</span> : null}
+          </div>
+          {myBooking?.schedule?.startAt ? (
+            <p className="text-xs text-muted-foreground">
+              Scheduled: {formatVisitDate(myBooking.schedule.startAt)}
+            </p>
+          ) : null}
+          {renderActions()}
         </aside>
       </div>
 
-      {/* Recommended Listings */}
-      <section className="border-t border-border/70 pt-8">
-        <div className="mb-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-brand">
-            Discover more
-          </p>
-          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-            Similar Properties
-          </h2>
-        </div>
+      {/* Similar Listings */}
+      <section className="border-t border-border/60 pt-7">
+        <h2 className="mb-5 text-lg font-bold tracking-tight text-foreground">
+          More listings
+        </h2>
         <Recommend id={property._id} />
       </section>
 
-      {/* Mobile Sticky Bottom CTA Bar */}
-      <div className="chrome-fixed-bottom glass fixed inset-x-0 bottom-0 z-40 border-t border-border/80 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] lg:hidden">
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
-          <div className="hidden min-w-0 flex-col sm:flex">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {isRent ? "Rent" : "Price"}
-            </span>
-            <span className="truncate text-base font-extrabold text-foreground tabular-nums">
+      {/* Mobile Bottom Action Bar */}
+      <div className="chrome-fixed-bottom glass fixed inset-x-0 bottom-0 z-40 border-t border-border/70 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] lg:hidden">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
+          <div className="shrink-0">
+            <span className="text-base font-bold tabular-nums text-foreground">
               {formatPrice(property.price)}
-              {isRent ? "/mo" : ""}
             </span>
+            {isRent ? <span className="text-xs text-muted-foreground">/mo</span> : null}
           </div>
-          {renderActionButtons(true)}
+          {renderActions()}
         </div>
       </div>
 
-      {/* Share Sheet */}
       <PropertyShareSheet
         open={shareOpen}
         onClose={() => setShareOpen(false)}
@@ -714,46 +436,40 @@ const View = () => {
         propertyTitle={property.title || "Property"}
       />
 
-      {/* Request Site Visit Sheet */}
+      {/* Minimal Schedule Visit Sheet */}
       <Sheet
         open={visitSheetOpen}
         onOpenChange={setVisitSheetOpen}
-        title="Request a site visit"
-        description={`Pick up to 3 preferred date & time slots to visit "${property.title || "this property"}".`}
+        title="Schedule a visit"
         footer={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => setVisitSheetOpen(false)}
-              disabled={visitSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="brand"
-              loading={visitSubmitting}
-              onClick={handleSubmitVisit}
-            >
-              <CalendarCheck className="size-4" aria-hidden="true" />
-              <span>Send visit request</span>
-            </Button>
-          </>
+          <Button
+            loading={visitSubmitting}
+            onClick={handleSubmitVisit}
+            className="w-full rounded-full sm:w-auto"
+          >
+            Request visit
+          </Button>
         }
       >
         <form onSubmit={handleSubmitVisit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-foreground/90">
-                Preferred date &amp; time slots ({slots.length}/3)
+              <span className="text-xs font-semibold text-foreground">
+                Preferred time
               </span>
               {slots.length < 3 ? (
                 <button
                   type="button"
-                  onClick={addSlot}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+                  onClick={() =>
+                    setSlots((prev) => [
+                      ...prev,
+                      defaultTomorrowSlot(26 + prev.length * 24),
+                    ])
+                  }
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
                 >
                   <Plus className="size-3.5" aria-hidden="true" />
-                  <span>Add slot</span>
+                  <span>Add option</span>
                 </button>
               ) : null}
             </div>
@@ -764,45 +480,42 @@ const View = () => {
                   type="datetime-local"
                   value={slot}
                   min={minLocalDateTime()}
-                  onChange={(e) => handleSlotChange(idx, e.target.value)}
-                  aria-label={`Preferred slot ${idx + 1}`}
+                  onChange={(e) => {
+                    setVisitError("");
+                    setSlots((prev) =>
+                      prev.map((s, i) => (i === idx ? e.target.value : s)),
+                    );
+                  }}
+                  aria-label={`Option ${idx + 1}`}
                   required={idx === 0}
                 />
                 {slots.length > 1 ? (
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => removeSlot(idx)}
-                    aria-label={`Remove slot ${idx + 1}`}
+                    onClick={() =>
+                      setSlots((prev) => prev.filter((_, i) => i !== idx))
+                    }
+                    aria-label="Remove option"
+                    className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
                   >
-                    <Trash2 className="size-4 text-muted-foreground" aria-hidden="true" />
-                  </Button>
+                    <Trash2 className="size-4" aria-hidden="true" />
+                  </button>
                 ) : null}
               </div>
             ))}
-            <p className="text-xs text-muted-foreground">
-              Giving 2–3 options helps the owner and assigned broker confirm faster.
-            </p>
           </div>
 
-          <Field
-            label="Note for the owner & broker (optional)"
-            hint="Questions about parking, furnishings, lease length, or directions."
-          >
+          <Field label="Note (optional)">
             <Textarea
-              rows={3}
+              rows={2}
               value={visitNote}
               onChange={(e) => setVisitNote(e.target.value)}
-              placeholder="e.g., Moving next month with family, available weekday mornings…"
+              placeholder="Any message for the owner or broker"
             />
           </Field>
 
           {visitError ? (
-            <p
-              role="alert"
-              className="rounded-xl border border-destructive/30 bg-danger-soft px-3.5 py-2.5 text-xs font-medium text-destructive"
-            >
+            <p role="alert" className="text-xs font-medium text-destructive">
               {visitError}
             </p>
           ) : null}

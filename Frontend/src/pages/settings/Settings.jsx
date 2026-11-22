@@ -3,15 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
   ChevronRight,
-  User,
   Edit3,
   Lock,
   Palette,
   FileText,
   Shield,
   LogOut,
-  CalendarCheck,
-  Bookmark,
 } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
@@ -19,52 +16,24 @@ import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 import { AppContext } from "../../contexts/AppContext";
 import api from "../../api/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
-import { Avatar } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/toast";
 
-if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
-  try {
-    GoogleAuth.initialize({
-      clientId:
-        "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
-      scopes: ["profile", "email"],
-      grantOfflineAccess: true,
-    });
-  } catch {
-    /* ignore */
-  }
-}
-
-function SettingsRow({ icon: Icon, label, sublabel, onClick, destructive = false }) {
+function Row({ icon: Icon, label, onClick, destructive = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={
         destructive
-          ? "flex w-full items-center justify-between gap-3 rounded-2xl p-3 text-left text-destructive transition-colors hover:bg-danger-soft/60"
-          : "flex w-full items-center justify-between gap-3 rounded-2xl p-3 text-left text-foreground transition-colors hover:bg-accent/70"
+          ? "flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-sm font-medium text-destructive transition-colors hover:bg-danger-soft/50"
+          : "flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
       }
     >
-      <div className="flex min-w-0 items-center gap-3">
-        <div
-          className={
-            destructive
-              ? "flex size-10 shrink-0 items-center justify-center rounded-xl bg-danger-soft text-destructive"
-              : "flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground"
-          }
-        >
-          <Icon className="size-4" aria-hidden="true" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold">{label}</p>
-          {sublabel ? (
-            <p className="truncate text-xs text-muted-foreground">{sublabel}</p>
-          ) : null}
-        </div>
-      </div>
+      <span className="flex items-center gap-3">
+        <Icon className="size-4 shrink-0 opacity-75" aria-hidden="true" />
+        <span>{label}</span>
+      </span>
       <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
     </button>
   );
@@ -94,188 +63,88 @@ const Settings = () => {
       } catch {
         /* ignore */
       }
-      toast({
-        title: "Signed out",
-        description: "You have been signed out of Propatyc.",
-      });
+      toast({ title: "Signed out" });
       navigate("/signin");
     }
   };
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 py-5 sm:py-8">
-      <div>
-        <Button
-          variant="ghost"
-          size="sm"
+    <div className="mx-auto flex max-w-lg flex-col gap-6 py-4 pb-16 sm:py-6">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="-ml-2 mb-1 gap-1.5"
+          aria-label="Back"
+          className="inline-flex size-9 items-center justify-center rounded-full border border-border hover:bg-accent"
         >
-          <ChevronLeft className="size-4" aria-hidden="true" />
-          <span>Back</span>
-        </Button>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+          <ChevronLeft className="size-5" aria-hidden="true" />
+        </button>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">
           Settings
         </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Manage your account, appearance, and legal preferences.
-        </p>
       </div>
 
-      {/* User Summary */}
-      {user ? (
-        <Card>
-          <CardContent className="flex items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3.5">
-              <Avatar src={user.pp} name={user.username || "User"} size="lg" />
-              <div className="min-w-0">
-                <p className="truncate text-base font-bold text-foreground">
-                  {user.username}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {user.email}
-                </p>
-              </div>
-            </div>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/edit-profile">Edit</Link>
+      {!user ? (
+        <div className="flex items-center justify-between rounded-2xl border border-border p-4">
+          <span className="text-sm font-medium text-foreground">Not signed in</span>
+          <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm" className="rounded-full">
+              <Link to="/signin">Sign in</Link>
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-bold text-foreground">
-                Sign in to Propatyc
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Save properties, request site visits, and publish listings.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/signin">Sign in</Link>
-              </Button>
-              <Button asChild variant="brand" size="sm">
-                <Link to="/signup">Sign up</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            <Button asChild size="sm" className="rounded-full">
+              <Link to="/signup">Sign up</Link>
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
-      {/* Account */}
-      {user ? (
-        <Card>
-          <CardHeader className="pb-1">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Account &amp; Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-1">
-            <SettingsRow
-              icon={User}
-              label="My Profile"
-              sublabel="Listings, bookings, and saved homes"
-              onClick={() => navigate("/profile")}
-            />
-            <SettingsRow
+      <div className="divide-y divide-border/70 overflow-hidden rounded-2xl border border-border">
+        {user ? (
+          <>
+            <Row
               icon={Edit3}
-              label="Edit Profile"
-              sublabel="Update full name and phone number"
+              label="Edit profile"
               onClick={() => navigate("/edit-profile")}
             />
-            <SettingsRow
-              icon={CalendarCheck}
-              label="Site Visits"
-              sublabel="3-party visit requests and schedules"
-              onClick={() => navigate("/visits")}
-            />
-            <SettingsRow
-              icon={Bookmark}
-              label="My Space"
-              sublabel="Manage reservations and saved listings"
-              onClick={() => navigate("/bookings")}
-            />
             {!user.uuid ? (
-              <SettingsRow
+              <Row
                 icon={Lock}
-                label="Change Password"
-                sublabel="Update your account password"
+                label="Change password"
                 onClick={() => navigate("/change-password")}
               />
             ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {/* Preferences */}
-      <Card>
-        <CardHeader className="pb-1">
-          <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Preferences
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-1">
-          <SettingsRow
-            icon={Palette}
-            label="Appearance & Theme"
-            sublabel="Switch between Light and Dark mode"
-            onClick={() => navigate("/themes")}
+          </>
+        ) : null}
+        <Row
+          icon={Palette}
+          label="Appearance"
+          onClick={() => navigate("/themes")}
+        />
+        <Row
+          icon={FileText}
+          label="Terms & Conditions"
+          onClick={() => navigate("/termsandcondition")}
+        />
+        <Row
+          icon={Shield}
+          label="Privacy Policy"
+          onClick={() => navigate("/privacyandpolicy")}
+        />
+        {user?._id ? (
+          <Row
+            icon={LogOut}
+            label="Sign out"
+            destructive
+            onClick={() => setSignOutOpen(true)}
           />
-        </CardContent>
-      </Card>
-
-      {/* Legal */}
-      <Card>
-        <CardHeader className="pb-1">
-          <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Legal &amp; About
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-1">
-          <SettingsRow
-            icon={FileText}
-            label="Terms & Conditions"
-            sublabel="Platform rules and usage terms"
-            onClick={() => navigate("/termsandcondition")}
-          />
-          <SettingsRow
-            icon={Shield}
-            label="Privacy Policy"
-            sublabel="How Propatyc protects your data"
-            onClick={() => navigate("/privacyandpolicy")}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Sign Out */}
-      {user?._id ? (
-        <Card>
-          <CardContent className="py-1">
-            <SettingsRow
-              icon={LogOut}
-              label="Sign Out"
-              sublabel="Log out from this device"
-              destructive
-              onClick={() => setSignOutOpen(true)}
-            />
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <p className="text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Propatyc · Property Management System
-      </p>
+        ) : null}
+      </div>
 
       <ConfirmDialog
         open={signOutOpen}
         onOpenChange={setSignOutOpen}
-        title="Sign out of Propatyc?"
-        description="You can sign back in anytime to access your saved homes and visits."
+        title="Sign out?"
         confirmLabel="Sign out"
-        cancelLabel="Stay signed in"
         destructive
         onConfirm={handleSignOut}
       />

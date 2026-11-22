@@ -8,6 +8,9 @@ const {
   editProfile,
   updateFCM, 
   signout,
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
 } = require("../../Controllers/Broker/Auth");
 const { requireBrokerAuth } = require("../../middleware/requireAuth");
 
@@ -19,6 +22,10 @@ router.post("/signinWithGoogle", signinWithGoogle);
 router.get("/checkAuth", checkAuth);
 router.post("/edit-profile", requireBrokerAuth, editProfile);
 router.post("/update-fcm-token", requireBrokerAuth, updateFCM);
+
+router.get("/notifications", requireBrokerAuth, getNotifications);
+router.post("/notifications/read-all", requireBrokerAuth, markAllNotificationsRead);
+router.patch("/notifications/:notificationId/read", requireBrokerAuth, markNotificationRead);
 
 
 module.exports = router;

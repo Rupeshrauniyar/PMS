@@ -78,10 +78,14 @@ const fetchPropertyRoutes = require("./Routes/FetchingProperty");
 const paymentRoutes = require("./Routes/Payment");
 const emailRoutes = require("./Routes/Cred");
 const androidRoutes = require("./Routes/Android");
+const visitRoutes = require("./Routes/Visit");
+const visitService = require("./services/visitService");
+const BookingModel = require("./Models/BookingModel");
+const PropertyModel = require("./Models/PropertyModel");
 
 // Broker Routes
 const brokerauthRoutes = require("./Routes/Broker/Auth");
-const fetchBroking = require("./Routes/Broker/FetchBroking");
+const brokerVisitRoutes = require("./Routes/Broker/Visits");
 
 // // --- Keep Alive Function ---
 // const makeActive = async () => {
@@ -98,6 +102,15 @@ const fetchBroking = require("./Routes/Broker/FetchBroking");
 (async () => {
   try {
     await connectDB(); // MongoDB connection — required for the API
+
+    // Idempotent startup maintenance: indexes + legacy visit upgrade, then reminders.
+    try {
+      await Promise.all([BookingModel.createIndexes(), PropertyModel.createIndexes()]);
+      await visitService.migrateLegacyVisits();
+    } catch (maintErr) {
+      console.warn("Startup maintenance skipped:", maintErr?.message || maintErr);
+    }
+    visitService.startReminderLoop();
 
     // try {
     //   await connectRedis(); // Redis: cache invalidation paths use try/catch; optional at boot
@@ -136,9 +149,24 @@ const fetchBroking = require("./Routes/Broker/FetchBroking");
     app.use("/api/booking", bookingRoutes);
     app.use("/api/fetching", fetchPropertyRoutes);
     app.use("/api/payment", paymentRoutes);
+    app.use("/api/visits", visitRoutes);
 
     app.use("/api/broker/auth", brokerauthRoutes);
-    app.use("/api/broker/fetch", fetchBroking);
+    app.use("/api/broker", brokerVisitRoutes);
+
+    // JSON 404 + error handler (keeps CORS/JSON errors from leaking HTML stack traces)
+    app.use((req, res) => res.status(404).json({ message: "Not found." }));
+    // eslint-disable-next-line no-unused-vars
+    app.use((err, req, res, next) => {
+      if (err?.message === "Not allowed by CORS") {
+        return res.status(403).json({ message: "Origin not allowed." });
+      }
+      if (err?.type === "entity.too.large") {
+        return res.status(413).json({ message: "Request is too large." });
+      }
+      console.error("Unhandled error:", err?.message || err);
+      return res.status(err?.status || 500).json({ message: "Something went wrong." });
+    });
 
     // Start server
     app.listen(port, () => {

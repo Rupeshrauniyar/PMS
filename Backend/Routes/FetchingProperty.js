@@ -9,7 +9,7 @@ const {
 const { requireUserAuth } = require("../middleware/requireAuth");
 
 router.post("/get-property", getProperty);
-router.post("/get-my-prop", getBookers);
+router.post("/get-my-prop", requireUserAuth, getBookers);
 router.post("/get-user-property", requireUserAuth, getUserProperty);
 router.post("/search", searchProperty);
 

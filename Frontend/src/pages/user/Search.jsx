@@ -6,7 +6,6 @@ import {
   SlidersHorizontal,
   X,
   RotateCcw,
-  Sparkles,
 } from "lucide-react";
 
 import api from "../../api/client";
@@ -378,26 +377,14 @@ const Search = () => {
       {/* Main Content */}
       {isIdle ? (
         <section className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-brand" aria-hidden="true" />
-              <h2 className="text-base font-bold text-foreground">
-                Explore Recent Listings
-              </h2>
-            </div>
-            <span className="text-xs text-muted-foreground">
-              Type 2+ characters or apply filters to refine
-            </span>
-          </div>
-
           {suggestedLoading ? (
-            <div className="grid grid-cols-1 gap-x-7 gap-y-11 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <PropertyCardSkeleton key={i} />
               ))}
             </div>
           ) : suggested.filter((p) => p?._id).length > 0 ? (
-            <div className="grid grid-cols-1 gap-x-7 gap-y-11 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
               {suggested
                 .filter((p) => p?._id)
                 .map((prop) => (
@@ -407,35 +394,28 @@ const Search = () => {
           ) : (
             <EmptyState
               icon={SearchIcon}
-              title="Search across Propatyc"
-              description="Enter a city, locality, or open Filters to set your exact budget and room preferences."
+              title="Search properties"
               action={
                 <Button variant="outline" size="sm" onClick={() => setSheetOpen(true)}>
                   <SlidersHorizontal className="size-4" aria-hidden="true" />
-                  <span>Open Filters</span>
+                  <span>Filters</span>
                 </Button>
               }
             />
           )}
         </section>
       ) : loading ? (
-        <div className="flex flex-col gap-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Searching listings…
-          </p>
-          <div className="grid grid-cols-1 gap-x-7 gap-y-11 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <PropertyCardSkeleton key={i} />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <PropertyCardSkeleton key={i} />
+          ))}
         </div>
       ) : results.filter((p) => p?._id).length > 0 ? (
         <div className="flex flex-col gap-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {results.filter((p) => p?._id).length}{" "}
-            {results.filter((p) => p?._id).length === 1 ? "listing" : "listings"} found
+          <p className="text-xs font-medium text-muted-foreground">
+            {results.filter((p) => p?._id).length} results
           </p>
-          <div className="grid grid-cols-1 gap-x-7 gap-y-11 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
             {results
               .filter((p) => p?._id)
               .map((prop) => (
@@ -446,12 +426,10 @@ const Search = () => {
       ) : (
         <EmptyState
           icon={Building2}
-          title="No matching properties"
-          description="Try widening your price range, removing room minimums, or searching a broader location."
+          title="No matches"
           action={
-            <Button variant="outline" onClick={clearAll}>
-              <RotateCcw className="size-4" aria-hidden="true" />
-              <span>Reset search &amp; filters</span>
+            <Button variant="outline" size="sm" onClick={clearAll} className="rounded-full px-5">
+              Reset
             </Button>
           }
         />

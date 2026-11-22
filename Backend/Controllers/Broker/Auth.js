@@ -333,3 +333,50 @@ exports.updateFCM = async (req, res) => {
     return sendServerError(res, err, "broker updateFCM");
   }
 };
+
+// ---- Broker notifications ----
+const { isValidObjectId: isValidId } = require("../../utils/authHelpers");
+
+exports.getNotifications = async (req, res) => {
+  try {
+    const doc = await UserModel.findById(req.userId).select("notifications").lean();
+    const list = [...(doc?.notifications ?? [])];
+    list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return res.status(200).json({
+      success: true,
+      notifications: list,
+      unreadCount: list.filter((n) => !n.read).length,
+    });
+  } catch (err) {
+    return sendServerError(res, err, "broker getNotifications");
+  }
+};
+
+exports.markNotificationRead = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    if (!notificationId || !isValidId(notificationId)) {
+      return res.status(400).json({ message: "Invalid notification id." });
+    }
+    const r = await UserModel.updateOne(
+      { _id: req.userId, "notifications._id": notificationId },
+      { $set: { "notifications.$.read": true } },
+    );
+    if (!r.matchedCount) return res.status(404).json({ message: "Notification not found." });
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    return sendServerError(res, err, "broker markNotificationRead");
+  }
+};
+
+exports.markAllNotificationsRead = async (req, res) => {
+  try {
+    await UserModel.updateOne(
+      { _id: req.userId },
+      { $set: { "notifications.$[].read": true } },
+    );
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    return sendServerError(res, err, "broker markAllNotificationsRead");
+  }
+};
