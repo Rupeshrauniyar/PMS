@@ -17,13 +17,14 @@ import { cn } from "@/lib/utils";
 
 export function PropertyCardSkeleton({ className }) {
   return (
-    <div className={cn("flex flex-col gap-2.5", className)}>
-      <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
-      <div className="flex items-center justify-between gap-4 pt-0.5">
-        <Skeleton className="h-4 w-1/2 rounded-md" />
-        <Skeleton className="h-4 w-20 rounded-md" />
+    <div className={cn("flex min-w-0 flex-col gap-2.5", className)}>
+      <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <Skeleton className="h-4 w-24 rounded-md" />
+        <Skeleton className="h-4 w-12 rounded-full" />
       </div>
-      <Skeleton className="h-3.5 w-2/5 rounded-md" />
+      <Skeleton className="h-4 w-4/5 rounded-md" />
+      <Skeleton className="h-3.5 w-3/5 rounded-md" />
     </div>
   );
 }
@@ -46,6 +47,7 @@ const Properties = ({ prop, className, linkTo }) => {
     user?.saved?.some((s) => String(s?.propId) === String(prop._id)),
   );
   const hasVideo = Boolean(prop?.video?.url);
+  const isBooked = Boolean(prop?.status);
 
   const images = Array.isArray(prop.images) ? prop.images.filter(Boolean) : [];
   const slides =
@@ -111,23 +113,23 @@ const Properties = ({ prop, className, linkTo }) => {
   if (prop.location) metaParts.push(prop.location);
   if (prop.propertyType !== "Plot" && Number(prop.rooms) > 0) {
     metaParts.push(`${prop.rooms} ${Number(prop.rooms) === 1 ? "Room" : "Rooms"}`);
-  } else if (prop.propertyType === "Plot" && Number(prop.area) > 0) {
-    metaParts.push(`${prop.area} sq.ft`);
+  } else if (prop.area) {
+    metaParts.push(`${prop.area}`);
   }
 
   return (
     <article
-      className={cn("group flex flex-col gap-2.5", className)}
+      className={cn("group flex min-w-0 flex-col gap-2.5", className)}
       onMouseEnter={() => {
-        if (hasVideo) setPreviewVideo(true);
+        if (hasVideo && !isBooked) setPreviewVideo(true);
       }}
       onMouseLeave={() => {
         if (hasVideo) setPreviewVideo(false);
       }}
     >
-      {/* Clean 16:10 Media Stage */}
+      {/* 4:3 Architectural Media Frame */}
       <div
-        className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-muted"
+        className="relative aspect-[4/3] w-full overflow-clip rounded-2xl border border-border/50 bg-muted"
         onTouchStart={(e) => {
           touchStartX.current = e.touches[0]?.clientX ?? null;
         }}
@@ -153,22 +155,25 @@ const Properties = ({ prop, className, linkTo }) => {
               src={prop.video.url}
               poster={activeImg || undefined}
               width={640}
-              height={400}
+              height={480}
               autoPlay
               muted
               loop
               playsInline
-              className="size-full object-cover"
+              className="block size-full object-cover"
             />
           ) : activeImg && !imgFailed ? (
             <img
               src={activeImg}
               alt={prop.title || "Property"}
               width={640}
-              height={400}
+              height={480}
               loading="lazy"
               onError={() => setImgFailed(true)}
-              className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+              className={cn(
+                "block size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]",
+                isBooked && "opacity-85",
+              )}
             />
           ) : (
             <div className="flex size-full items-center justify-center text-muted-foreground">
@@ -177,7 +182,28 @@ const Properties = ({ prop, className, linkTo }) => {
           )}
         </Link>
 
-        {/* Minimal Save Icon */}
+        {/* Top-left Status / Video Micro-Pill */}
+        {isBooked ? (
+          <span className="pointer-events-none absolute left-2.5 top-2.5 inline-flex items-center rounded-full bg-black/80 px-2.5 py-0.5 text-[10.5px] font-bold tracking-tight text-white backdrop-blur-md">
+            Booked
+          </span>
+        ) : hasVideo ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPreviewVideo((v) => !v);
+            }}
+            aria-label="Preview walkthrough video"
+            className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-1 text-[10.5px] font-semibold text-white backdrop-blur-md transition hover:bg-black/80"
+          >
+            <Play className="size-2.5 fill-current" aria-hidden="true" />
+            <span>Tour</span>
+          </button>
+        ) : null}
+
+        {/* Save Button */}
         <button
           type="button"
           disabled={saveBusy}
@@ -185,9 +211,9 @@ const Properties = ({ prop, className, linkTo }) => {
           aria-label={isSaved ? "Unsave" : "Save"}
           aria-pressed={isSaved}
           className={cn(
-            "absolute right-3 top-3 inline-flex size-8 items-center justify-center rounded-full backdrop-blur-md transition",
+            "absolute right-2.5 top-2.5 inline-flex size-8 items-center justify-center rounded-full backdrop-blur-md transition",
             isSaved
-              ? "bg-white text-black"
+              ? "bg-white text-black shadow-sm"
               : "bg-black/40 text-white hover:bg-black/65",
           )}
         >
@@ -197,22 +223,6 @@ const Properties = ({ prop, className, linkTo }) => {
           />
         </button>
 
-        {/* Video Indicator (Bottom-left) */}
-        {hasVideo ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setPreviewVideo((v) => !v);
-            }}
-            aria-label="Preview video"
-            className="absolute bottom-2.5 left-2.5 inline-flex size-7 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-md"
-          >
-            <Play className="ml-0.5 size-3 fill-current" aria-hidden="true" />
-          </button>
-        ) : null}
-
         {/* Hover Photo Arrows */}
         {totalSlides > 1 ? (
           <>
@@ -220,7 +230,7 @@ const Properties = ({ prop, className, linkTo }) => {
               type="button"
               onClick={(e) => stepSlide(e, -1)}
               aria-label="Previous photo"
-              className="absolute left-2.5 top-1/2 hidden size-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black opacity-0 transition-opacity group-hover:opacity-100 sm:inline-flex"
+              className="absolute left-2 top-1/2 hidden size-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black opacity-0 shadow-sm transition-opacity group-hover:opacity-100 sm:inline-flex"
             >
               <ChevronLeft className="size-4" aria-hidden="true" />
             </button>
@@ -228,7 +238,7 @@ const Properties = ({ prop, className, linkTo }) => {
               type="button"
               onClick={(e) => stepSlide(e, 1)}
               aria-label="Next photo"
-              className="absolute right-2.5 top-1/2 hidden size-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black opacity-0 transition-opacity group-hover:opacity-100 sm:inline-flex"
+              className="absolute right-2 top-1/2 hidden size-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black opacity-0 shadow-sm transition-opacity group-hover:opacity-100 sm:inline-flex"
             >
               <ChevronRight className="size-4" aria-hidden="true" />
             </button>
@@ -239,7 +249,7 @@ const Properties = ({ prop, className, linkTo }) => {
         {totalSlides > 1 && !previewVideo ? (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-center gap-1"
+            className="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1"
           >
             {slides.slice(0, 5).map((_, idx) => (
               <span
@@ -256,21 +266,28 @@ const Properties = ({ prop, className, linkTo }) => {
         ) : null}
       </div>
 
-      {/* Minimal 2-Line Info */}
-      <Link to={destination} className="flex flex-col gap-0.5 px-0.5">
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className="truncate text-[15px] font-semibold text-foreground">
-            {prop.title || "Untitled"}
-          </h3>
-          <span className="shrink-0 text-[14.5px] font-bold tabular-nums text-foreground">
+      {/* Crisp 3-Line Architectural Metadata */}
+      <Link to={destination} className="flex min-w-0 flex-col gap-0.5 px-0.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-[14.5px] font-extrabold tabular-nums tracking-tight text-foreground sm:text-[15.5px]">
             {formatPrice(prop.price)}
             {isRent ? (
-              <span className="text-xs font-normal text-muted-foreground">/mo</span>
+              <span className="text-[11.5px] font-medium text-muted-foreground"> /mo</span>
             ) : null}
           </span>
+
+          {prop.propertyType ? (
+            <span className="shrink-0 rounded-md border border-border/80 bg-secondary/50 px-1.5 py-0.5 text-[10.5px] font-semibold text-foreground/85">
+              {prop.propertyType}
+            </span>
+          ) : null}
         </div>
 
-        <p className="truncate text-[13px] text-muted-foreground">
+        <h3 className="truncate text-[13.5px] font-semibold text-foreground sm:text-[14.5px]">
+          {prop.title || "Untitled property"}
+        </h3>
+
+        <p className="truncate text-xs text-muted-foreground">
           {metaParts.join(" · ") || (isRent ? "For Rent" : "For Sale")}
         </p>
       </Link>

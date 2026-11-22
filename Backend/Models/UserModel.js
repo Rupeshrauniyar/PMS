@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { normalizeEmail, canonicalizeEmail } = require("../utils/authHelpers");
 
 const notificationEntrySchema = mongoose.Schema(
   {
@@ -22,11 +23,26 @@ const notificationEntrySchema = mongoose.Schema(
 
 const userSchema = mongoose.Schema(
   {
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    canonicalEmail: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+    },
     username: { type: String, required: true },
-    password: { type: String }, // optional if using Google
-    uuid: { type: String }, // optional, used for Google OAuth
-    authProvider: { type: String, default: "local" }, // 'local' or 'google'
+    password: { type: String }, // optional if created via Google only
+    uuid: { type: String, unique: true, sparse: true }, // Google OAuth sub / uid
+    authProvider: {
+      type: String,
+      enum: ["local", "google", "both"],
+      default: "local",
+    },
+    authProviders: {
+      type: [{ type: String, enum: ["local", "google"] }],
+      default: undefined,
+    },
     phone: {
       type: String,
       unique: true,
@@ -36,7 +52,7 @@ const userSchema = mongoose.Schema(
       maxlength: 15,
     },
     address: { type: String },
-    pp: { type: String }, // profile picture
+    pp: { type: String },
     myProperties: [
       {
         propId: { type: mongoose.Schema.Types.ObjectId, ref: "property" },
@@ -60,6 +76,14 @@ const userSchema = mongoose.Schema(
   },
   { timestamps: true },
 );
+
+userSchema.pre("validate", function normalizeUserEmails(next) {
+  if (this.email) {
+    this.email = normalizeEmail(this.email);
+    this.canonicalEmail = canonicalizeEmail(this.email);
+  }
+  next();
+});
 
 const UserModel = mongoose.model("users", userSchema);
 

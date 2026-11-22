@@ -447,13 +447,45 @@ body.keyboard-visible .chrome-fixed-bottom {
   @apply w-full h-11 rounded-xl border border-input bg-card text-sm focus:ring-2 focus:ring-ring/25 px-10 outline-none;
 }
 
+/* Deferred off-screen rendering strictly for below-the-fold sections */
+.cv-below-fold {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 640px;
+}
+
+/* Accessible native <details> accordion with progressive slide animation */
+.intro-accordion details > summary {
+  list-style: none;
+}
+.intro-accordion details > summary::-webkit-details-marker {
+  display: none;
+}
+.intro-accordion details::details-content {
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  contain: layout;
+}
+.intro-accordion details:not([open])::details-content {
+  block-size: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .intro-accordion details::details-content {
+    transition: block-size 0.25s ease-in-out, content-visibility 0.25s ease-in-out, display 0.25s ease-in-out;
+    transition-behavior: allow-discrete;
+  }
+  .intro-accordion .accordion-chevron {
+    transition: rotate 0.2s ease;
+  }
+}
+.intro-accordion details > summary .accordion-chevron {
+  rotate: -90deg;
+}
+.intro-accordion details[open] > summary .accordion-chevron {
+  rotate: 0deg;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  html {
+    scroll-behavior: auto;
   }
 }

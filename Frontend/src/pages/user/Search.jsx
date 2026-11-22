@@ -378,13 +378,13 @@ const Search = () => {
       {isIdle ? (
         <section className="flex flex-col gap-4">
           {suggestedLoading ? (
-            <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 sm:gap-x-5 sm:gap-y-8 md:grid-cols-3 xl:grid-cols-4">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <PropertyCardSkeleton key={i} />
               ))}
             </div>
           ) : suggested.filter((p) => p?._id).length > 0 ? (
-            <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 sm:gap-x-5 sm:gap-y-8 md:grid-cols-3 xl:grid-cols-4">
               {suggested
                 .filter((p) => p?._id)
                 .map((prop) => (
@@ -405,7 +405,7 @@ const Search = () => {
           )}
         </section>
       ) : loading ? (
-        <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 sm:gap-x-5 sm:gap-y-8 md:grid-cols-3 xl:grid-cols-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <PropertyCardSkeleton key={i} />
           ))}
@@ -415,7 +415,7 @@ const Search = () => {
           <p className="text-xs font-medium text-muted-foreground">
             {results.filter((p) => p?._id).length} results
           </p>
-          <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 sm:gap-x-5 sm:gap-y-8 md:grid-cols-3 xl:grid-cols-4">
             {results
               .filter((p) => p?._id)
               .map((prop) => (

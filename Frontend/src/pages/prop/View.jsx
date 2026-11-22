@@ -250,6 +250,14 @@ const View = () => {
       );
     }
 
+    if (property.status === true) {
+      return (
+        <Button disabled variant="secondary" className="flex-1 rounded-full">
+          Currently Booked
+        </Button>
+      );
+    }
+
     return (
       <div className="flex flex-1 gap-2">
         <Button onClick={openVisitSheet} className="flex-1 rounded-full">

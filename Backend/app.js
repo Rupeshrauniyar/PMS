@@ -32,11 +32,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-const allowedOrigins = [
-  process.env.FRONTEND1,
-  process.env.FRONTEND2,
-  process.env.FRONTEND3,
-].filter((o) => typeof o === "string" && o.length > 0);
+const allowedOrigins = Object.entries(process.env)
+  .filter(([k, v]) => /^FRONTEND\d*$/i.test(k) && typeof v === "string" && v.trim().length > 0)
+  .map(([, v]) => v.trim().replace(/\/+$/, ""));
 
 const nodeEnv = process.env.NODE_ENV || "development";
 

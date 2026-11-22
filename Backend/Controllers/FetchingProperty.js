@@ -19,20 +19,130 @@ exports.getProperty = async (req, res) => {
       return res.status(400).json({ error: "Invalid request body." });
     }
 
-    if (Data.type) {
+    if (Data.type || Data.recent) {
       const limit = Math.min(Math.max(parseInt(Data.limit, 10) || 100, 1), 200);
-      const Properties = await PropertyModel.find({
-        propertyType: Data.type,
-        status: false,
-      })
-        .select("-owner -bookers -ownerModel")
-        .lean()
-        .limit(limit)
-        .sort({ createdAt: -1 });
+      const query = {};
+
+      if (Data.onlyAvailable === true) {
+        query.status = false;
+      }
+
+      if (Data.type && Data.type !== "All") {
+        const cleanType = String(Data.type).trim();
+        query.propertyType = {
+          $regex: `^${cleanType.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+          $options: "i",
+        };
+      }
+
+      if (
+        Data.sellingType &&
+        ["Rent System", "Selling System"].includes(Data.sellingType)
+      ) {
+        query.sellingType = Data.sellingType;
+      }
+
+      if (Data.withVideo) {
+        query["video.url"] = { $nin: [null, ""] };
+      }
+
+      const sort =
+        Data.sort === "popular"
+          ? { status: 1, views: -1, createdAt: -1 }
+          : { status: 1, createdAt: -1 };
+
+      const [Properties, summaryGroups] = await Promise.all([
+        PropertyModel.find(query)
+          .select("-owner -bookers -ownerModel")
+          .sort(sort)
+          .limit(limit)
+          .lean(),
+        Data.includeCounts
+          ? PropertyModel.aggregate([
+              {
+                $group: {
+                  _id: null,
+                  all: { $sum: 1 },
+                  available: {
+                    $sum: { $cond: [{ $eq: ["$status", false] }, 1, 0] },
+                  },
+                  House: {
+                    $sum: {
+                      $cond: [
+                        { $eq: [{ $toLower: "$propertyType" }, "house"] },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                  Room: {
+                    $sum: {
+                      $cond: [
+                        { $eq: [{ $toLower: "$propertyType" }, "room"] },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                  Plot: {
+                    $sum: {
+                      $cond: [
+                        { $eq: [{ $toLower: "$propertyType" }, "plot"] },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                  video: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $and: [
+                            { $ne: ["$video.url", null] },
+                            { $ne: ["$video.url", ""] },
+                          ],
+                        },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+            ])
+          : Promise.resolve(null),
+      ]);
+
+      let list = Properties || [];
+      if (Data.sort === "price_asc" || Data.sort === "price_desc") {
+        const dir = Data.sort === "price_asc" ? 1 : -1;
+        list = [...list].sort((a, b) => {
+          if (Boolean(a.status) !== Boolean(b.status)) {
+            return a.status ? 1 : -1;
+          }
+          const pa = Number(String(a.price ?? "").replace(/,/g, "")) || 0;
+          const pb = Number(String(b.price ?? "").replace(/,/g, "")) || 0;
+          return (pa - pb) * dir;
+        });
+      }
+
+      const rawCounts = summaryGroups?.[0];
+      const counts = Data.includeCounts
+        ? {
+            All: rawCounts?.all || 0,
+            available: rawCounts?.available || 0,
+            House: rawCounts?.House || 0,
+            Room: rawCounts?.Room || 0,
+            Plot: rawCounts?.Plot || 0,
+            video: rawCounts?.video || 0,
+          }
+        : undefined;
 
       return res.status(200).json({
-        Properties: Properties || [],
-        message: Properties?.length ? undefined : "No properties available yet",
+        Properties: list,
+        ...(counts ? { counts } : {}),
+        success: true,
+        message: list.length ? undefined : "No properties available yet",
       });
     }
 
@@ -87,30 +197,14 @@ exports.getProperty = async (req, res) => {
       });
     }
 
-    if (Data.recent) {
-      const limit = Math.min(Math.max(parseInt(Data.limit, 10) || 100, 1), 200);
-      const query = { status: false };
-      if (Data.sellingType && ["Rent System", "Selling System"].includes(Data.sellingType)) {
-        query.sellingType = Data.sellingType;
-      }
-      if (Data.withVideo) query["video.url"] = { $ne: null };
-      const sort = Data.sort === "popular" ? { views: -1, createdAt: -1 } : { createdAt: -1 };
-      const Properties = await PropertyModel.find(query)
-        .select("-owner -bookers -ownerModel")
-        .sort(sort)
-        .limit(limit)
-        .lean();
-      return res.status(200).json({ Properties, success: true });
-    }
-
     if (Data.filter) {
       const Properties = await PropertyModel.find({
         _id: { $ne: Data.filter },
       })
         .select("-owner -bookers -ownerModel")
         .lean()
-        .limit(10)
-        .sort({ createdAt: -1 });
+        .limit(12)
+        .sort({ status: 1, createdAt: -1 });
 
       return res.status(200).json({
         Properties: Properties || [],
@@ -475,7 +569,7 @@ exports.searchProperty = async (req, res) => {
         nlp.sortByPrice,
     );
 
-    const andConditions = [{ status: false }];
+    const andConditions = f.onlyAvailable === true ? [{ status: false }] : [];
 
     if (
       explicit.sellingType &&
@@ -523,10 +617,8 @@ exports.searchProperty = async (req, res) => {
         andConditions.push({ $or: text.orFilters });
     }
 
-    const finalQuery = { $and: andConditions };
-
     /* Avoid returning every listing when the query is effectively empty */
-    if (andConditions.length === 1) {
+    if (andConditions.length === 0 || (andConditions.length === 1 && f.onlyAvailable === true)) {
       return res.status(200).json({
         success: true,
         count: 0,
@@ -536,6 +628,8 @@ exports.searchProperty = async (req, res) => {
       });
     }
 
+    const finalQuery = andConditions.length === 1 ? andConditions[0] : { $and: andConditions };
+
     let props = await PropertyModel.find(finalQuery)
       .select(SEARCH_PUBLIC_FIELDS)
       .limit(120)
@@ -543,6 +637,7 @@ exports.searchProperty = async (req, res) => {
 
     if (sortNumericPrice) {
       props.sort((a, b) => {
+        if (Boolean(a.status) !== Boolean(b.status)) return a.status ? 1 : -1;
         const pa = parseNum(a.price);
         const pb = parseNum(b.price);
         const na = pa != null ? pa : Number.POSITIVE_INFINITY;
@@ -550,9 +645,10 @@ exports.searchProperty = async (req, res) => {
         return na - nb;
       });
     } else {
-      props.sort(
-        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
-      );
+      props.sort((a, b) => {
+        if (Boolean(a.status) !== Boolean(b.status)) return a.status ? 1 : -1;
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
     }
 
     props = props.slice(0, 100);

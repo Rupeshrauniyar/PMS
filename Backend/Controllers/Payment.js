@@ -100,18 +100,21 @@ async function markPaymentComplete(payment, { gatewayRef, rawPayload }) {
 
   const finalDoc = updated || (await PaymentModel.findById(payment._id));
 
-  await BookingModel.updateOne(
-    { _id: payment.bookingId },
-    {
-      $set: {
-        paymentStatus: "paid",
-        paymentGateway: payment.gateway,
-        paymentRef: gatewayRef || payment.transactionUuid,
-        paidAt: now,
-        status: true,
+  await Promise.all([
+    BookingModel.updateOne(
+      { _id: payment.bookingId },
+      {
+        $set: {
+          paymentStatus: "paid",
+          paymentGateway: payment.gateway,
+          paymentRef: gatewayRef || payment.transactionUuid,
+          paidAt: now,
+          status: true,
+        },
       },
-    },
-  );
+    ),
+    PropertyModel.updateOne({ _id: payment.propId }, { $set: { status: true } }),
+  ]);
 
   // Notify buyer and property owner (best-effort)
   if (updated) {
@@ -216,16 +219,19 @@ exports.initiatePayment = async (req, res) => {
         status: "pay_at_property",
       });
 
-      await BookingModel.updateOne(
-        { _id: booking._id },
-        {
-          $set: {
-            paymentStatus: "pay_at_property",
-            paymentGateway: "cash",
-            paymentRef: transactionUuid,
+      await Promise.all([
+        BookingModel.updateOne(
+          { _id: booking._id },
+          {
+            $set: {
+              paymentStatus: "pay_at_property",
+              paymentGateway: "cash",
+              paymentRef: transactionUuid,
+            },
           },
-        },
-      );
+        ),
+        PropertyModel.updateOne({ _id: booking.propId }, { $set: { status: true } }),
+      ]);
 
       if (prop?.owner) {
         await pushUserNotification(prop.owner, {

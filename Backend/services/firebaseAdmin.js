@@ -1,23 +1,33 @@
 const path = require("path");
+const fs = require("fs");
 const admin = require("firebase-admin");
 
 let initialized = false;
 
-function getMessaging() {
+function ensureFirebaseApp() {
   if (!initialized) {
     if (!admin.apps.length) {
-      const serviceAccount = require(path.join(
-        __dirname,
-        "..",
-        "serviceAccountKey.json",
-      ));
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
+      const keyPath = path.join(__dirname, "..", "serviceAccountKey.json");
+      if (fs.existsSync(keyPath)) {
+        const serviceAccount = require(keyPath);
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+      } else {
+        throw new Error("serviceAccountKey.json not found");
+      }
     }
     initialized = true;
   }
-  return admin.messaging();
+  return admin;
 }
 
-module.exports = { getMessaging };
+function getMessaging() {
+  return ensureFirebaseApp().messaging();
+}
+
+function getAuth() {
+  return ensureFirebaseApp().auth();
+}
+
+module.exports = { ensureFirebaseApp, getMessaging, getAuth };

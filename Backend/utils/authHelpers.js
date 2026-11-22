@@ -45,9 +45,6 @@ function getBearerToken(req) {
   return parts[1] || null;
 }
 
-/**
- * Verify access JWT (Authorization header, password-reset tokens will not have `id`).
- */
 function verifyAccessToken(token) {
   return jwt.verify(token, JWT_SECRET);
 }
@@ -78,9 +75,6 @@ function signRefreshToken(payload) {
   );
 }
 
-/**
- * Decode access token from string; rejects refresh typ and missing id.
- */
 function tryDecodeAccessTokenString(token) {
   if (!token) return null;
   try {
@@ -134,33 +128,90 @@ function tryUserIdFromRefreshCookie(req, role = "user") {
   return null;
 }
 
+function normalizeEmail(email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase();
+}
+
 /**
- * Verify an incoming Google / Firebase `idToken` when provided (Android GoogleAuth or Web Firebase).
- * Falls back cleanly to body fields for older client versions.
+ * Industry-standard canonical email normalization:
+ * - Lowercases & trims all addresses.
+ * - For Gmail (`@gmail.com` and `@googlemail.com`), strips `.` dots and `+tag`
+ *   sub-addresses and unifies `@googlemail.com` -> `@gmail.com` so the same
+ *   Google mailbox can never register duplicate accounts.
+ */
+function canonicalizeEmail(email) {
+  const norm = normalizeEmail(email);
+  const atIdx = norm.lastIndexOf("@");
+  if (atIdx <= 0) return norm;
+
+  let local = norm.slice(0, atIdx);
+  let domain = norm.slice(atIdx + 1);
+
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    domain = "gmail.com";
+    const plusIdx = local.indexOf("+");
+    if (plusIdx !== -1) {
+      local = local.slice(0, plusIdx);
+    }
+    local = local.replace(/\./g, "");
+  }
+
+  if (!local) return norm;
+  return `${local}@${domain}`;
+}
+
+/**
+ * Build a MongoDB filter matching an email by either its canonical form or exact normalized form.
+ */
+function buildEmailLookupQuery(rawEmail) {
+  const emailNorm = normalizeEmail(rawEmail);
+  const canonical = canonicalizeEmail(emailNorm);
+  if (!emailNorm) return { email: "" };
+  if (canonical === emailNorm) {
+    return { $or: [{ canonicalEmail: canonical }, { email: emailNorm }] };
+  }
+  return {
+    $or: [
+      { canonicalEmail: canonical },
+      { email: emailNorm },
+      { email: canonical },
+    ],
+  };
+}
+
+/**
+ * Verify an incoming Google / Firebase `idToken` (Web Firebase or Native Android GoogleAuth).
+ * Returns `{ email, uuid, username, pp, verified, emailVerified }`.
  */
 async function resolveGoogleIdentity(body = {}) {
   const { idToken, email, uuid, username, pp } = body || {};
   if (idToken && typeof idToken === "string") {
-    // 1. Try Firebase Admin ID token verification (Web signInWithPopup)
+    // 1. Firebase Admin ID token verification (Web signInWithPopup)
     try {
-      const admin = require("firebase-admin");
-      if (admin.apps.length) {
-        const decoded = await admin.auth().verifyIdToken(idToken);
-        if (decoded?.email) {
-          return {
-            email: decoded.email,
-            uuid: decoded.sub || decoded.uid || uuid,
-            username: decoded.name || username || decoded.email.split("@")[0],
-            pp: decoded.picture || pp || "",
-            verified: true,
-          };
-        }
+      const { getAuth } = require("../services/firebaseAdmin");
+      const decoded = await getAuth().verifyIdToken(idToken);
+      if (decoded?.email) {
+        const googleSub =
+          decoded.firebase?.identities?.["google.com"]?.[0] ||
+          decoded.sub ||
+          decoded.uid ||
+          uuid;
+        return {
+          email: decoded.email,
+          uuid: String(googleSub),
+          username: decoded.name || username || decoded.email.split("@")[0],
+          pp: decoded.picture || pp || "",
+          verified: true,
+          emailVerified: decoded.email_verified !== false,
+        };
       }
     } catch {
       /* Not a Firebase ID token — try Google OAuth2 tokeninfo next */
     }
 
-    // 2. Try Google OAuth2 ID token (Native Android GoogleAuth.signIn)
+    // 2. Google OAuth2 ID token verification (Native Android GoogleAuth.signIn)
     try {
       const resp = await fetch(
         `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
@@ -168,37 +219,35 @@ async function resolveGoogleIdentity(body = {}) {
       if (resp.ok) {
         const info = await resp.json();
         if (info?.email && info?.sub) {
+          const emailVerified =
+            info.email_verified === true || info.email_verified === "true";
           return {
             email: info.email,
-            uuid: uuid || info.sub,
+            uuid: String(info.sub || uuid),
             username: info.name || username || info.email.split("@")[0],
             pp: info.picture || pp || "",
             verified: true,
+            emailVerified,
           };
         }
       }
     } catch {
-      /* Fallback to explicit payload fields if offline / network issue */
+      /* Fallback if tokeninfo unreachable */
     }
   }
 
   return {
     email,
-    uuid,
+    uuid: uuid ? String(uuid) : "",
     username: username || (email ? String(email).split("@")[0] : "User"),
     pp: pp || "",
     verified: false,
+    emailVerified: false,
   };
 }
 
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
-}
-
-function normalizeEmail(email) {
-  return String(email || "")
-    .trim()
-    .toLowerCase();
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -242,6 +291,8 @@ module.exports = {
   resolveGoogleIdentity,
   isValidObjectId,
   normalizeEmail,
+  canonicalizeEmail,
+  buildEmailLookupQuery,
   isValidEmail,
   sendServerError,
 };

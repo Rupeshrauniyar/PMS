@@ -38,6 +38,7 @@ const DESKTOP_LINKS = [
   { to: "/", label: "Explore", end: true },
   { to: "/search", label: "Search" },
   { to: "/visits", label: "Visits" },
+  { to: "/intro", label: "About" },
   { to: "/profile", label: "Profile" },
 ];
 

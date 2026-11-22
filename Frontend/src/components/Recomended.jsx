@@ -34,8 +34,8 @@ const Recommend = ({ id }) => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-x-7 gap-y-11 sm:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3].map((i) => (
+      <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 sm:gap-x-5 lg:grid-cols-3 xl:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
           <PropertyCardSkeleton key={i} />
         ))}
       </div>
@@ -54,7 +54,7 @@ const Recommend = ({ id }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 sm:gap-x-5 lg:grid-cols-3 xl:grid-cols-4">
       {valid.map((item) => (
         <Properties prop={item} key={item._id} />
       ))}

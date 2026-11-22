@@ -90,6 +90,9 @@ exports.bookProperty = async (req, res) => {
     if (!prop) {
       return res.status(404).json({ message: "Property not found." });
     }
+    if (prop.status === true) {
+      return res.status(409).json({ message: "This property is already booked." });
+    }
     if (!userExists) {
       return res.status(404).json({ message: "User not found." });
     }
@@ -197,13 +200,14 @@ exports.canclePropertyBooking = async (req, res) => {
       .populate({ path: "owner", select: "_id FCMtokens" })
       .lean();
 
-    const activeConfirmedCount = await BookingModel.countDocuments({
+    const activeSettledCount = await BookingModel.countDocuments({
       propId: booking.propId,
       active: true,
-      status: true,
+      bType: "pay",
+      paymentStatus: { $in: ["paid", "pay_at_property"] },
     });
 
-    if (activeConfirmedCount === 0 && prop) {
+    if (activeSettledCount === 0 && prop) {
       await PropertyModel.updateOne({ _id: prop._id }, { $set: { status: false } });
     }
 
@@ -269,10 +273,8 @@ exports.confirmPropertyBooking = async (req, res) => {
         .json({ message: "Not allowed to confirm this booking." });
     }
 
-    await Promise.all([
-      BookingModel.updateOne({ _id }, { $set: { status: true } }),
-      PropertyModel.updateOne({ _id: prop._id }, { $set: { status: true } }),
-    ]);
+    // Confirming unlocks payment for the buyer; Property.status becomes true only once paid / pay_at_property.
+    await BookingModel.updateOne({ _id }, { $set: { status: true } });
 
     const buyer = await UserModel.findById(booking.userId)
       .select("FCMtokens")
@@ -351,6 +353,19 @@ exports.rejectPropertyBooking = async (req, res) => {
         { $pull: { bookers: booking._id } },
       ),
     ]);
+
+    const remainingSettled = await BookingModel.countDocuments({
+      propId: booking.propId,
+      active: true,
+      bType: "pay",
+      paymentStatus: { $in: ["paid", "pay_at_property"] },
+    });
+    if (remainingSettled === 0) {
+      await PropertyModel.updateOne(
+        { _id: booking.propId },
+        { $set: { status: false } },
+      );
+    }
 
     const buyer = await UserModel.findById(booking.userId)
       .select("FCMtokens")

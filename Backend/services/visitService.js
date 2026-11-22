@@ -834,6 +834,22 @@ async function migrateLegacyVisits() {
   ]);
   const n = cancelled.modifiedCount + approved.modifiedCount + requested.modifiedCount;
   if (n) console.log(`[migrate] upgraded ${n} legacy visit bookings`);
+
+  // Reconcile orphaned Property.status = true where no active paid / pay_at_property booking exists
+  const settledPropIds = await BookingModel.distinct("propId", {
+    active: true,
+    bType: "pay",
+    paymentStatus: { $in: ["paid", "pay_at_property"] },
+  });
+  const propReconciled = await PropertyModel.updateMany(
+    { status: true, _id: { $nin: settledPropIds } },
+    { $set: { status: false } },
+  );
+  if (propReconciled.modifiedCount) {
+    console.log(
+      `[migrate] restored ${propReconciled.modifiedCount} available properties from stale booked status`,
+    );
+  }
 }
 
 /** Express helper: translate VisitError to an HTTP response. */
