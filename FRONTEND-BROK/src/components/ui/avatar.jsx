@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const SIZES = {
-  xs: "size-7 text-xs",
+  xs: "size-7 text-[11px]",
   sm: "size-9 text-xs",
   default: "size-11 text-sm",
   lg: "size-14 text-base",
@@ -10,9 +10,9 @@ const SIZES = {
 };
 
 function initialsOf(name) {
-  if (!name) return "?";
+  if (!name) return "•";
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
+  if (parts.length === 0) return "•";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
@@ -30,7 +30,7 @@ export function Avatar({ src, name, size = "default", className, alt }) {
     <span
       data-slot="avatar"
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-soft font-bold text-brand ring-1 ring-border/70 select-none",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-foreground font-semibold text-background ring-1 ring-border select-none",
         SIZES[size] || SIZES.default,
         className,
       )}

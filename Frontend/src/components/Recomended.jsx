@@ -1,103 +1,63 @@
 import React, { useEffect, useState } from "react";
-import { DoorOpen, LandPlot, Home as HomeIcon, Building2 } from "lucide-react";
-import Properties from "./Properties";
+import { Building2 } from "lucide-react";
+import Properties, { PropertyCardSkeleton } from "./Properties";
+import { EmptyState } from "@/components/ui/empty-state";
 import api from "../api/client";
 
-const Recommend = (prop) => {
+const Recommend = ({ id }) => {
   const [propData, setPropData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
+    let cancelled = false;
     const getProperty = async () => {
       try {
         setLoading(true);
-        let response;
-        if (prop.id) {
-          response = await api.post("/api/fetching/get-property", {
-            filter: prop.id,
-          });
-        } else {
-          response = await api.post("/api/fetching/get-property", {});
+        const payload = id ? { filter: id } : { recent: true, limit: 6 };
+        const response = await api.post("/api/fetching/get-property", payload);
+        if (!cancelled) {
+          setPropData(
+            response?.status === 200 ? response.data?.Properties || [] : [],
+          );
         }
-
-        // console.log(response.data)
-        if (response?.status === 200) {
-          setLoading(false);
-          setPropData(response.data.Properties);
-        } else {
-          setLoading(false);
-          setPropData([]);
-        }
-      } catch (err) {
-        setLoading(false);
+      } catch {
+        if (!cancelled) setPropData([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
     getProperty();
-  }, [prop.id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 gap-x-7 gap-y-11 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <PropertyCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  const valid = propData.filter((item) => item?._id);
+  if (valid.length === 0) {
+    return (
+      <EmptyState
+        icon={Building2}
+        title="No similar properties right now"
+        description="Check back soon as new listings are added daily."
+      />
+    );
+  }
+
   return (
-    <div className="w-full mt-4">
-      {/* {console.log(prop)} */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[{}, {}, {}].map((p, i) => (
-            <div
-              key={i}
-              className="bg-card border border-border rounded-3xl overflow-hidden animate-pulse h-full"
-            >
-              {/* Image Skeleton */}
-              <div className="relative overflow-hidden aspect-video bg-muted">
-                <div className="absolute top-3 left-3 w-20 h-5 bg-muted-foreground/20 rounded-md"></div>
-              </div>
-
-              {/* Content Section */}
-              <div className="p-4">
-                {/* Description */}
-                <div className="w-5/6 h-3 bg-muted-foreground/25 mb-2 rounded"></div>
-                <div className="w-4/5 h-3 bg-muted-foreground/15 mb-4 rounded"></div>
-
-                {/* Property Details Grid */}
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  {[...Array(4)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-1.5 text-muted-foreground"
-                    >
-                      <div className="w-4 h-4 bg-muted-foreground/25 rounded"></div>
-                      <div className="w-16 h-3 bg-muted-foreground/15 rounded"></div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Price Section */}
-                <div className="pt-3 border-t border-border flex items-center justify-between">
-                  <div className="w-24 h-4 bg-muted-foreground/25 rounded"></div>
-                  <div className="w-16 h-3 bg-muted-foreground/15 rounded"></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : propData.length > 0 ? (
-        <div className="grid grid-cols-1 gap-3">
-          {propData.map((item, index) => (
-            <Properties
-              prop={item}
-              key={index}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="xl:w-[80vw]  flex items-center justify-center flex-col  p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-            <Building2
-              size={32}
-              className="text-muted-foreground"
-            />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            No Properties available to recommend
-          </h3>
-        </div>
-      )}
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {valid.map((item) => (
+        <Properties prop={item} key={item._id} />
+      ))}
     </div>
   );
 };

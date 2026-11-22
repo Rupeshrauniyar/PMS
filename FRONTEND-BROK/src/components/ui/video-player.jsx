@@ -165,11 +165,11 @@ export function VideoPlayer({
       ) : null}
 
       {/* Top-left walkthrough badge */}
-      <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white ring-1 ring-white/15 backdrop-blur-md">
-        <span className="size-2 rounded-full bg-brand animate-pulse" />
-        <span>Video tour</span>
+      <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white ring-1 ring-white/15 backdrop-blur-md">
+        <span className="size-1.5 rounded-full bg-white animate-pulse" />
+        <span>VIDEO TOUR</span>
         {duration > 0 ? (
-          <span className="text-white/75">· {formatDuration(duration - currentTime || duration)}</span>
+          <span className="text-white/70 tabular-nums">· {formatDuration(duration - currentTime || duration)}</span>
         ) : null}
       </div>
 
@@ -192,10 +192,10 @@ export function VideoPlayer({
             if (e.key === "ArrowRight") v.currentTime = Math.min(duration, v.currentTime + 5);
             if (e.key === "ArrowLeft") v.currentTime = Math.max(0, v.currentTime - 5);
           }}
-          className="h-1.5 w-full cursor-pointer overflow-hidden rounded-full bg-white/30"
+          className="h-1 w-full cursor-pointer overflow-hidden rounded-full bg-white/25"
         >
           <div
-            className="h-full rounded-full bg-brand transition-[width] duration-100"
+            className="h-full rounded-full bg-white transition-[width] duration-100"
             style={{ width: `${progress}%` }}
           />
         </div>

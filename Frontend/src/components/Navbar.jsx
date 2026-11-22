@@ -1,261 +1,357 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useContext } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  Link,
-  NavLink,
-  useLocation,
-  useMatch,
-  useParams,
-} from "react-router-dom";
-import { Book, Home, Menu, PlaySquare, Plus, Search, Settings } from "lucide-react";
-import {
-  HomeIcon as HomeOutline,
-  ClipboardDocumentListIcon as ClipboardOutline,
-  Bars3Icon as MenuOutline,
-  PlayIcon as PlayOutline,
-  PlusCircleIcon as PlusOutline,
-  MagnifyingGlassIcon as SearchOutline,
-  Cog6ToothIcon as SettingsOutline,
-  UserIcon as UserOutline,
-} from "@heroicons/react/24/outline";
+  Home,
+  Search,
+  Plus,
+  CalendarCheck,
+  User,
+  Sun,
+  Moon,
+  Settings,
+  LogOut,
+  Bookmark,
+  Palette,
+  Building2,
+} from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 
-import {
-  HomeIcon as HomeSolid,
-  ClipboardDocumentListIcon as ClipboardSolid,
-  Bars3Icon as MenuSolid,
-  PlayIcon as PlaySolid,
-  PlusCircleIcon as PlusSolid,
-  MagnifyingGlassIcon as SearchSolid,
-  Cog6ToothIcon as SettingsSolid,
-  UserIcon as UserSolid,
-} from "@heroicons/react/24/solid";
 import { AppContext } from "../contexts/AppContext";
+import api from "../api/client";
 import { NotificationBell } from "./NotificationBell";
 import { UserAvatarButton } from "./UserAvatarButton";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/components/ui/toast";
+import { useTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
+
+const DESKTOP_LINKS = [
+  { to: "/", label: "Residences", end: true },
+  { to: "/search", label: "Search" },
+  { to: "/visits", label: "Visits" },
+  { to: "/bookings", label: "Saved" },
+];
+
+const MOBILE_TABS = [
+  { to: "/", label: "Explore", icon: Home, end: true },
+  { to: "/search", label: "Search", icon: Search },
+  { to: "/add-property", label: "List", icon: Plus, accent: true },
+  { to: "/visits", label: "Visits", icon: CalendarCheck },
+  { to: "/profile", label: "Profile", icon: User },
+];
+
+export function shouldHideChrome(pathname) {
+  return pathname === "/intro";
+}
+
+export function shouldHideMobileTabbar(pathname) {
+  if (shouldHideChrome(pathname)) return true;
+  return (
+    pathname.startsWith("/view/") ||
+    pathname.startsWith("/book/") ||
+    pathname === "/add-property" ||
+    pathname.startsWith("/edit-property/") ||
+    pathname === "/signin" ||
+    pathname === "/signup" ||
+    pathname === "/pass-reset-mail" ||
+    pathname.startsWith("/forgot-password/")
+  );
+}
+
+/** Crisp monochrome architectural mark */
+function PropatycMark({ className }) {
+  return (
+    <svg
+      viewBox="0 0 28 28"
+      fill="none"
+      aria-hidden="true"
+      className={cn("size-7 shrink-0", className)}
+    >
+      <rect width="28" height="28" rx="8" fill="currentColor" />
+      <path
+        d="M8.5 20V11.2L14 7.5L19.5 11.2V20H15.8V15.2H12.2V20H8.5Z"
+        fill="var(--background)"
+      />
+    </svg>
+  );
+}
 
 const Navbar = () => {
-  const [show, setShow] = useState(true);
-  const lastScrollY = useRef(
-    typeof window !== "undefined" ? window.scrollY : 0,
-  );
-  const { user } = useContext(AppContext);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (document.body.classList.contains("keyboard-visible")) {
-        setShow(true);
-        lastScrollY.current = window.scrollY;
-        return;
-      }
-
-      const current = window.scrollY;
-      const delta = current - lastScrollY.current;
-
-      if (delta > 12 && current > 72) setShow(false);
-      else if (delta < -12) setShow(true);
-
-      lastScrollY.current = current;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
+  const { user, setUser } = useContext(AppContext);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
 
-  const navLinks = [
-    {
-      path: "/",
-      name: "Home",
-      outline: HomeOutline,
-      solid: HomeSolid,
-    },
-    {
-      path: "/bookings",
-      name: "Bookings",
-      outline: ClipboardOutline,
-      solid: ClipboardSolid,
-    },
-    {
-      path: "/add-property",
-      name: "",
-      outline: PlusOutline,
-      solid: PlusSolid,
-    },
-    {
-      path: "/search",
-      name: "Search",
-      outline: SearchOutline,
-      solid: SearchSolid,
-    },
-    {
-      path: "/profile",
-      name: "Profile",
-      outline: UserOutline,
-      solid: UserSolid,
-    },
-  ];
-  const isBookPage = useMatch("/book/:id/:price");
-  return location.pathname === "/signup" ||
-    location.pathname === "/signin" ||
-    location.pathname === "/reels" ||
-    location.pathname === "/intro" ||
-    location.pathname === "/add-property" ||
-    location.pathname.includes("/view") ||
-    isBookPage ? null : (
+  if (shouldHideChrome(location.pathname)) {
+    return null;
+  }
+
+  const hideBottomBar = shouldHideMobileTabbar(location.pathname);
+
+  const handleSignOut = async () => {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await GoogleAuth.signOut().catch(() => {});
+      }
+      await api
+        .post("/api/auth/signout", {
+          fcmToken: localStorage.getItem("fcmToken") || undefined,
+        })
+        .catch(() => {});
+    } finally {
+      setUser(null);
+      try {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+      } catch {
+        /* ignore */
+      }
+      toast({
+        title: "Signed out",
+        description: "See you again soon.",
+      });
+      navigate("/signin");
+    }
+  };
+
+  return (
     <>
-      {/* Top Nav */}
-      <div
-        className={`chrome-fixed-top xl:w-[75%] w-full fixed top-0 right-0 left-0 xl:left-auto z-[99] transition-transform duration-300 ${
-          show ? "translate-y-0" : "-translate-y-full"
-        }`}
-      >
-        {/* {console.log(user.displayName)} */}
-        <div className=" ">
-          <div className="chrome-fixed-inner min-h-[4.75rem] bg-background/70 backdrop-blur-xl border border-border shadow-lg px-2 flex items-center justify-between">
-            {/* Left: Menu + Logo */}
-            <div className="flex items-center gap-3">
-              <Link to="/" className="flex items-center gap-2">
-                <img
-                  className="w-12 h-12  object-contain ml-[4px]"
-                  src="/web-app-manifest-512x512.png"
-                  alt="Logo"
-                />
-              </Link>
-            </div>
+      {/* Minimal Monochrome Top Header */}
+      <header className="chrome-fixed-top glass fixed inset-x-0 top-0 z-40 border-b border-border/60 pt-safe">
+        <div className="mx-auto flex h-[3.75rem] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          {/* Monochrome Brand Wordmark */}
+          <Link
+            to="/"
+            className="flex shrink-0 items-center gap-2.5 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-lg"
+          >
+            <PropatycMark />
+            <span className="text-[17px] font-extrabold tracking-[-0.035em] text-foreground">
+              Propatyc
+            </span>
+          </Link>
 
-            {/* Right: Profile */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {user ? (
-                <>
-                  <NotificationBell user={user} />
-                  <Link
-                    to="/profile"
-                    aria-label="Profile"
-                    className="rounded-full hover:bg-accent transition-colors flex items-center justify-center p-1.5 cursor-pointer"
-                  >
-                    <UserAvatarButton user={user} sizeClass="w-9 h-9 sm:w-8 sm:h-8" ring />
-                  </Link>
-                </>
-              ) : (
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Link
-                    to="/signin"
-                    className="hidden sm:block px-2 py-1 sm:px-3 sm:py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="px-5 py-3 sm:px-4 sm:py-2 text-sm font-semibold bg-foreground text-background rounded-full hover:bg-foreground/90 transition-colors"
-                  >
-                    Sign up
-                  </Link>
-                </div>
-              )}
+          {/* Desktop Center Navigation */}
+          <nav
+            aria-label="Primary"
+            className="hidden items-center gap-1 rounded-full border border-border/70 bg-secondary/50 p-1 lg:flex"
+          >
+            {DESKTOP_LINKS.map((item) => (
               <NavLink
-                to="settings"
-                className={({ isActive }) => `
-                   transition-all duration-200
-                ${
-                  isActive
-                    ? "font-extrabold text-foreground hover:text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  cn(
+                    "inline-flex h-8 items-center rounded-full px-4 text-[13px] font-semibold transition-colors",
+                    isActive
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground",
+                  )
                 }
-              `}
               >
-                <Menu />
-              </NavLink>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Mobile bottombar*/}
-      <div
-        className={`chrome-fixed-bottom block xl:hidden fixed bottom-0 left-0 right-0 z-[2000] transition-transform duration-300`}
-      >
-        {/* {console.log(user.displayName)} */}
-        <div className="max-w-6xl mx-auto w-full">
-          <div className="chrome-fixed-inner min-h-14 h-14 max-h-14 bg-background/70 backdrop-blur-xl border border-border shadow-lg flex items-center justify-between px-4">
-            {/* Left: Menu + Logo */}
-            {navLinks.map((navLink, index) => (
-              <NavLink
-                key={index}
-                to={navLink.path}
-                className="flex items-center justify-center"
-              >
-                {({ isActive }) => {
-                  const Icon = isActive ? navLink.solid : navLink.outline;
-
-                  return (
-                    <span className="flex items-center justify-center flex-col">
-                      <Icon
-                        className={`w-6 h-6 transition-all duration-200 ${
-                          isActive
-                            ? "text-foreground scale-110"
-                            : "text-muted-foreground"
-                        }`}
-                      />
-                      <p
-                        className={`font-medium text-xs text-center ${isActive ? "text-foreground" : "text-muted-foreground"}`}
-                      >
-                        {navLink.name}
-                      </p>
-                    </span>
-                  );
-                }}
+                {item.label}
               </NavLink>
             ))}
+          </nav>
+
+          {/* Right Controls */}
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <Button
+              asChild
+              variant="default"
+              size="sm"
+              className="hidden rounded-full px-4 lg:inline-flex"
+            >
+              <Link to="/add-property">
+                <Plus className="size-3.5" aria-hidden="true" />
+                <span>List property</span>
+              </Link>
+            </Button>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={
+                theme === "dark"
+                  ? "Switch to light theme"
+                  : "Switch to dark theme"
+              }
+              className="inline-flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            >
+              {theme === "dark" ? (
+                <Sun className="size-[18px]" aria-hidden="true" />
+              ) : (
+                <Moon className="size-[18px]" aria-hidden="true" />
+              )}
+            </button>
+
+            {user ? (
+              <>
+                <NotificationBell user={user} />
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Open account menu"
+                      className="inline-flex items-center gap-2 rounded-full border border-border bg-background p-1 sm:pr-3 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                    >
+                      <UserAvatarButton user={user} size="xs" />
+                      <span className="hidden max-w-24 truncate text-xs font-semibold text-foreground sm:inline">
+                        {user.username || "Account"}
+                      </span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 rounded-2xl border-border/80 p-1.5 shadow-float"
+                  >
+                    <DropdownMenuLabel className="px-2.5 py-2">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {user.username || "Propatyc Member"}
+                      </p>
+                      {user.email ? (
+                        <p className="truncate text-xs font-normal text-muted-foreground">
+                          {user.email}
+                        </p>
+                      ) : null}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => navigate("/profile")}
+                      className="cursor-pointer rounded-xl py-2"
+                    >
+                      <User className="size-4" aria-hidden="true" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/visits")}
+                      className="cursor-pointer rounded-xl py-2"
+                    >
+                      <CalendarCheck className="size-4" aria-hidden="true" />
+                      <span>Site Visits</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/bookings")}
+                      className="cursor-pointer rounded-xl py-2"
+                    >
+                      <Bookmark className="size-4" aria-hidden="true" />
+                      <span>Saved &amp; Bookings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/add-property")}
+                      className="cursor-pointer rounded-xl py-2"
+                    >
+                      <Building2 className="size-4" aria-hidden="true" />
+                      <span>List a Property</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => navigate("/themes")}
+                      className="cursor-pointer rounded-xl py-2"
+                    >
+                      <Palette className="size-4" aria-hidden="true" />
+                      <span>Appearance</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/settings")}
+                      className="cursor-pointer rounded-xl py-2"
+                    >
+                      <Settings className="size-4" aria-hidden="true" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={handleSignOut}
+                      className="cursor-pointer rounded-xl py-2"
+                    >
+                      <LogOut className="size-4" aria-hidden="true" />
+                      <span>Sign out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Button asChild variant="ghost" size="sm" className="rounded-full">
+                  <Link to="/signin">Sign in</Link>
+                </Button>
+                <Button asChild variant="default" size="sm" className="rounded-full px-4">
+                  <Link to="/signup">Sign up</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-      {/* Desktop sidebar*/}
-      <div className="chrome-fixed-top hidden xl:block fixed left-22 top-0 h-svh max-h-svh w-[25%] bg-background text-foreground z-[100] border-r border-border overflow-y-auto">
-        <div className="w-full p-2 border-b border-border">
-          <h3 className="font-bold text-3xl  ">Sidebar</h3>
-          <p>Navigate through pages.</p>
-        </div>
+      </header>
 
-        <div className="flex flex-col h-full px-2 ">
-          {navLinks.map((navLink, index) => (
-            <NavLink
-              key={index}
-              to={navLink.path}
-              className={({ isActive }) => `
-                flex items-center px-4 py-3 my-1 rounded-xl transition-all duration-200
-                ${
-                  isActive
-                    ? "bg-foreground text-background hover:bg-foreground/90"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }
-              `}
-            >
-              <navLink.outline className="w-5 h-5 mr-3" />
-              <span className="font-medium">{navLink.name}</span>
-            </NavLink>
-          ))}
-
-          {/* Divider */}
-          <div className="border-t border-border my-4"></div>
-
-          {/* Settings Link */}
-          <NavLink
-            to="/settings"
-            className={({ isActive }) => `
-              flex items-center px-4 py-3 my-1 rounded-xl transition-all duration-200
-              ${
-                isActive
-                  ? "bg-foreground text-background hover:bg-foreground/90"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+      {/* Monochrome Mobile Dock */}
+      {!hideBottomBar ? (
+        <nav
+          aria-label="Mobile navigation"
+          className="chrome-fixed-bottom glass fixed inset-x-0 bottom-0 z-40 border-t border-border/60 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] lg:hidden"
+        >
+          <div className="mx-auto grid max-w-md grid-cols-5 items-center gap-1">
+            {MOBILE_TABS.map((tab) => {
+              const Icon = tab.icon;
+              if (tab.accent) {
+                return (
+                  <NavLink
+                    key={tab.to}
+                    to={tab.to}
+                    aria-label="List a property"
+                    className="flex flex-col items-center justify-center py-0.5"
+                  >
+                    <span className="flex size-10 items-center justify-center rounded-full bg-foreground text-background transition-transform active:scale-95">
+                      <Icon className="size-5 stroke-[2.2]" aria-hidden="true" />
+                    </span>
+                  </NavLink>
+                );
               }
-            `}
-          >
-            <Settings className="w-5 h-5 mr-3" />
-            <span className="font-medium">Settings</span>
-          </NavLink>
 
-          {/* Logout Link */}
-        </div>
-      </div>
+              return (
+                <NavLink
+                  key={tab.to}
+                  to={tab.to}
+                  end={tab.end}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex flex-col items-center justify-center gap-0.5 rounded-xl py-1 text-[10.5px] font-semibold tracking-tight transition-colors",
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon
+                        className={cn(
+                          "size-[19px] transition-transform",
+                          isActive ? "stroke-[2.4]" : "stroke-[1.75]",
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span>{tab.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
+          </div>
+        </nav>
+      ) : null}
     </>
   );
 };

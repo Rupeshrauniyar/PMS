@@ -1,517 +1,410 @@
-import { useContext, useEffect, useState } from "react";
-import { useNavigate, Link, useParams, useLocation } from "react-router-dom";
-import { AppContext } from "../../contexts/AppContext";
+import React, { useContext, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
-  CheckCircle,
-  Loader2,
-  ChevronRight,
-  ChevronDown,
-  ArrowUpRight,
-  User,
-  CalendarDays,
-  SlidersHorizontal,
-  FileText,
-  Tag,
+  ChevronLeft,
+  CheckCircle2,
+  CalendarCheck,
+  CreditCard,
+  Building2,
 } from "lucide-react";
+
+import { AppContext } from "../../contexts/AppContext";
 import api from "../../api/client";
-import AlertBox from "../../components/AlertBox";
 import EditProfile from "../auth/EditProfile";
 import Signin from "../auth/Signin";
 import Signup from "../auth/Signup";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input, Textarea, Field } from "@/components/ui/input";
+import { Tabs } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
+import { formatPrice } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-/* ─────────────────────────────────────────
-   Section colour tokens
-   step 1 → amber, step 2 → indigo
-───────────────────────────────────────── */
-const sectionTheme = {
-  1: {
-    badge: "bg-amber-500 text-white",
-    badgeInactive: "bg-amber-50 text-amber-300",
-    border: "border-amber-200",
-    header: "hover:bg-amber-50/60",
-    iconBar: "bg-amber-50",
-    iconColor: "text-amber-500",
-    ring: "focus:ring-amber-400 focus:border-amber-400",
-    tabActive: "bg-amber-500 text-white shadow-sm",
-    tabInactive: "text-zinc-400 hover:text-zinc-600",
-    tabBg: "bg-amber-50",
-    labelColor: "text-amber-600",
-  },
-  2: {
-    badge: "bg-indigo-600 text-white",
-    badgeInactive: "bg-indigo-50 text-indigo-300",
-    border: "border-indigo-200",
-    header: "hover:bg-indigo-50/60",
-    iconBar: "bg-indigo-50",
-    iconColor: "text-indigo-500",
-    ring: "focus:ring-indigo-400 focus:border-indigo-400",
-    labelColor: "text-indigo-600",
-  },
-};
-
-/* ── Step pill ── */
-const StepBadge = ({ number, active }) => {
-  const t = sectionTheme[number];
-  return (
-    <span
-      className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 transition-colors ${
-        active ? t.badge : t.badgeInactive
-      }`}
-    >
-      {number}
-    </span>
-  );
-};
-
-/* ── Collapsible section ── */
-const Section = ({ step, title, icon: Icon, open, onToggle, children, disabled }) => {
-  const t = sectionTheme[step];
-  return (
-    <div
-      className={`rounded-2xl border-2 overflow-hidden transition-all duration-200 ${
-        open ? t.border : "border-zinc-100"
-      } bg-white shadow-sm`}
-    >
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onToggle}
-        className={`w-full flex items-center justify-between px-5 py-4 text-left transition-colors ${
-          disabled
-            ? "cursor-default opacity-40"
-            : `${t.header} cursor-pointer`
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <StepBadge number={step} active={open} />
-          {/* Icon chip */}
-          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${open ? t.iconBar : "bg-zinc-100"} transition-colors`}>
-            <Icon className={`w-4 h-4 transition-colors ${open ? t.iconColor : "text-zinc-400"}`} />
-          </span>
-          <span
-            className={`text-sm font-semibold tracking-wide uppercase transition-colors ${
-              open ? "text-zinc-800" : "text-zinc-400"
-            }`}
-          >
-            {title}
-          </span>
-        </div>
-        <ChevronDown
-          className={`w-4 h-4 transition-transform duration-200 ${
-            open ? `${t.iconColor} rotate-180` : "text-zinc-300"
-          }`}
-        />
-      </button>
-
-      <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          open ? "max-h-[900px] opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className={`px-5 pb-5 pt-1 border-t-2 ${open ? t.border : "border-transparent"}`}>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/* ── Field wrapper ── */
-const Field = ({ label, error, hint, children, step = 2 }) => {
-  const t = sectionTheme[step];
-  return (
-    <div className="flex flex-col gap-1.5">
-      {label && (
-        <label className={`text-xs font-semibold tracking-widest uppercase ${t.labelColor} flex items-center gap-1`}>
-          {label}
-        </label>
-      )}
-      {children}
-      {hint && !error && <p className="text-xs text-zinc-400 italic">{hint}</p>}
-      {error && (
-        <p className="text-xs text-rose-600 font-medium flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
-          {error}
-        </p>
-      )}
-    </div>
-  );
-};
-
-const inputClass = (hasError, step = 2) => {
-  const ring = sectionTheme[step].ring;
-  return `w-full px-4 py-3 rounded-xl border text-sm font-mono bg-white transition-all outline-none focus:ring-2 ${ring} ${
-    hasError ? "border-rose-400 ring-1 ring-rose-400" : "border-zinc-200"
-  }`;
-};
+function minDateTimeLocal() {
+  const d = new Date(Date.now() + 30 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 const Book = () => {
   const navigate = useNavigate();
-  const { user, setUser } = useContext(AppContext);
-  const params = useParams();
   const location = useLocation();
+  const params = useParams();
+  const { user, setUser, refreshUser } = useContext(AppContext);
+  const { toast } = useToast();
 
-  const [submitting, setSubmitting] = useState(false);
-  const [date, setDate] = useState("");
-  const [select, setSelect] = useState("pay");
-  const [note, setNote] = useState("");
-  const [barPrice, setBarPrice] = useState(null);
-  const [isBar, setIsBar] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState(null);
-  const [backendError, setBackendError] = useState(null);
-
-  const [step1Open, setStep1Open] = useState(!user);
-  const [step2Open, setStep2Open] = useState(!!user);
   const [authTab, setAuthTab] = useState("signin");
-
-  const validate = () => {
-    const newErrors = {};
-    if (!user?.phone || user?.phone.length === 0) {
-      newErrors.contact = "Please add a contact number to continue.";
-      setStep1Open(true);
-      setStep2Open(false);
-    }
-    if (!params.price || params.price === 0) {
-      newErrors.price = "Invalid property price.";
-    }
-    if (barPrice && (barPrice === "0" || barPrice === "00")) {
-      newErrors.price = "Invalid property price.";
-    }
-    if (select !== "pay" && !date) {
-      newErrors.date = "Please select an appointment date.";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleConfirmBooking = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    try {
-      setSubmitting(true);
-      const Data = {
-        propId: params.id,
-        price: isBar ? barPrice : params.price,
-        userId: user?._id,
-        date,
-        note,
-        bType: select,
-      };
-      const res = await api.post("/api/booking/book", Data);
-      if (res.status === 200) {
-        setUser((prev) => ({
-          ...prev,
-          bookedProperties: [...prev.bookedProperties, res.data.booking],
-        }));
-        setSubmitting(false);
-        setSuccess(res.data.message);
-        navigate(`/booked/${params.id}`);
-      } else {
-        setSubmitting(false);
-      }
-    } catch (err) {
-      setSubmitting(false);
-      setBackendError(err.response?.data.message || "Something went wrong.");
-    }
-  };
+  const [bookingType, setBookingType] = useState("pay");
+  const [slotDate, setSlotDate] = useState("");
+  const [offerPrice, setOfferPrice] = useState(() => String(params.price || ""));
+  const [note, setNote] = useState("");
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!barPrice) return;
-    setIsBar(params.price.toString() !== barPrice.toString());
-  }, [barPrice]);
-
-  useEffect(() => {
-    if (user) {
-      setStep1Open(false);
-      setStep2Open(true);
+    if (params.price && !offerPrice) {
+      setOfferPrice(String(params.price));
     }
-  }, [user]);
+  }, [params.price, offerPrice]);
 
-  /* ── Guard screens ── */
   if (!params.id) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 text-center">
-        <div className="w-12 h-px bg-zinc-300 mx-auto mb-6" />
-        <h3 className="text-2xl font-light tracking-tight text-black mb-2">No Property Found</h3>
-        <p className="text-sm text-zinc-400">Please go back and select a property.</p>
+      <div className="py-12">
+        <EmptyState
+          icon={Building2}
+          title="No property selected"
+          description="Go back and open a property listing to reserve it."
+          action={
+            <Button asChild variant="brand">
+              <Link to="/">Browse properties</Link>
+            </Button>
+          }
+        />
       </div>
     );
   }
 
-  if (user?.myProperties?.find((p) => p?.propId === params.id)) {
+  const isOwner = Boolean(
+    user?.myProperties?.some((p) => String(p?.propId) === String(params.id)),
+  );
+  const existingBooking = user?.bookedProperties?.find(
+    (p) => String(p?.propId) === String(params.id),
+  );
+
+  if (isOwner) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 text-center">
-        <div className="w-12 h-px bg-amber-400 mx-auto mb-6" />
-        <h1 className="text-3xl font-light tracking-tight text-black mb-3">Your Property</h1>
-        <p className="text-sm text-zinc-500 max-w-xs mb-8 leading-relaxed">
-          You can't book your own listing. View it from your property dashboard instead.
-        </p>
-        <Link
-          to={`/my/${params.id}`}
-          className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-7 py-3.5 rounded-full hover:bg-zinc-800 transition-colors"
-        >
-          Open Listing <ArrowUpRight className="w-4 h-4" />
-        </Link>
+      <div className="py-12">
+        <EmptyState
+          icon={Building2}
+          title="This is your own listing"
+          description="Manage incoming visit requests and bookings from your owner dashboard."
+          action={
+            <Button asChild variant="brand">
+              <Link to={`/my/${params.id}`}>Open Owner Dashboard</Link>
+            </Button>
+          }
+        />
       </div>
     );
   }
 
-  if (user?.bookedProperties?.find((p) => p?.propId === params.id)) {
+  if (existingBooking) {
+    const dest =
+      existingBooking.bType === "visit" && existingBooking._id
+        ? `/visits/${existingBooking._id}`
+        : `/booked/${params.id}`;
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 text-center">
-        <div className="w-12 h-px bg-indigo-400 mx-auto mb-6" />
-        <h1 className="text-3xl font-light tracking-tight text-black mb-3">Already Booked</h1>
-        <p className="text-sm text-zinc-500 max-w-xs mb-8 leading-relaxed">
-          You've already booked this property. Manage it from your bookings.
-        </p>
-        <Link
-          to={`/booked/${params.id}`}
-          className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-7 py-3.5 rounded-full hover:bg-zinc-800 transition-colors"
-        >
-          View Booking <ArrowUpRight className="w-4 h-4" />
-        </Link>
+      <div className="py-12">
+        <EmptyState
+          icon={CheckCircle2}
+          title="Already requested"
+          description="You already have an active request for this property."
+          action={
+            <Button asChild variant="brand">
+              <Link to={dest}>View status</Link>
+            </Button>
+          }
+        />
       </div>
     );
   }
 
-  const t1 = sectionTheme[1];
-  const t2 = sectionTheme[2];
+  const isNegotiated =
+    offerPrice && String(offerPrice).trim() !== String(params.price).trim();
+
+  const validate = () => {
+    const e = {};
+    if (!user?._id) {
+      e.auth = "Please sign in first.";
+    } else if (!user?.phone || user.phone.replace(/\D/g, "").length < 7) {
+      e.contact = "Please save your phone number above so the owner/broker can reach you.";
+    }
+
+    const numericPrice = Number(String(offerPrice).replace(/,/g, ""));
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      e.price = "Enter a valid offer price.";
+    }
+
+    if (bookingType === "visit") {
+      if (!slotDate) {
+        e.date = "Choose a preferred date and time.";
+      } else if (new Date(slotDate).getTime() <= Date.now()) {
+        e.date = "Preferred visit time must be in the future.";
+      }
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    try {
+      setSubmitting(true);
+      const cleanPrice = String(offerPrice).replace(/,/g, "").trim();
+      const isoSlot =
+        bookingType === "visit" && slotDate
+          ? new Date(slotDate).toISOString()
+          : undefined;
+
+      const res = await api.post("/api/booking/book", {
+        propId: params.id,
+        price: cleanPrice,
+        userId: user._id,
+        date: isoSlot || slotDate,
+        preferredSlots: isoSlot ? [isoSlot] : undefined,
+        note: note.trim(),
+        bType: bookingType,
+      });
+
+      if (res.status === 200 || res.status === 201) {
+        const createdBooking = res.data?.booking || res.data?.visit;
+        if (createdBooking) {
+          setUser((prev) => {
+            if (!prev) return prev;
+            const updated = {
+              ...prev,
+              bookedProperties: [...(prev.bookedProperties || []), createdBooking],
+            };
+            try {
+              localStorage.setItem("user", JSON.stringify(updated));
+            } catch {
+              /* ignore */
+            }
+            return updated;
+          });
+        }
+        refreshUser?.();
+
+        toast({
+          title:
+            bookingType === "visit"
+              ? "Site visit requested!"
+              : "Reservation submitted!",
+          description:
+            res.data?.message || "The property owner has been notified.",
+          variant: "success",
+        });
+
+        const visitId = res.data?.visit?._id || (bookingType === "visit" && createdBooking?._id);
+        if (visitId) {
+          navigate(`/visits/${visitId}`);
+        } else {
+          navigate(`/booked/${params.id}`);
+        }
+      }
+    } catch (err) {
+      toast({
+        title: "Could not submit booking",
+        description: err.response?.data?.message || "Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="w-full min-h-screen bg-zinc-50 overflow-hidden p-2 pb-28">
-      {/* Alerts */}
-      {success && (
-        <AlertBox message={success} type="success" onClose={() => setSuccess(null)} />
-      )}
-      {backendError && (
-        <AlertBox message={backendError} type="error" onClose={() => setBackendError(null)} />
-      )}
-
-      {/* Page header */}
-      <div className="max-w-lg mx-auto pt-6 pb-4 px-1">
-        <p className="text-xs font-semibold tracking-[0.2em] uppercase text-zinc-400 mb-1">Property Booking</p>
-        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Complete your booking</h1>
-        {/* Progress dots */}
-        <div className="flex items-center gap-2 mt-3">
-          <div className={`h-1.5 rounded-full flex-1 transition-colors ${step1Open ? "bg-amber-400" : "bg-zinc-200"}`} />
-          <div className={`h-1.5 rounded-full flex-1 transition-colors ${step2Open ? "bg-indigo-500" : "bg-zinc-200"}`} />
-        </div>
+    <div className="mx-auto flex max-w-xl flex-col gap-6 py-5 pb-28 sm:py-8">
+      {/* Header */}
+      <div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="-ml-2 mb-1 gap-1.5"
+        >
+          <ChevronLeft className="size-4" aria-hidden="true" />
+          <span>Back to listing</span>
+        </Button>
+        <p className="text-xs font-semibold uppercase tracking-wider text-brand">
+          Reserve Property
+        </p>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground">
+          Complete your reservation
+        </h1>
       </div>
 
-      {/* ── Steps ── */}
-      <div className="max-w-lg mx-auto flex flex-col gap-3">
-
-        {/* Step 1 — Account */}
-        <Section
-          step={1}
-          title={user ? "Your Details" : "Account"}
-          icon={User}
-          open={step1Open}
-          onToggle={() => setStep1Open((p) => !p)}
-        >
+      {/* Step 1: Account & Verified Phone */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle>1. Your Contact Details</CardTitle>
+            {user?.phone ? (
+              <Badge variant="success">Ready</Badge>
+            ) : (
+              <Badge variant="warning">Phone required</Badge>
+            )}
+          </div>
+          <CardDescription>
+            {user
+              ? "Confirm your contact number so the host or assigned broker can reach you."
+              : "Sign in or create an account to continue."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           {user ? (
-            <div className="mt-2">
-              <EditProfile error={errors?.contact || null} css={true} />
-              {errors.contact && (
-                <p className="text-xs text-rose-600 font-medium flex items-center gap-1.5 mt-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" />
-                  {errors.contact}
-                </p>
-              )}
-            </div>
+            <EditProfile error={errors.contact || null} css />
           ) : (
-            <div className="mt-2">
-              {/* Tab pills */}
-              <div className={`flex gap-1 ${t1.tabBg} p-1 rounded-xl mb-3`}>
-                {[
-                  { key: "signin", label: "Sign In" },
-                  { key: "signup", label: "Sign Up" },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setAuthTab(tab.key)}
-                    className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${
-                      authTab === tab.key ? t1.tabActive : t1.tabInactive
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-col gap-4">
+              <Tabs
+                fullWidth
+                value={authTab}
+                onValueChange={setAuthTab}
+                items={[
+                  { value: "signin", label: "Sign In" },
+                  { value: "signup", label: "Create Account" },
+                ]}
+              />
               {authTab === "signin" ? (
-                <Signin from={location.pathname} css={true} />
+                <Signin from={location.pathname} css />
               ) : (
-                <Signup from={location.pathname} css={true} />
+                <Signup from={location.pathname} css />
               )}
             </div>
           )}
-        </Section>
+        </CardContent>
+      </Card>
 
-        {/* Step 2 — Booking Preferences */}
-        <Section
-          step={2}
-          title="Booking Preferences"
-          icon={SlidersHorizontal}
-          open={step2Open}
-          onToggle={() => {
-            if (user && user?.phone?.length > 0) setStep2Open((p) => !p);
-          }}
-          disabled={!user || !user?.phone || user?.phone?.length === 0}
-        >
-          <div className="mt-3 flex flex-col gap-5">
-
-            {/* Booking type */}
-            <Field label="Booking Type" step={2}>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: "pay", label: "Pay Now" },
-                  { value: "visit", label: "Schedule Visit" },
-                ].map((opt) => (
+      {/* Step 2: Reservation Preferences */}
+      <Card className={cn(!user && "opacity-60 pointer-events-none")}>
+        <CardHeader>
+          <CardTitle>2. Booking Type &amp; Offer</CardTitle>
+          <CardDescription>
+            Reserve directly with a price offer or schedule an in-person visit.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form id="book-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                {
+                  value: "pay",
+                  label: "Reserve / Pay",
+                  desc: "Direct offer & eSewa",
+                  icon: CreditCard,
+                },
+                {
+                  value: "visit",
+                  label: "Site Visit",
+                  desc: "3-party guided tour",
+                  icon: CalendarCheck,
+                },
+              ].map((opt) => {
+                const Icon = opt.icon;
+                const active = bookingType === opt.value;
+                return (
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => {
-                      setErrors((prev) => ({ ...prev, select: "" }));
-                      setSelect(opt.value);
-                    }}
-                    className={`py-3 rounded-xl text-sm font-semibold border-2 transition-all ${
-                      select === opt.value
-                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200"
-                        : "bg-white text-zinc-500 border-zinc-200 hover:border-indigo-300 hover:text-indigo-600"
-                    }`}
+                    onClick={() => setBookingType(opt.value)}
+                    className={cn(
+                      "flex flex-col items-start gap-1 rounded-2xl border p-3.5 text-left transition-all",
+                      active
+                        ? "border-brand bg-brand-soft/60 ring-2 ring-brand/20"
+                        : "border-border bg-card hover:border-foreground/25",
+                    )}
                   >
-                    {opt.label}
+                    <Icon
+                      className={cn("size-4", active ? "text-brand" : "text-muted-foreground")}
+                      aria-hidden="true"
+                    />
+                    <span className="text-sm font-bold text-foreground">
+                      {opt.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {opt.desc}
+                    </span>
                   </button>
-                ))}
-              </div>
-            </Field>
+                );
+              })}
+            </div>
 
-            {/* Appointment date */}
-            {select !== "pay" && (
+            {bookingType === "visit" ? (
               <Field
-                label={
-                  <span className="flex items-center gap-1.5">
-                    <CalendarDays className="w-3.5 h-3.5" /> Appointment Date
-                  </span>
-                }
+                label="Preferred date & time"
+                required
                 error={errors.date}
-                step={2}
               >
-                <input
-                  type="date"
+                <Input
+                  type="datetime-local"
+                  value={slotDate}
+                  min={minDateTimeLocal()}
                   onChange={(e) => {
-                    setErrors((prev) => ({ ...prev, date: "" }));
-                    setDate(e.target.value);
+                    setSlotDate(e.target.value);
+                    setErrors((p) => ({ ...p, date: "" }));
                   }}
-                  className={inputClass(!!errors.date, 2)}
-                  min={new Date().toISOString().split("T")[0]}
-                  required
                 />
               </Field>
-            )}
+            ) : null}
 
-            {/* Price */}
             <Field
-              label={
-                <span className="flex items-center gap-2">
-                  <Tag className="w-3.5 h-3.5" /> Price
-                  {isBar && (
-                    <span className="ml-auto text-xs bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
-                      Bargained · Original: ₹{new Intl.NumberFormat("en-IN").format(params.price)}
-                    </span>
-                  )}
-                </span>
-              }
-              hint="You can negotiate the listed price"
+              label="Offer Price (Rs.)"
               error={errors.price}
-              step={2}
-            >
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400 text-sm font-bold pointer-events-none">
-                  ₹
-                </span>
-                <input
-                  type="text"
-                  value={
-                    isBar
-                      ? new Intl.NumberFormat("en-IN").format(barPrice)
-                      : new Intl.NumberFormat("en-IN").format(params.price)
-                  }
-                  onChange={(e) => {
-                    if (e.target.value.trim()) {
-                      setErrors((prev) => ({ ...prev, price: "" }));
-                      const raw = e.target.value.replace(/,/g, "");
-                      if (!isNaN(raw)) setBarPrice(raw);
-                    } else {
-                      setBarPrice("0");
-                    }
-                  }}
-                  className={`${inputClass(!!errors.price, 2)} pl-8`}
-                  required
-                />
-              </div>
-            </Field>
-
-            {/* Note */}
-            <Field
-              label={
-                <span className="flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5" /> Note{" "}
-                  <span className="normal-case text-zinc-400 font-normal tracking-normal text-xs">
-                    (optional)
-                  </span>
-                </span>
+              hint={
+                isNegotiated
+                  ? `Negotiated offer · Listed price is ${formatPrice(params.price)}`
+                  : "You may propose a negotiated price if needed."
               }
-              step={2}
             >
-              <textarea
-                rows={3}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Any special requests or questions..."
-                className="w-full px-4 py-3 rounded-xl border-2 border-zinc-200 text-sm bg-white resize-none outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all placeholder:text-zinc-300"
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={offerPrice}
+                onChange={(e) => {
+                  setOfferPrice(e.target.value);
+                  setErrors((p) => ({ ...p, price: "" }));
+                }}
               />
             </Field>
-          </div>
-        </Section>
-      </div>
 
-      {/* ── Sticky Confirm Bar ── */}
-      <div className="chrome-fixed-bottom fixed bottom-0 left-0 right-0 z-[998] bg-white/90 backdrop-blur-xl border-t-2 border-zinc-100">
-        <div className="chrome-fixed-inner max-w-lg mx-auto p-3 flex items-center gap-4 min-h-[4.25rem]">
-          {/* Price summary */}
-          {params.price && (
-            <div className="hidden sm:flex flex-col shrink-0 pl-1">
-              <span className="text-xs text-zinc-400 leading-none mb-0.5 font-medium tracking-wide uppercase">Total</span>
-              <span className="text-xl font-bold text-zinc-900 tracking-tight">
-                ₹{new Intl.NumberFormat("en-IN").format(isBar ? barPrice : params.price)}
-              </span>
-              {isBar && (
-                <span className="text-xs text-amber-500 font-medium">Negotiated price</span>
-              )}
-            </div>
-          )}
-
-          <form noValidate onSubmit={handleConfirmBooking} className="flex-1">
-            <button
-              type="submit"
-              disabled={submitting || !user}
-              className="w-full py-3.5 rounded-xl cursor-pointer text-white text-sm font-bold flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Processing…
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4" />
-                  {user ? "Confirm Booking" : "Sign in to Book"}
-                </>
-              )}
-            </button>
+            <Field label="Note for owner (optional)">
+              <Textarea
+                rows={3}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Move-in timeline, lease duration, or questions…"
+              />
+            </Field>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Sticky Bottom Confirm Bar */}
+      <div className="chrome-fixed-bottom glass fixed inset-x-0 bottom-0 z-40 border-t border-border/80 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {isNegotiated ? "Your offer" : "Listed price"}
+            </p>
+            <p className="truncate text-lg font-extrabold text-foreground tabular-nums">
+              {formatPrice(offerPrice || params.price)}
+            </p>
+          </div>
+
+          <Button
+            type="submit"
+            form="book-form"
+            variant="brand"
+            loading={submitting}
+            disabled={!user?._id}
+            className="px-6"
+          >
+            <CheckCircle2 className="size-4" aria-hidden="true" />
+            <span>
+              {!user?._id
+                ? "Sign in above"
+                : bookingType === "visit"
+                  ? "Request Visit"
+                  : "Confirm Reservation"}
+            </span>
+          </Button>
         </div>
       </div>
     </div>

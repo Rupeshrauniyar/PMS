@@ -1,34 +1,79 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Bell, ChevronLeft } from "lucide-react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Bell,
+  ChevronLeft,
+  CheckCheck,
+  Sparkles,
+  CalendarCheck,
+  CalendarClock,
+  UserCheck,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  AlertTriangle,
+  Building2,
+  CreditCard,
+} from "lucide-react";
+
 import api from "../../api/client";
 import { AppContext } from "../../contexts/AppContext";
-import { resolveNotificationPath } from "../../utils/notificationRoutes";
+import { resolveNotificationTarget } from "../../utils/notificationRoutes";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
+import { timeAgo } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-function formatWhen(iso) {
-  if (!iso) return "";
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "";
+function getKindMeta(kind) {
+  switch (kind) {
+    case "listing_live":
+      return { icon: Building2, tone: "bg-brand-soft text-brand" };
+    case "visit_requested":
+      return { icon: CalendarClock, tone: "bg-warning-soft text-warning" };
+    case "visit_owner_approved":
+    case "visit_pool_new":
+      return { icon: Sparkles, tone: "bg-info-soft text-info" };
+    case "visit_claimed":
+    case "visit_reassigned":
+      return { icon: UserCheck, tone: "bg-brand-soft text-brand" };
+    case "visit_scheduled":
+    case "visit_rescheduled":
+    case "visit_reminder":
+      return { icon: CalendarCheck, tone: "bg-success-soft text-success" };
+    case "visit_completed":
+    case "booking_confirmed":
+      return { icon: CheckCircle2, tone: "bg-success-soft text-success" };
+    case "visit_owner_rejected":
+    case "booking_rejected":
+      return { icon: XCircle, tone: "bg-danger-soft text-destructive" };
+    case "visit_no_show":
+      return { icon: AlertTriangle, tone: "bg-danger-soft text-destructive" };
+    case "visit_cancelled":
+    case "visit_released":
+    case "booking_cancelled":
+      return { icon: Ban, tone: "bg-muted text-muted-foreground" };
+    case "booking_new":
+      return { icon: CreditCard, tone: "bg-brand-soft text-brand" };
+    default:
+      return { icon: Bell, tone: "bg-secondary text-foreground" };
   }
 }
 
 const Notifications = () => {
   const { user, refreshUser } = useContext(AppContext);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [markingAll, setMarkingAll] = useState(false);
 
   const load = useCallback(async () => {
-    if (!user) {
+    if (!user?._id) {
       setLoading(false);
       return;
     }
@@ -48,13 +93,34 @@ const Notifications = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?._id]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const onOpen = async (n) => {
+  const handleMarkAllRead = async () => {
+    if (unreadCount === 0) return;
+    try {
+      setMarkingAll(true);
+      await api.post("/api/auth/notifications/read-all");
+      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+      toast({
+        title: "All notifications marked as read",
+        variant: "success",
+      });
+    } catch {
+      toast({
+        title: "Could not mark notifications read",
+        variant: "error",
+      });
+    } finally {
+      setMarkingAll(false);
+    }
+  };
+
+  const handleOpenItem = async (n) => {
     if (!n?._id) return;
     if (!n.read) {
       try {
@@ -64,100 +130,139 @@ const Notifications = () => {
         );
         setUnreadCount((c) => Math.max(0, c - 1));
       } catch {
-        /* ignore */
+        /* non-fatal */
       }
     }
-
-    const pid = n.propId;
-    const path = pid
-      ? resolveNotificationPath(pid, n.kind, user)
-      : "/";
-    navigate(path);
+    const target = resolveNotificationTarget(n, user);
     refreshUser?.();
+    navigate(target);
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-[40vh] flex flex-col items-center justify-center px-4 pt-24 pb-16 text-center">
-        <p className="text-sm text-muted-foreground mb-4">Sign in to see notifications.</p>
-        <Link
-          to="/signin"
-          className="text-sm font-semibold text-foreground underline underline-offset-2"
-        >
-          Sign in
-        </Link>
-      </div>
-    );
-  }
+  const groups = useMemo(() => {
+    const unread = items.filter((n) => !n.read);
+    const earlier = items.filter((n) => n.read);
+    const out = [];
+    if (unread.length > 0) out.push({ label: "New", list: unread });
+    if (earlier.length > 0) out.push({ label: unread.length > 0 ? "Earlier" : "All Activity", list: earlier });
+    return out;
+  }, [items]);
 
   return (
-    <div className="w-full max-w-lg mx-auto pt-20 pb-24 ">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="p-2 rounded-full hover:bg-accent text-foreground"
-          aria-label="Go back"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <Bell className="w-5 h-5 text-muted-foreground shrink-0" />
-          <h1 className="text-lg font-semibold truncate">Notifications</h1>
-          {unreadCount > 0 ? (
-            <span className="text-xs font-medium text-muted-foreground tabular-nums">
-              ({unreadCount} new)
-            </span>
-          ) : null}
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 py-5 sm:py-8">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+          >
+            <ChevronLeft className="size-5" aria-hidden="true" />
+          </Button>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+                Notifications
+              </h1>
+              {unreadCount > 0 ? (
+                <Badge variant="brand">{unreadCount} unread</Badge>
+              ) : null}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Updates on your site visits, listings, and reservations
+            </p>
+          </div>
         </div>
+
+        {unreadCount > 0 ? (
+          <Button
+            variant="outline"
+            size="sm"
+            loading={markingAll}
+            onClick={handleMarkAllRead}
+          >
+            <CheckCheck className="size-4" aria-hidden="true" />
+            <span>Mark all read</span>
+          </Button>
+        ) : null}
       </div>
 
+      {/* Content */}
       {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="animate-pulse rounded-2xl border border-border bg-muted/40 h-24"
-            />
+        <div className="flex flex-col gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-22 rounded-2xl" />
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-16 text-center">
-          <p className="text-sm text-muted-foreground">
-            No notifications yet. Bookings and new listings will appear here.
-          </p>
-        </div>
+        <EmptyState
+          icon={Bell}
+          title="You're all caught up"
+          description="Updates on site visits, broker assignments, and property bookings will appear here."
+        />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {items.map((n) => (
-            <li key={n._id}>
-              <button
-                type="button"
-                onClick={() => onOpen(n)}
-                className={`w-full text-left rounded-2xl border border-border px-4 py-3 transition-colors hover:bg-accent/50 ${
-                  !n.read ? "bg-accent/25 border-foreground/15" : "bg-card"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="text-sm font-semibold leading-snug">
-                    {n.title}
-                  </span>
-                  {!n.read ? (
-                    <span className="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
-                  ) : null}
-                </div>
-                {n.body ? (
-                  <p className="text-xs text-muted-foreground line-clamp-3 mb-2">
-                    {n.body}
-                  </p>
-                ) : null}
-                <p className="text-[11px] text-muted-foreground/80">
-                  {formatWhen(n.createdAt)}
-                </p>
-              </button>
-            </li>
+        <div className="flex flex-col gap-6">
+          {groups.map((group) => (
+            <section key={group.label} className="flex flex-col gap-2.5">
+              <h2 className="px-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {group.label}
+              </h2>
+              <ul className="flex flex-col gap-2">
+                {group.list.map((n) => {
+                  const { icon: Icon, tone } = getKindMeta(n.kind);
+                  return (
+                    <li key={n._id}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenItem(n)}
+                        className={cn(
+                          "flex w-full items-start gap-3.5 rounded-2xl border p-4 text-left transition-all hover:border-foreground/20 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                          !n.read
+                            ? "border-brand/35 bg-brand-soft/30 shadow-soft"
+                            : "border-border/70 bg-card",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl",
+                            tone,
+                          )}
+                        >
+                          <Icon className="size-5" aria-hidden="true" />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-bold leading-snug text-foreground">
+                              {n.title || "Notification"}
+                            </p>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              <span className="text-[11px] font-medium text-muted-foreground">
+                                {timeAgo(n.createdAt)}
+                              </span>
+                              {!n.read ? (
+                                <span
+                                  aria-label="Unread"
+                                  className="size-2 rounded-full bg-brand"
+                                />
+                              ) : null}
+                            </div>
+                          </div>
+                          {n.body ? (
+                            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                              {n.body}
+                            </p>
+                          ) : null}
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

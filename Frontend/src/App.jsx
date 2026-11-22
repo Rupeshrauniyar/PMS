@@ -2,9 +2,12 @@ import React, { useEffect } from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { SplashScreen } from "@capacitor/splash-screen";
+import { Analytics } from "@vercel/analytics/react";
 import Index from "./Index";
 import { AppProvider } from "./contexts/AppContext";
+import { ToastProvider } from "./components/ui/toast";
 import { useAndroidPullToRefresh } from "./hooks/useAndroidPullToRefresh";
+import { getResolvedTheme } from "./lib/theme";
 
 function isTypingTarget(el) {
   if (!el || !(el instanceof Element)) return false;
@@ -26,18 +29,16 @@ function isTypingTarget(el) {
   return !skip.has(type);
 }
 
-// import { Analytics } from "@vercel/analytics/next";
 const App = () => {
   useAndroidPullToRefresh();
+  const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
-    // Apply persisted theme ASAP
-    const savedTheme = localStorage.getItem("theme");
-    const theme = savedTheme === "dark" ? "dark" : "light";
+    const theme = getResolvedTheme();
     document.documentElement.classList.toggle("dark", theme === "dark");
 
     if (Capacitor.isNativePlatform()) {
-      SplashScreen.hide();
+      SplashScreen.hide().catch(() => {});
     }
   }, []);
 
@@ -78,14 +79,15 @@ const App = () => {
   }, []);
 
   return (
-    <div className="w-full min-h-svh overflow-x-hidden bg-background text-foreground">
-      {/* FCM:{FCM} */}
-      {/* <Analytics /> */}
-      <AppProvider>
-        <Router>
-          <Index />
-        </Router>
-      </AppProvider>
+    <div className="min-h-svh w-full bg-background text-foreground">
+      {!isNative ? <Analytics /> : null}
+      <ToastProvider withTabbar>
+        <AppProvider>
+          <Router>
+            <Index />
+          </Router>
+        </AppProvider>
+      </ToastProvider>
     </div>
   );
 };

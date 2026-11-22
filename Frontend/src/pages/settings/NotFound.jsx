@@ -1,22 +1,31 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { Compass, Search } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const NotFound = () => {
   return (
-    <div className="w-full min-h-screen flex items-center justify-center xl:bg-gradient-to-br from-zinc-50 to-zinc-100 xl:px-4 px:2">
-      <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8 text-center">
-        <h1 className="text-6xl font-bold text-zinc-900">404</h1>
-        <p className="text-xl text-zinc-700 mt-4">Page Not Found</p>
-        <p className="text-sm text-zinc-500 mt-2">
-          The page you are looking for does not exist.
-        </p>
-        <Link
-          to="/"
-          className="mt-8 inline-block bg-zinc-900 hover:bg-zinc-800 text-white font-medium px-6 py-3 rounded-xl transition-colors"
-        >
-          Go to Home
-        </Link>
-      </div>
+    <div className="mx-auto max-w-lg py-16">
+      <EmptyState
+        icon={Compass}
+        title="404 — Page not found"
+        description="The page or listing you're looking for may have moved or no longer exists."
+        action={
+          <>
+            <Button asChild variant="brand">
+              <Link to="/">Back to Explore</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/search">
+                <Search className="size-4" aria-hidden="true" />
+                <span>Search properties</span>
+              </Link>
+            </Button>
+          </>
+        }
+      />
     </div>
   );
 };

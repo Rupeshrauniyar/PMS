@@ -9,7 +9,7 @@ const INR_FMT = new Intl.NumberFormat("en-IN", {
 /**
  * Format a numeric or string price as "Rs. 25,000".
  */
-export function formatPrice(value, { prefix = "Rs. ", fallback = "Price on request" } = {}) {
+export function formatPrice(value, { prefix = "रू. ", fallback = "Price on request" } = {}) {
   if (value === undefined || value === null || value === "") return fallback;
   const num =
     typeof value === "number"
@@ -22,7 +22,7 @@ export function formatPrice(value, { prefix = "Rs. ", fallback = "Price on reque
 /**
  * Compact price ("Rs. 25K", "Rs. 1.2Cr") for tight badges/chips.
  */
-export function formatCompactPrice(value, prefix = "Rs. ") {
+export function formatCompactPrice(value, prefix = "रू. ") {
   const num =
     typeof value === "number"
       ? value

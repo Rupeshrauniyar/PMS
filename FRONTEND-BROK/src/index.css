@@ -4,29 +4,18 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ------------------------------------------------------------------ */
-/*  Font                                                              */
-/* ------------------------------------------------------------------ */
-@font-face {
-  font-family: "Propatyc Sans";
-  src: url("/font/font.woff2") format("woff2");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Design tokens                                                     */
+/*  Pure Monochrome Architectural Design Tokens (B&W)                  */
 /* ------------------------------------------------------------------ */
 @theme inline {
-  --font-sans: "Propatyc Sans", "Google Sans", "Montserrat", ui-sans-serif,
-    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 4px);
-  --radius-lg: calc(var(--radius) - 2px);
-  --radius-xl: var(--radius);
-  --radius-2xl: calc(var(--radius) + 4px);
-  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 14px);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -48,6 +37,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* Monochrome brand aliases — zero orange, pure contrast */
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-soft: var(--brand-soft);
@@ -61,11 +51,6 @@
   --color-surface: var(--surface);
   --color-glass: var(--glass);
 
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -75,72 +60,67 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.04), 0 4px 16px -4px oklch(0 0 0 / 0.08);
-  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 8px 24px -8px oklch(0 0 0 / 0.12);
-  --shadow-float: 0 2px 6px oklch(0 0 0 / 0.06), 0 18px 48px -12px oklch(0 0 0 / 0.25);
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.04);
+  --shadow-card: 0 2px 8px -2px oklch(0 0 0 / 0.06), 0 1px 2px oklch(0 0 0 / 0.04);
+  --shadow-float: 0 16px 40px -12px oklch(0 0 0 / 0.22), 0 2px 6px oklch(0 0 0 / 0.06);
 
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
 }
 
 :root {
   color-scheme: light dark;
-  --radius: 1rem;
+  --radius: 0.75rem;
 
-  --background: oklch(0.985 0.002 75);
-  --foreground: oklch(0.18 0.01 60);
+  /* Pure Crisp White & Jet Black (#ffffff / #09090b) */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.13 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.01 60);
+  --card-foreground: oklch(0.13 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.01 60);
-  --primary: oklch(0.2 0.01 60);
-  --primary-foreground: oklch(0.985 0.002 75);
-  --secondary: oklch(0.955 0.004 75);
-  --secondary-foreground: oklch(0.22 0.01 60);
-  --muted: oklch(0.955 0.004 75);
-  --muted-foreground: oklch(0.5 0.012 60);
-  --accent: oklch(0.945 0.006 75);
-  --accent-foreground: oklch(0.2 0.01 60);
-  --destructive: oklch(0.58 0.22 27);
+  --popover-foreground: oklch(0.13 0 0);
+  --primary: oklch(0.13 0 0);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.965 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.955 0 0);
+  --accent-foreground: oklch(0.13 0 0);
+  --destructive: oklch(0.55 0.2 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.91 0.005 75);
-  --input: oklch(0.88 0.006 75);
-  --ring: oklch(0.68 0.17 48);
+  --border: oklch(0.915 0 0);
+  --input: oklch(0.89 0 0);
+  --ring: oklch(0.13 0 0);
 
-  /* Brand accent: the orange window in the logo */
-  --brand: oklch(0.68 0.18 48);
-  --brand-foreground: oklch(0.99 0 0);
-  --brand-soft: oklch(0.95 0.04 60);
-  --success: oklch(0.56 0.14 155);
-  --success-soft: oklch(0.95 0.04 155);
-  --warning: oklch(0.62 0.15 70);
-  --warning-soft: oklch(0.96 0.05 85);
-  --info: oklch(0.55 0.15 250);
-  --info-soft: oklch(0.95 0.03 250);
-  --danger-soft: oklch(0.95 0.03 25);
+  /* Monochrome brand & restrained status palette */
+  --brand: oklch(0.13 0 0);
+  --brand-foreground: oklch(1 0 0);
+  --brand-soft: oklch(0.955 0 0);
+  --success: oklch(0.42 0.1 155);
+  --success-soft: oklch(0.955 0.02 155);
+  --warning: oklch(0.32 0 0);
+  --warning-soft: oklch(0.955 0 0);
+  --info: oklch(0.25 0 0);
+  --info-soft: oklch(0.955 0 0);
+  --danger-soft: oklch(0.96 0.02 25);
 
   --surface: oklch(1 0 0);
-  --glass: oklch(1 0 0 / 0.72);
+  --glass: oklch(1 0 0 / 0.82);
 
-  --chart-1: oklch(0.68 0.18 48);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0.002 75);
-  --sidebar-foreground: oklch(0.18 0.01 60);
-  --sidebar-primary: oklch(0.2 0.01 60);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.955 0.004 75);
-  --sidebar-accent-foreground: oklch(0.2 0.01 60);
-  --sidebar-border: oklch(0.91 0.005 75);
-  --sidebar-ring: oklch(0.68 0.17 48);
+  --sidebar: oklch(0.99 0 0);
+  --sidebar-foreground: oklch(0.13 0 0);
+  --sidebar-primary: oklch(0.13 0 0);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.955 0 0);
+  --sidebar-accent-foreground: oklch(0.13 0 0);
+  --sidebar-border: oklch(0.915 0 0);
+  --sidebar-ring: oklch(0.13 0 0);
 
-  --scrollbar-thumb: oklch(0.6 0.01 60);
+  --scrollbar-thumb: oklch(0.68 0 0);
   --scrollbar-track: transparent;
 
-  /* App chrome sizes (used for padding content under fixed bars) */
-  --app-topbar-h: 4rem;
-  --app-tabbar-h: 4.25rem;
+  --app-topbar-h: 3.75rem;
+  --app-tabbar-h: 4rem;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -148,59 +128,55 @@
 .dark {
   color-scheme: dark;
 
-  --background: oklch(0.155 0.006 60);
-  --foreground: oklch(0.96 0.004 75);
-  --card: oklch(0.2 0.007 60);
-  --card-foreground: oklch(0.96 0.004 75);
-  --popover: oklch(0.21 0.007 60);
-  --popover-foreground: oklch(0.96 0.004 75);
-  --primary: oklch(0.96 0.004 75);
-  --primary-foreground: oklch(0.18 0.01 60);
-  --secondary: oklch(0.26 0.008 60);
-  --secondary-foreground: oklch(0.96 0.004 75);
-  --muted: oklch(0.25 0.008 60);
-  --muted-foreground: oklch(0.7 0.01 70);
-  --accent: oklch(0.27 0.009 60);
-  --accent-foreground: oklch(0.96 0.004 75);
-  --destructive: oklch(0.68 0.19 24);
-  --destructive-foreground: oklch(0.15 0 0);
+  /* Deep Obsidian & Crisp White (#09090b / #fafafa) */
+  --background: oklch(0.115 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.155 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.16 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.115 0 0);
+  --secondary: oklch(0.2 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.195 0 0);
+  --muted-foreground: oklch(0.66 0 0);
+  --accent: oklch(0.22 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.66 0.18 25);
+  --destructive-foreground: oklch(0.12 0 0);
   --border: oklch(1 0 0 / 0.1);
-  --input: oklch(1 0 0 / 0.16);
-  --ring: oklch(0.72 0.16 52);
+  --input: oklch(1 0 0 / 0.15);
+  --ring: oklch(0.985 0 0);
 
-  --brand: oklch(0.74 0.16 52);
-  --brand-foreground: oklch(0.17 0.01 60);
-  --brand-soft: oklch(0.32 0.06 50);
-  --success: oklch(0.74 0.15 155);
-  --success-soft: oklch(0.3 0.05 155);
-  --warning: oklch(0.8 0.14 80);
-  --warning-soft: oklch(0.32 0.05 80);
-  --info: oklch(0.74 0.12 250);
-  --info-soft: oklch(0.3 0.05 250);
-  --danger-soft: oklch(0.3 0.06 25);
+  --brand: oklch(0.985 0 0);
+  --brand-foreground: oklch(0.115 0 0);
+  --brand-soft: oklch(0.22 0 0);
+  --success: oklch(0.76 0.11 155);
+  --success-soft: oklch(0.24 0.03 155);
+  --warning: oklch(0.84 0 0);
+  --warning-soft: oklch(0.22 0 0);
+  --info: oklch(0.86 0 0);
+  --info-soft: oklch(0.22 0 0);
+  --danger-soft: oklch(0.25 0.04 25);
 
-  --surface: oklch(0.2 0.007 60);
-  --glass: oklch(0.2 0.007 60 / 0.7);
+  --surface: oklch(0.155 0 0);
+  --glass: oklch(0.115 0 0 / 0.8);
 
-  --chart-1: oklch(0.74 0.16 52);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.2 0.007 60);
-  --sidebar-foreground: oklch(0.96 0 0);
-  --sidebar-primary: oklch(0.74 0.16 52);
-  --sidebar-primary-foreground: oklch(0.17 0 0);
-  --sidebar-accent: oklch(0.27 0.009 60);
-  --sidebar-accent-foreground: oklch(0.96 0 0);
-  --sidebar-border: oklch(1 0 0 / 0.1);
-  --sidebar-ring: oklch(0.72 0.16 52);
+  --sidebar: oklch(0.13 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.115 0 0);
+  --sidebar-accent: oklch(0.2 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 0.09);
+  --sidebar-ring: oklch(0.985 0 0);
 
-  --scrollbar-thumb: oklch(0.55 0.01 60);
+  --scrollbar-thumb: oklch(0.42 0 0);
 }
 
 /* ------------------------------------------------------------------ */
-/*  Base                                                              */
+/*  Base Typography & Layout                                           */
 /* ------------------------------------------------------------------ */
 @layer base {
   * {
@@ -210,7 +186,7 @@
   html {
     min-height: 100%;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-    accent-color: var(--brand);
+    accent-color: var(--foreground);
     -webkit-tap-highlight-color: transparent;
     scroll-padding-top: calc(var(--safe-top) + var(--app-topbar-h) + 0.75rem);
     scroll-padding-bottom: calc(var(--safe-bottom) + var(--app-tabbar-h) + 1.5rem);
@@ -218,8 +194,8 @@
 
   @supports not (scrollbar-color: auto) {
     ::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
     }
     ::-webkit-scrollbar-thumb {
       background: var(--scrollbar-thumb);
@@ -236,14 +212,18 @@
     min-height: 100svh;
     margin: 0;
     padding: 0;
+    letter-spacing: -0.011em;
     overscroll-behavior-y: contain;
     overflow-wrap: break-word;
     text-rendering: optimizeLegibility;
+    user-select: none;
   }
 
   h1,
   h2,
-  h3 {
+  h3,
+  h4 {
+    letter-spacing: -0.028em;
     text-wrap: balance;
   }
 
@@ -260,10 +240,6 @@
     min-height: 100svh;
   }
 
-  /* Text selection only where it makes sense (feels native in the APK) */
-  body {
-    user-select: none;
-  }
   input,
   textarea,
   [contenteditable],
@@ -277,10 +253,10 @@
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--brand) 30%, transparent);
+    background: var(--foreground);
+    color: var(--background);
   }
 
-  /** Avoid iOS zoom-on-focus on inputs smaller than 16px */
   @media screen and (max-width: 640px) {
     input,
     textarea,
@@ -291,7 +267,7 @@
 }
 
 /* ------------------------------------------------------------------ */
-/*  Native <dialog> (Dialog / Sheet) — see components/ui/dialog.jsx    */
+/*  Native <dialog> (Dialog / Sheet)                                   */
 /* ------------------------------------------------------------------ */
 dialog.ui-modal {
   position: fixed;
@@ -308,7 +284,6 @@ dialog.ui-modal {
   overflow: hidden;
 }
 dialog.ui-modal:modal {
-  /* stops scroll gestures in the dialog chaining to the page */
   overscroll-behavior: contain;
 }
 dialog.ui-modal::backdrop {
@@ -317,14 +292,14 @@ dialog.ui-modal::backdrop {
   overscroll-behavior: contain;
 }
 
-/* Toast region (popover="manual") */
+/* Toast region */
 .ui-toast-region {
   position: fixed;
   inset: auto 0 0 0;
   margin: 0 auto;
   padding: 0 0.75rem calc(var(--safe-bottom) + 0.75rem);
   width: 100%;
-  max-width: 28rem;
+  max-width: 26rem;
   height: auto;
   border: 0;
   background: transparent;
@@ -365,7 +340,6 @@ dialog.ui-modal::backdrop {
     opacity 0.2s ease;
 }
 
-/** Native-style: tuck tab bar away while typing */
 body.keyboard-visible .chrome-fixed-bottom {
   transform: translate3d(0, 140%, 0) !important;
   opacity: 0;
@@ -380,7 +354,6 @@ body.keyboard-visible .chrome-fixed-bottom {
   padding-bottom: var(--safe-bottom);
 }
 
-/* Page content padding under the app chrome */
 .app-main {
   padding-top: calc(var(--safe-top) + var(--app-topbar-h));
   padding-bottom: calc(var(--safe-bottom) + var(--app-tabbar-h) + 1.5rem);
@@ -395,15 +368,14 @@ body.keyboard-visible .chrome-fixed-bottom {
   }
 }
 
-/* Glass surfaces */
 .glass {
   background: var(--glass);
-  -webkit-backdrop-filter: saturate(180%) blur(18px);
-  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(150%) blur(20px);
+  backdrop-filter: saturate(150%) blur(20px);
 }
 
 /* ------------------------------------------------------------------ */
-/*  Capacitor Android pull-to-refresh (hooks/useAndroidPullToRefresh)  */
+/*  Capacitor Android pull-to-refresh                                  */
 /* ------------------------------------------------------------------ */
 .cap-ptr-indicator {
   position: fixed;
@@ -423,8 +395,8 @@ body.keyboard-visible .chrome-fixed-bottom {
   border-radius: 9999px;
   background: var(--card);
   box-shadow: var(--shadow-card);
-  border: 2.5px solid color-mix(in oklab, var(--foreground) 15%, transparent);
-  border-top-color: var(--brand);
+  border: 2px solid color-mix(in oklab, var(--foreground) 15%, transparent);
+  border-top-color: var(--foreground);
 }
 
 .cap-ptr-armed .cap-ptr-spinner {
@@ -446,32 +418,9 @@ body.keyboard-visible .chrome-fixed-bottom {
   }
 }
 
-@keyframes shine {
-  0% {
-    left: -75%;
-  }
-  100% {
-    left: 125%;
-  }
-}
-.animate-shine {
-  animation: shine 2.5s infinite;
-}
-
-/* Legacy Swiper styles (used by older carousels) */
-.swiper {
-  width: 100%;
-  height: 100%;
-}
-.swiper-slide {
-  background-size: cover;
-  background-position: center;
-}
-
-/* Horizontal scroll rows */
 .scroll-row {
   display: flex;
-  gap: 0.875rem;
+  gap: 1.25rem;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-padding-inline: 1rem;
@@ -495,7 +444,7 @@ body.keyboard-visible .chrome-fixed-bottom {
 }
 
 .input-field {
-  @apply w-full h-11 rounded-xl border border-input bg-card text-sm focus:ring-2 focus:ring-ring/40 px-10 outline-none;
+  @apply w-full h-11 rounded-xl border border-input bg-card text-sm focus:ring-2 focus:ring-ring/25 px-10 outline-none;
 }
 
 @media (prefers-reduced-motion: reduce) {

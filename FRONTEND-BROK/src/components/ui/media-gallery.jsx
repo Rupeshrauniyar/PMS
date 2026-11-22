@@ -163,8 +163,8 @@ export function MediaGallery({ images = [], video = null, title = "Property", cl
                 className={cn(
                   "relative h-14 w-20 shrink-0 overflow-hidden rounded-xl border-2 transition-all",
                   active
-                    ? "border-brand ring-2 ring-brand/30"
-                    : "border-transparent opacity-70 hover:opacity-100",
+                    ? "border-foreground opacity-100"
+                    : "border-transparent opacity-55 hover:opacity-100",
                 )}
               >
                 {s.type === "video" ? (

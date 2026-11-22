@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light dark" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=overlays-content"
@@ -10,172 +11,73 @@
       name="google-site-verification"
       content="xWX5to9dHEfGfWIhL3Mkb9dZtmWR0SrE9AIQEzW177A"
     />
-    <!-- Title (keep under 60 chars for SEO) -->
-    <title>Propatyc - Buy, Sell & Rent Properties Online</title>
+    <title>Propatyc — Real Estate, Video Tours &amp; Site Visits</title>
 
-    <!-- Description (150–160 chars for search engines) -->
     <meta
       name="description"
-      content="Propatyc is a web app for buying, selling, and renting properties online, making real estate transactions easy and efficient."
+      content="Propatyc is a modern platform for buying, selling, and renting properties with walkthrough video tours and coordinated site visits."
     />
     <meta
       name="keywords"
-      content="Propatyc, Property Management System, Real Estate, Buy Property, Sell Property, Rent Property, Online Property Portal, Web App"
+      content="Propatyc, Real Estate, Buy Property, Sell Property, Rent Property, Video Tours, Site Visits"
     />
-    <meta
-      name="author"
-      content="Propatyc Team"
-    />
+    <meta name="author" content="Propatyc" />
 
     <!-- Open Graph -->
-    <meta
-      property="og:title"
-      content="Propatyc - Property Management System"
-    />
+    <meta property="og:title" content="Propatyc — Real Estate &amp; Video Tours" />
     <meta
       property="og:description"
-      content="Buy, sell, and rent properties online easily with Propatyc — your all-in-one property management web app."
+      content="Discover houses, rooms, and plots with walkthrough videos and coordinated site visits."
     />
-    <meta
-      property="og:image"
-      content="/Propatyc-og-image.png"
-    />
-    <meta
-      property="og:url"
-      content="https://Propatycnepal.vercel.app"
-    />
-    <meta
-      property="og:type"
-      content="website"
-    />
+    <meta property="og:image" content="/web-app-manifest-512x512.png" />
+    <meta property="og:url" content="https://propatyc.vercel.app" />
+    <meta property="og:type" content="website" />
 
     <!-- Twitter Card -->
-    <meta
-      name="twitter:card"
-      content="summary_large_image"
-    />
-    <meta
-      name="twitter:title"
-      content="Propatyc - Property Management System"
-    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Propatyc — Real Estate &amp; Video Tours" />
     <meta
       name="twitter:description"
-      content="Explore Propatyc, the web app that allows you to buy, sell, and rent properties online with ease."
+      content="Discover houses, rooms, and plots with walkthrough videos and coordinated site visits."
     />
-    <meta
-      name="twitter:image"
-      content="/Propatyc-og-image.png"
-    />
+    <meta name="twitter:image" content="/web-app-manifest-512x512.png" />
 
     <!-- Icons -->
-    <link rel="canonical" href="https://propatycnepal.vercel.app/" />
+    <link rel="canonical" href="https://propatyc.vercel.app/" />
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Typography: Plus Jakarta Sans + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="icon"
-      type="image/png"
-      href="/Propatyc-favicon.png"
-      sizes="96x96"
-    />
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="/favicon.svg"
-    />
-    <link
-      rel="shortcut icon"
-      href="/favicon.ico"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="180x180"
-      href="/apple-touch-icon.png"
-    />
-    <link
-      rel="manifest"
-      href="/site.webmanifest"
-    />
-    <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-    />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <meta
-      name="theme-color"
-      content="#0f172a"
-    />
 
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Propatyc - Property Management System",
-        "url": "https://Propatycnepal.vercel.app",
-        "description": "Propatyc is a web app that enables users to buy, sell, and rent properties online, simplifying real estate transactions.",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web",
-        "sameAs": [
-          "https://facebook.com/yourapp",
-          "https://twitter.com/yourapp",
-          "https://linkedin.com/company/yourapp"
-        ],
-        "image": "https://Propatycnepal.vercel.app/Propatyc-og-image.png"
-      }
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var prefersDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var isDark =
+            saved === "dark" || ((!saved || saved === "system") && prefersDark);
+          document.documentElement.classList.toggle("dark", isDark);
+        } catch (_) {}
+      })();
     </script>
   </head>
 
   <body>
     <div id="root"></div>
-
-    <!-- <script>
-      (function () {
-        const appLink = "Propatycnepal://open";
-        const fallbackLink = window.location.pathname; // or your deployed site
-        try {
-          
-          const isMobile = /Android|iPhone|iPad|iPod/i.test(
-            navigator.userAgent
-          );
-
-          if (!isMobile) return;
-
-          // check if we already attempted to open the app
-          const urlParams = new URLSearchParams(window.location.search);
-          const triedApp = urlParams.get("triedApp");
-
-          if (!triedApp) {
-            const start = Date.now();
-            // Try to open the app
-            window.location = appLink;
-
-            // Fallback if app not installed
-            setTimeout(() => {
-              const elapsed = Date.now() - start;
-              if (elapsed < 2000) {
-                // add ?triedApp=1 to URL so it won't try again
-                const separator = fallbackLink.includes("?") ? "&" : "?";
-                window.location = fallbackLink + separator + "triedApp=1";
-              }
-            }, 1000);
-          } 
-        } catch (err) {
-          // console.log(err);
-          const separator = fallbackLink.includes("?") ? "&" : "?";
-          window.location = fallbackLink + separator + "triedApp=1";
-        }
-      })();
-    </script> -->
-
-    <script
-      type="module"
-      src="/src/main.jsx"
-    ></script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -7,13 +7,13 @@ export function RoleBadge({ role, className }) {
   const isSuper = role === "superbroker";
   return (
     <Badge
-      variant={isSuper ? "brand" : "info"}
+      variant={isSuper ? "default" : "secondary"}
       className={cn("gap-1 tracking-tight", className)}
     >
       {isSuper ? (
-        <ShieldCheck className="size-3.5" aria-hidden="true" />
+        <ShieldCheck className="size-3" aria-hidden="true" />
       ) : (
-        <Briefcase className="size-3.5" aria-hidden="true" />
+        <Briefcase className="size-3" aria-hidden="true" />
       )}
       <span>{isSuper ? "Superbroker" : "Broker"}</span>
     </Badge>
@@ -23,27 +23,30 @@ export function RoleBadge({ role, className }) {
 export function BrokerBrand({ compact = false, className }) {
   return (
     <div className={cn("inline-flex items-center gap-2.5 select-none", className)}>
-      <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary text-primary-foreground shadow-soft ring-1 ring-border/60">
-        <img
-          src="/web-app-manifest-192x192.png"
-          alt="Propatyc Broker logo"
-          width={36}
-          height={36}
-          className="size-7 object-contain"
+      <svg
+        viewBox="0 0 28 28"
+        fill="none"
+        aria-hidden="true"
+        className="size-8 shrink-0 text-foreground"
+      >
+        <rect width="28" height="28" rx="8" fill="currentColor" />
+        <path
+          d="M8.5 20V11.2L14 7.5L19.5 11.2V20H15.8V15.2H12.2V20H8.5Z"
+          fill="var(--background)"
         />
-      </div>
+      </svg>
       {!compact ? (
         <div className="min-w-0 leading-none">
           <div className="flex items-center gap-1.5">
-            <span className="text-[15px] font-extrabold tracking-tight text-foreground">
+            <span className="text-[15.5px] font-extrabold tracking-[-0.03em] text-foreground">
               Propatyc
             </span>
-            <span className="rounded-md bg-brand px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-brand-foreground">
+            <span className="rounded-full bg-foreground px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-background">
               Broker
             </span>
           </div>
           <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-            Site Visit Console
+            Visit Console
           </p>
         </div>
       ) : null}

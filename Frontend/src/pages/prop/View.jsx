@@ -1,670 +1,813 @@
-import { useContext, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { AppContext } from "../../contexts/AppContext";
+import React, { useContext, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
-  CheckCircle,
-  X,
-  Bookmark,
-  BookmarkCheck,
   ChevronLeft,
-  ArrowUpRight,
-  Bed,
-  Bath,
-  Maximize,
-  Building2,
-  Tag,
-  IndianRupee,
-  MapPin,
-  ChevronRight,
-  ZoomIn,
-  Images,
-  Shield,
-  Star,
-  Home,
-  Layers,
-  Phone,
-  BathIcon,
-  DoorOpen,
+  Bookmark,
   Share2,
+  MapPin,
+  Building2,
+  Eye,
+  CalendarCheck,
+  CreditCard,
+  Edit3,
+  Settings2,
+  Plus,
+  Trash2,
+  ExternalLink,
+  CheckCircle2,
+  Film,
+  ChevronDown,
 } from "lucide-react";
+
+import { AppContext } from "../../contexts/AppContext";
 import api from "../../api/client";
-import AlertBox from "../../components/AlertBox";
-import EditProfile from "../auth/EditProfile";
-import Reccomended from "../../components/Recomended";
-import ExtendedProperty from "../../components/ExtendedProperty";
+import { requestVisit } from "../../api/visits";
+import Recommend from "../../components/Recomended";
 import PropertyShareSheet from "../../components/PropertyShareSheet";
+import { MediaGallery } from "@/components/ui/media-gallery";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Sheet } from "@/components/ui/sheet";
+import { Input, Textarea, Field } from "@/components/ui/input";
+import { Avatar } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { VisitStatusPill } from "@/components/ui/visit-status";
+import { useToast } from "@/components/ui/toast";
+import { formatPrice } from "@/lib/format";
+import { buildMapsUrl, formatVisitDate } from "@/lib/visit";
+import { cn } from "@/lib/utils";
 
-/* ── Fullscreen Image Gallery ── */
-const FullscreenGallery = ({ images, startIndex, onClose }) => {
-  const [current, setCurrent] = useState(startIndex || 0);
+function defaultTomorrowSlot(hoursOffset = 24) {
+  const d = new Date(Date.now() + hoursOffset * 3600 * 1000);
+  d.setMinutes(0, 0, 0);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "ArrowRight") setCurrent((p) => (p + 1) % images.length);
-      if (e.key === "ArrowLeft")
-        setCurrent((p) => (p - 1 + images.length) % images.length);
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [images.length, onClose]);
-
-  return (
-    <div className="fixed inset-0 z-[1000] bg-black flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 bg-black/80 backdrop-blur-sm">
-        <span className="text-sm font-medium text-zinc-300">
-          {current + 1} <span className="text-zinc-600">/</span> {images.length}
-        </span>
-        <button
-          onClick={onClose}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-        >
-          <X className="w-5 h-5 text-white" />
-        </button>
-      </div>
-
-      {/* Main image */}
-      <div className="flex-1 flex items-center justify-center relative px-4">
-        <button
-          onClick={() =>
-            setCurrent((p) => (p - 1 + images.length) % images.length)
-          }
-          className="absolute left-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5 text-white" />
-        </button>
-
-        <img
-          key={current}
-          src={images[current]}
-          alt={`Photo ${current + 1}`}
-          className="max-h-full max-w-full object-contain rounded-lg"
-          style={{ animation: "fadeIn 0.2s ease-out" }}
-        />
-
-        <button
-          onClick={() => setCurrent((p) => (p + 1) % images.length)}
-          className="absolute right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-colors"
-        >
-          <ChevronRight className="w-5 h-5 text-white" />
-        </button>
-      </div>
-
-      {/* Thumbnail strip */}
-      <div className="px-4 py-3 bg-black/80 backdrop-blur-sm overflow-x-auto">
-        <div className="flex gap-2 justify-center">
-          {images.map((img, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={`shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${
-                i === current
-                  ? "border-white scale-105"
-                  : "border-transparent opacity-50 hover:opacity-80"
-              }`}
-            >
-              <img src={img} alt="" className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/* ── Image Grid ── */
-const ImageGrid = ({ images, onOpenGallery }) => {
-  if (!images?.length) return null;
-
-  const main = images[0];
-  const rest = images.slice(1, 5);
-
-  return (
-    <div className="relative rounded-2xl overflow-hidden bg-zinc-100">
-      {images.length === 1 ? (
-        <div
-          className="relative aspect-[16/9] cursor-pointer"
-          onClick={() => onOpenGallery(0)}
-        >
-          <img
-            src={main}
-            alt="Property"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-4 grid-rows-2 gap-1 h-72 sm:h-96">
-          {/* Main large image */}
-          <div
-            className="col-span-2 row-span-2 relative cursor-pointer overflow-hidden"
-            onClick={() => onOpenGallery(0)}
-          >
-            <img
-              src={main}
-              alt="Main"
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-          </div>
-
-          {/* Smaller images */}
-          {rest.map((img, i) => (
-            <div
-              key={i}
-              className={`relative cursor-pointer overflow-hidden ${
-                i === rest.length - 1 && images.length > 5 ? "relative" : ""
-              }`}
-              onClick={() => onOpenGallery(i + 1)}
-            >
-              <img
-                src={img}
-                alt={`Photo ${i + 2}`}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              />
-              {/* "Show all" overlay on last visible */}
-              {i === rest.length - 1 && images.length > 5 && (
-                <div
-                  className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 cursor-pointer"
-                  onClick={() => onOpenGallery(i + 1)}
-                >
-                  <Images className="w-5 h-5 text-white" />
-                  <span className="text-white text-xs font-semibold">
-                    +{images.length - 5} more
-                  </span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* View all button */}
-      <button
-        onClick={() => onOpenGallery(0)}
-        className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-black text-xs font-semibold px-3 py-1.5 rounded-full shadow-md hover:bg-white transition-colors border border-zinc-200"
-      >
-        <ZoomIn className="w-3.5 h-3.5" />
-        View all photos
-      </button>
-    </div>
-  );
-};
-
-/* ── Stat pill ── */
-const StatPill = ({ icon: Icon, label, value, color }) => {
-  const colors = {
-    blue: "bg-blue-50 border-blue-100 text-blue-700",
-    violet: "bg-violet-50 border-violet-100 text-violet-700",
-    emerald: "bg-emerald-50 border-emerald-100 text-emerald-700",
-    amber: "bg-amber-50 border-amber-100 text-amber-700",
-    zinc: "bg-zinc-50 border-zinc-200 text-zinc-700",
-  };
-  return (
-    <div
-      className={`flex flex-col items-center gap-1 px-4 py-3 rounded-xl border ${colors[color] || colors.zinc}`}
-    >
-      <Icon className="w-4 h-4 opacity-70" />
-      <span className="text-lg font-bold leading-none">{value}</span>
-      <span className="text-[11px] font-medium opacity-70 uppercase tracking-wide">
-        {label}
-      </span>
-    </div>
-  );
-};
+function minLocalDateTime() {
+  const d = new Date(Date.now() + 15 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 const View = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { user, setUser } = useContext(AppContext);
-  const [props, setPropData] = useState({});
-  const params = useParams();
-  const [propertyLoading, setPropertyLoading] = useState(true);
-  const [success, setSuccess] = useState(null);
-  const [backendError, setBackendError] = useState(null);
-  const [editOpen, setEditOpen] = useState(false);
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  const [galleryStart, setGalleryStart] = useState(0);
+  const location = useLocation();
+  const { user, setUser, refreshUser } = useContext(AppContext);
+  const { toast } = useToast();
+
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [expandedDesc, setExpandedDesc] = useState(false);
 
-  const openGallery = (index) => {
-    setGalleryStart(index);
-    setGalleryOpen(true);
-  };
-
-  if (user?.myProperties?.find((my) => my?.propId === params.id)) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 pt-20 text-center bg-white">
-        <div className="max-w-md w-full">
-          <div className="w-16 h-px bg-black mx-auto mb-8" />
-          <h1 className="text-4xl font-light tracking-tight text-black mb-3">
-            Wrong Page
-          </h1>
-          <p className="text-sm text-zinc-500 leading-relaxed mb-8 font-light">
-            This listing belongs to your portfolio. View it through your
-            property dashboard.
-          </p>
-          <Link
-            to={`/my/${params.id}`}
-            className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-7 py-3.5 rounded-full hover:bg-zinc-800 transition-colors"
-          >
-            Open My Property <ArrowUpRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-    );
-  } else if (
-    user?.bookedProperties?.find((book) => book?.propId === params.id)
-  ) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 pt-20 text-center bg-white">
-        <div className="max-w-md w-full">
-          <div className="w-16 h-px bg-black mx-auto mb-8" />
-          <h1 className="text-4xl font-light tracking-tight text-black mb-3">
-            Already Booked
-          </h1>
-          <p className="text-sm text-zinc-500 leading-relaxed mb-8 font-light">
-            You have an existing booking for this property. Manage it from your
-            bookings page.
-          </p>
-          <Link
-            to={`/booked/${params.id}`}
-            className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-7 py-3.5 rounded-full hover:bg-zinc-800 transition-colors"
-          >
-            View Booking <ArrowUpRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // Request site visit Sheet state
+  const [visitSheetOpen, setVisitSheetOpen] = useState(false);
+  const [slots, setSlots] = useState(() => [defaultTomorrowSlot(26)]);
+  const [visitNote, setVisitNote] = useState("");
+  const [visitError, setVisitError] = useState("");
+  const [visitSubmitting, setVisitSubmitting] = useState(false);
 
   useEffect(() => {
-    const getProperty = async () => {
+    let cancelled = false;
+    const loadProperty = async () => {
+      setLoading(true);
       try {
-        const response = await api.post("/api/fetching/get-property", {
-          _id: params.id,
-        });
-        if (response?.status === 200 && response.data.Property?._id) {
-          setPropData(response.data.Property);
-        } else {
-          setPropData({});
+        const res = await api.post("/api/fetching/get-property", { _id: id });
+        if (!cancelled) {
+          if (res?.status === 200 && res.data?.Property?._id) {
+            setProperty(res.data.Property);
+          } else {
+            setProperty(null);
+          }
         }
-      } catch (err) {
-        console.log(err);
-        setPropData({});
+      } catch {
+        if (!cancelled) setProperty(null);
       } finally {
-        setPropertyLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-    getProperty();
-  }, [params.id]);
+    loadProperty();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
-  useEffect(() => {
-    document.body.style.overflow =
-      editOpen || galleryOpen || shareOpen ? "hidden" : "auto";
-  }, [editOpen, galleryOpen, shareOpen]);
+  const isSaved = Boolean(
+    user?.saved?.some((s) => String(s?.propId) === String(id)),
+  );
 
-  if (propertyLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen w-full overflow-hidden pb-20 pt-15 bg-white ">
-        <div className="xl:max-w-2xl w-full px-2 animate-pulse space-y-5">
-          <div className="bg-zinc-100 h-80 rounded-2xl w-full" />
-          <div className="space-y-2 pt-2">
-            <div className="h-7 bg-zinc-100 rounded-full w-2/3" />
-            <div className="h-4 bg-zinc-100 rounded-full w-1/3" />
-          </div>
-          <div className="h-px bg-zinc-100 w-full" />
-          <div className="grid grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-zinc-100 h-20 rounded-xl" />
-            ))}
-          </div>
-          <div className="space-y-2 pt-2">
-            <div className="h-3 bg-zinc-100 rounded-full w-full" />
-            <div className="h-3 bg-zinc-100 rounded-full w-5/6" />
-            <div className="h-3 bg-zinc-100 rounded-full w-4/6" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const isOwner = Boolean(
+    property?.viewer?.isOwner ||
+      user?.myProperties?.some((m) => String(m?.propId) === String(id)),
+  );
 
-  const action = !user?.saved?.some((save) => save.propId === params?.id);
+  const myBooking =
+    property?.viewer?.myBooking ||
+    user?.bookedProperties?.find((b) => String(b?.propId) === String(id)) ||
+    null;
 
   const handleSave = async () => {
+    if (!user?._id) {
+      toast({
+        title: "Sign in to bookmark",
+        description: "Create an account or sign in to save listings.",
+      });
+      navigate("/signin", { state: { from: location } });
+      return;
+    }
+    const nextAction = !isSaved;
     try {
-      if (!user?._id) {
-        setBackendError("Sign in to save this property.");
-      } else {
-        const res = await api.post("/api/booking/save-property", {
-          id: params.id,
-          action,
+      setSaveBusy(true);
+      const res = await api.post("/api/booking/save-property", {
+        id,
+        action: nextAction,
+      });
+      if (res.status === 200) {
+        setUser((prev) => {
+          if (!prev) return prev;
+          const nextSaved = nextAction
+            ? [...(prev.saved || []), { propId: id, createdAt: Date.now() }]
+            : (prev.saved || []).filter((s) => String(s?.propId) !== String(id));
+          const updated = { ...prev, saved: nextSaved };
+          try {
+            localStorage.setItem("user", JSON.stringify(updated));
+          } catch {
+            /* ignore */
+          }
+          return updated;
         });
-        if (res.status === 200) {
-          setSuccess(res.data.message);
-          setUser((prev) => ({
-            ...prev,
-            saved: action
-              ? [...prev.saved, { propId: params.id, createdAt: Date.now() }]
-              : prev.saved.filter((s) => s.propId !== params.id),
-          }));
-        }
+        toast({
+          title: nextAction ? "Saved to your bookmarks" : "Removed from bookmarks",
+          variant: "success",
+        });
       }
     } catch (err) {
-      setBackendError(err.response?.data?.message || "Error saving property");
+      toast({
+        title: "Could not save property",
+        description: err.response?.data?.message || "Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setSaveBusy(false);
     }
   };
 
-  // Gather images from props (adjust field names to match your data model)
-  const images = props.images || (props.image ? [props.image] : []);
+  const openVisitSheet = () => {
+    if (!user?._id) {
+      toast({
+        title: "Sign in required",
+        description: "Sign in to request an in-person site visit.",
+      });
+      navigate("/signin", { state: { from: location } });
+      return;
+    }
+    setVisitError("");
+    setVisitSheetOpen(true);
+  };
+
+  const handleSlotChange = (idx, val) => {
+    setVisitError("");
+    setSlots((prev) => prev.map((s, i) => (i === idx ? val : s)));
+  };
+
+  const addSlot = () => {
+    if (slots.length >= 3) return;
+    setSlots((prev) => [...prev, defaultTomorrowSlot(26 + prev.length * 24)]);
+  };
+
+  const removeSlot = (idx) => {
+    if (slots.length <= 1) return;
+    setSlots((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleSubmitVisit = async (e) => {
+    e?.preventDefault();
+    setVisitError("");
+
+    const validIso = [];
+    const now = Date.now();
+    for (const raw of slots) {
+      if (!raw) continue;
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) {
+        setVisitError("Please enter valid dates and times.");
+        return;
+      }
+      if (d.getTime() <= now + 5 * 60 * 1000) {
+        setVisitError("Every preferred slot must be in the future.");
+        return;
+      }
+      validIso.push(d.toISOString());
+    }
+
+    if (validIso.length === 0) {
+      setVisitError("Select at least one preferred date and time.");
+      return;
+    }
+
+    try {
+      setVisitSubmitting(true);
+      const data = await requestVisit({
+        propId: id,
+        preferredSlots: validIso.slice(0, 3),
+        note: visitNote.trim(),
+      });
+      const newVisit = data?.visit;
+      setVisitSheetOpen(false);
+      refreshUser?.();
+      toast({
+        title: "Site visit requested!",
+        description:
+          "The owner has been notified. Once approved, a broker will confirm the schedule.",
+        variant: "success",
+      });
+      if (newVisit?._id) {
+        navigate(`/visits/${newVisit._id}`);
+      } else {
+        navigate("/visits");
+      }
+    } catch (err) {
+      const code = err.response?.data?.code;
+      const msg =
+        err.response?.data?.message || "Could not submit visit request.";
+      setVisitError(msg);
+      toast({
+        title: code === "DUPLICATE" ? "Visit already requested" : "Request failed",
+        description: msg,
+        variant: "error",
+      });
+      if (code === "DUPLICATE") {
+        setVisitSheetOpen(false);
+        navigate("/visits");
+      }
+    } finally {
+      setVisitSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6 py-5 sm:py-8">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-9 w-24 rounded-full" />
+          <div className="flex gap-2">
+            <Skeleton className="size-10 rounded-full" />
+            <Skeleton className="size-10 rounded-full" />
+          </div>
+        </div>
+        <Skeleton className="aspect-[16/9] w-full rounded-3xl" />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-2/3" />
+            <Skeleton className="h-5 w-1/3" />
+            <div className="grid grid-cols-3 gap-3">
+              <Skeleton className="h-20 rounded-2xl" />
+              <Skeleton className="h-20 rounded-2xl" />
+              <Skeleton className="h-20 rounded-2xl" />
+            </div>
+            <Skeleton className="h-32 rounded-2xl" />
+          </div>
+          <Skeleton className="h-64 rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!property?._id) {
+    return (
+      <div className="py-12">
+        <EmptyState
+          icon={Building2}
+          title="Listing not found"
+          description="This property may have been removed or is no longer available."
+          action={
+            <Button asChild variant="brand">
+              <Link to="/">Browse available properties</Link>
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
+  const images = Array.isArray(property.images)
+    ? property.images
+    : property.image
+      ? [property.image]
+      : [];
+  const isRent = property.sellingType === "Rent System";
+  const amenities = Array.isArray(property.amenities)
+    ? property.amenities.filter(Boolean)
+    : [];
+  const ownerInfo = property.ownerInfo || null;
+  const description = property.description || "";
+  const isLongDesc = description.length > 280;
+
+  const renderActionButtons = (compact = false) => {
+    if (isOwner) {
+      return (
+        <div className={cn("flex gap-2.5", compact ? "flex-1" : "flex-col")}>
+          <Button asChild variant="brand" className="w-full">
+            <Link to={`/my/${property._id}`}>
+              <Settings2 className="size-4" aria-hidden="true" />
+              <span>Manage listing</span>
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full">
+            <Link to={`/edit-property/${property._id}`}>
+              <Edit3 className="size-4" aria-hidden="true" />
+              <span>Edit listing</span>
+            </Link>
+          </Button>
+        </div>
+      );
+    }
+
+    if (myBooking) {
+      if (myBooking.bType === "visit") {
+        return (
+          <div className={cn("flex gap-2.5", compact ? "flex-1 items-center" : "flex-col")}>
+            {!compact ? (
+              <div className="flex flex-col gap-1.5 rounded-2xl border border-border/70 bg-muted/50 p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    Your visit request
+                  </span>
+                  <VisitStatusPill status={myBooking.visitStatus || "requested"} short />
+                </div>
+                {myBooking.schedule?.startAt ? (
+                  <p className="text-xs font-medium text-foreground">
+                    {formatVisitDate(myBooking.schedule.startAt)}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <VisitStatusPill status={myBooking.visitStatus || "requested"} short />
+            )}
+            <Button asChild variant="brand" className="flex-1">
+              <Link to={`/visits/${myBooking._id}`}>
+                <CalendarCheck className="size-4" aria-hidden="true" />
+                <span>View visit status</span>
+              </Link>
+            </Button>
+          </div>
+        );
+      }
+
+      return (
+        <div className={cn("flex gap-2.5", compact ? "flex-1" : "flex-col")}>
+          <Button asChild variant="brand" className="w-full">
+            <Link to={`/booked/${property._id}`}>
+              <CheckCircle2 className="size-4" aria-hidden="true" />
+              <span>View booking</span>
+            </Link>
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className={cn("flex gap-2.5", compact ? "flex-1" : "flex-col")}>
+        <Button
+          variant="brand"
+          onClick={openVisitSheet}
+          className={cn(compact ? "flex-1" : "w-full")}
+        >
+          <CalendarCheck className="size-4" aria-hidden="true" />
+          <span>Request site visit</span>
+        </Button>
+        <Button
+          asChild
+          variant="outline"
+          className={cn(compact ? "shrink-0 px-3.5" : "w-full")}
+        >
+          <Link to={`/book/${property._id}/${property.price}`}>
+            <CreditCard className="size-4" aria-hidden="true" />
+            <span>{compact ? "Reserve" : "Book / Reserve"}</span>
+          </Link>
+        </Button>
+      </div>
+    );
+  };
 
   return (
-    <div className="w-full min-h-screen bg-zinc-50 overflow-hidden pb-40 p-2">
-      {/* ── Fullscreen Gallery ── */}
-      {galleryOpen && images.length > 0 && (
-        <FullscreenGallery
-          images={images}
-          startIndex={galleryStart}
-          onClose={() => setGalleryOpen(false)}
-        />
-      )}
+    <div className="flex flex-col gap-8 py-4 pb-28 sm:py-6 lg:pb-12">
+      {/* Top Action Bar */}
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="-ml-2 gap-1.5"
+        >
+          <ChevronLeft className="size-4" aria-hidden="true" />
+          <span>Back</span>
+        </Button>
 
+        <div className="flex items-center gap-2">
+          {isOwner ? (
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/edit-property/${property._id}`}>
+                <Edit3 className="size-3.5" aria-hidden="true" />
+                <span>Edit</span>
+              </Link>
+            </Button>
+          ) : null}
+          <Button
+            variant={isSaved ? "default" : "outline"}
+            size="sm"
+            disabled={saveBusy}
+            onClick={handleSave}
+          >
+            <Bookmark
+              className={cn("size-4", isSaved && "fill-current")}
+              aria-hidden="true"
+            />
+            <span>{isSaved ? "Saved" : "Save"}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShareOpen(true)}
+          >
+            <Share2 className="size-4" aria-hidden="true" />
+            <span>Share</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* MediaGallery — Walkthrough Video First, Then Photos */}
+      <div className="-mx-4 sm:mx-0">
+        <MediaGallery
+          images={images}
+          video={property.video}
+          title={property.title || "Property"}
+        />
+      </div>
+
+      {/* Two-column Details + Sticky Booking/Visit Sidebar */}
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_380px]">
+        {/* Left Column */}
+        <div className="flex min-w-0 flex-col gap-6">
+          {/* Header Badges + Title + Location */}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={isRent ? "info" : "brand"}>
+                {isRent ? "For Rent" : "For Sale"}
+              </Badge>
+              {property.propertyType ? (
+                <Badge variant="secondary">{property.propertyType}</Badge>
+              ) : null}
+              {property.video?.url ? (
+                <Badge variant="outline" className="gap-1">
+                  <Film className="size-3.5 text-brand" aria-hidden="true" />
+                  <span>Video tour included</span>
+                </Badge>
+              ) : null}
+              {typeof property.views === "number" ? (
+                <span className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground tabular-nums">
+                  <Eye className="size-3.5" aria-hidden="true" />
+                  <span>{property.views.toLocaleString()} views</span>
+                </span>
+              ) : null}
+            </div>
+
+            <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+              {property.title || "Property"}
+            </h1>
+
+            {property.location ? (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 font-medium text-foreground/90">
+                  <MapPin className="size-4 shrink-0 text-brand" aria-hidden="true" />
+                  <span>{property.location}</span>
+                </span>
+                <a
+                  href={buildMapsUrl(property.location)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+                >
+                  <span>Open in Maps</span>
+                  <ExternalLink className="size-3" aria-hidden="true" />
+                </a>
+              </div>
+            ) : null}
+
+            {/* Mobile Price Summary */}
+            <div className="mt-1 flex items-baseline gap-1.5 lg:hidden">
+              <span className="text-2xl font-extrabold tracking-tight text-foreground tabular-nums">
+                {formatPrice(property.price)}
+              </span>
+              {isRent ? (
+                <span className="text-sm font-medium text-muted-foreground">
+                  / month
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Architectural Key Facts Strip (No Heavy Boxes) */}
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-y border-border/70 py-5">
+            <div>
+              <p className="text-xs text-muted-foreground">Type</p>
+              <p className="mt-0.5 text-[15px] font-semibold text-foreground">
+                {property.propertyType || "Residence"}
+              </p>
+            </div>
+
+            {property.propertyType !== "Plot" ? (
+              <>
+                <div className="h-7 w-px bg-border/70" aria-hidden="true" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Rooms</p>
+                  <p className="mt-0.5 text-[15px] font-semibold text-foreground tabular-nums">
+                    {property.rooms ?? 0}{" "}
+                    {Number(property.rooms) === 1 ? "Room" : "Rooms"}
+                  </p>
+                </div>
+
+                <div className="h-7 w-px bg-border/70" aria-hidden="true" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Washrooms</p>
+                  <p className="mt-0.5 text-[15px] font-semibold text-foreground tabular-nums">
+                    {property.washrooms ?? 0}{" "}
+                    {Number(property.washrooms) === 1 ? "Bath" : "Baths"}
+                  </p>
+                </div>
+              </>
+            ) : null}
+
+            {Number(property.area) > 0 ? (
+              <>
+                <div className="h-7 w-px bg-border/70" aria-hidden="true" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Area</p>
+                  <p className="mt-0.5 text-[15px] font-semibold text-foreground tabular-nums">
+                    {property.area} sq.ft
+                  </p>
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          {/* Description */}
+          {description ? (
+            <div className="flex flex-col gap-2.5 border-b border-border/70 pb-6">
+              <h2 className="text-base font-bold tracking-tight text-foreground">
+                Overview
+              </h2>
+              <p
+                className={cn(
+                  "selectable whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground",
+                  !expandedDesc && isLongDesc && "line-clamp-4",
+                )}
+              >
+                {description}
+              </p>
+              {isLongDesc ? (
+                <button
+                  type="button"
+                  onClick={() => setExpandedDesc((v) => !v)}
+                  className="inline-flex items-center gap-1 self-start text-xs font-semibold text-foreground underline underline-offset-4"
+                >
+                  <span>{expandedDesc ? "Show less" : "Read full description"}</span>
+                  <ChevronDown
+                    className={cn(
+                      "size-3.5 transition-transform",
+                      expandedDesc && "rotate-180",
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Amenities */}
+          {amenities.length > 0 ? (
+            <div className="flex flex-col gap-3.5 border-b border-border/70 pb-6">
+              <h2 className="text-base font-bold tracking-tight text-foreground">
+                Amenities &amp; Highlights
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {amenities.map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/40 px-3.5 py-1.5 text-xs font-medium text-foreground"
+                  >
+                    <CheckCircle2
+                      className="size-3.5 text-foreground"
+                      aria-hidden="true"
+                    />
+                    <span>{item}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Owner Info Row */}
+          {ownerInfo ? (
+            <div className="flex items-center justify-between gap-4 py-1">
+              <div className="flex min-w-0 items-center gap-3.5">
+                <Avatar
+                  src={ownerInfo.pp}
+                  name={ownerInfo.username || "Owner"}
+                  size="default"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Listed by</p>
+                  <p className="truncate text-[15px] font-semibold text-foreground">
+                    {ownerInfo.username || "Verified Owner"}
+                  </p>
+                  {ownerInfo.memberSince ? (
+                    <p className="text-xs text-muted-foreground">
+                      Member since{" "}
+                      {new Date(ownerInfo.memberSince).toLocaleDateString("en-IN", {
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <Badge variant="outline">Verified Host</Badge>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Right Column — Desktop Sticky Sidebar */}
+        <aside className="hidden lg:sticky lg:top-24 lg:block">
+          <Card className="border-border/80 shadow-card">
+            <CardContent className="flex flex-col gap-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {isRent ? "Monthly rent" : "Asking price"}
+                </p>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
+                    {formatPrice(property.price)}
+                  </span>
+                  {isRent ? (
+                    <span className="text-sm font-medium text-muted-foreground">
+                      / month
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              {renderActionButtons(false)}
+
+              <div className="rounded-2xl bg-muted/60 p-3.5 text-xs leading-relaxed text-muted-foreground">
+                <p className="font-semibold text-foreground">
+                  How site visits work
+                </p>
+                <p className="mt-1">
+                  Submit up to 3 preferred time slots for free. Once the owner approves, a verified Propatyc broker coordinates the in-person visit.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
+
+      {/* Recommended Listings */}
+      <section className="border-t border-border/70 pt-8">
+        <div className="mb-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-brand">
+            Discover more
+          </p>
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            Similar Properties
+          </h2>
+        </div>
+        <Recommend id={property._id} />
+      </section>
+
+      {/* Mobile Sticky Bottom CTA Bar */}
+      <div className="chrome-fixed-bottom glass fixed inset-x-0 bottom-0 z-40 border-t border-border/80 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] lg:hidden">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+          <div className="hidden min-w-0 flex-col sm:flex">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {isRent ? "Rent" : "Price"}
+            </span>
+            <span className="truncate text-base font-extrabold text-foreground tabular-nums">
+              {formatPrice(property.price)}
+              {isRent ? "/mo" : ""}
+            </span>
+          </div>
+          {renderActionButtons(true)}
+        </div>
+      </div>
+
+      {/* Share Sheet */}
       <PropertyShareSheet
         open={shareOpen}
         onClose={() => setShareOpen(false)}
-        propertyId={params.id}
-        propertyTitle={props.title || "Property"}
+        propertyId={property._id}
+        propertyTitle={property.title || "Property"}
       />
 
-      {/* ── Edit Profile Modal ── */}
-      {editOpen && (
-        <>
-          <div className="fixed z-50 xl:w-[56%] xl:left-[22%] w-[94%] left-[3%] top-4 h-[90vh] flex flex-col">
-            <div className="w-full h-full bg-white rounded-2xl overflow-hidden flex flex-col shadow-2xl border border-zinc-200">
-              <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-100">
-                <span className="text-base font-semibold tracking-tight text-black">
-                  Edit Profile
-                </span>
-                <button
-                  onClick={() => setEditOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-100 transition-colors"
-                >
-                  <X size={18} className="text-zinc-600" />
-                </button>
-              </div>
-              <div className="overflow-y-auto flex-1 px-6 pb-6">
-                <EditProfile />
-              </div>
-            </div>
-          </div>
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-        </>
-      )}
-
-      {/* ── Alerts ── */}
-      {success && (
-        <AlertBox
-          message={success}
-          type="success"
-          onClose={() => setSuccess(null)}
-        />
-      )}
-      {backendError && (
-        <AlertBox
-          message={backendError}
-          type="error"
-          onClose={() => setBackendError(null)}
-        />
-      )}
-
-      {/* ── Top Nav ── */}
-      <div className="w-full max-w-2xl mx-auto  mb-4 flex items-center justify-between gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm font-medium text-zinc-600 hover:text-black transition-colors group"
-        >
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-          Back
-        </button>
-        <button
-          onClick={handleSave}
-          className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-full border transition-all ${
-            !action
-              ? "bg-black text-white border-black"
-              : "bg-white text-black border-zinc-300 hover:border-black"
-          }`}
-        >
-          {!action ? (
-            <>
-              <BookmarkCheck className="w-4 h-4" /> Saved
-            </>
-          ) : (
-            <>
-              <Bookmark className="w-4 h-4" /> Save
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* ── Main Content ── */}
-      <div className="w-full max-w-2xl mx-auto  space-y-5">
-        {/* Image Grid */}
-        {images.length > 0 && (
-          <ImageGrid images={images} onOpenGallery={openGallery} />
-        )}
-
-        {/* ── Price + Title Hero Card ── */}
-        <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
-          {/* Price band */}
-          <div className="bg-black px-5 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <p className="text-zinc-400 text-[11px] font-semibold tracking-widest uppercase mb-0.5">
-                Listed Price
-              </p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-white text-xl font-bold tracking-tight">
-                  ₹
-                  {props.price
-                    ? new Intl.NumberFormat("en-IN").format(props.price)
-                    : "—"}
-                </span>
-                {props.sellingType === "Rent System" ? <>/month</> : null}
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="inline-flex items-center gap-1.5 bg-white/10 text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20">
-                <Shield className="w-3 h-3" />
-                {/* Verified Listing */}
+      {/* Request Site Visit Sheet */}
+      <Sheet
+        open={visitSheetOpen}
+        onOpenChange={setVisitSheetOpen}
+        title="Request a site visit"
+        description={`Pick up to 3 preferred date & time slots to visit "${property.title || "this property"}".`}
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setVisitSheetOpen(false)}
+              disabled={visitSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="brand"
+              loading={visitSubmitting}
+              onClick={handleSubmitVisit}
+            >
+              <CalendarCheck className="size-4" aria-hidden="true" />
+              <span>Send visit request</span>
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmitVisit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-foreground/90">
+                Preferred date &amp; time slots ({slots.length}/3)
               </span>
-            </div>
-          </div>
-
-          {/* Title + location */}
-          <div className="px-5 pt-4 ">
-            <h1 className="text-xl font-bold text-zinc-900 leading-snug mb-1.5">
-              {props.title || props.name || "Property"}
-            </h1>
-          </div>
-
-          {/* Divider */}
-          <div className="mx-5 h-px bg-zinc-100" />
-
-          {/* Stats row */}
-          <div className="grid grid-cols-1 gap-2 py-2 px-4 ">
-            {[
-              props.rooms > 0 && {
-                icon: DoorOpen,
-                label: props.rooms + " room(s)",
-                color: "text-emerald-600",
-                bg: "bg-emerald-50",
-              },
-              props.washrooms > 0 && {
-                icon: BathIcon,
-                label: props.washrooms + " washroom(s)",
-                color: "text-blue-600",
-                bg: "bg-blue-50",
-              },
-              props.location && {
-                icon: MapPin,
-                label: props.location,
-                color: "text-violet-600",
-                bg: "bg-violet-50",
-              },
-              props.area > 0 && {
-                icon: Maximize,
-                label: `${props.area} sq.ft`,
-                color: "text-amber-600",
-                bg: "bg-amber-50",
-              },
-            ]
-              .filter(Boolean)
-              .map((item, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-2.5 ${item.bg} rounded-xl px-3.5 py-3`}
+              {slots.length < 3 ? (
+                <button
+                  type="button"
+                  onClick={addSlot}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
                 >
-                  <item.icon className={`w-4 h-4 shrink-0 ${item.color}`} />
-                  <span className="text-xs font-semibold text-zinc-700 truncate">
-                    {item.label}
-                  </span>
-                </div>
-              ))}
-          </div>
-        </div>
+                  <Plus className="size-3.5" aria-hidden="true" />
+                  <span>Add slot</span>
+                </button>
+              ) : null}
+            </div>
 
-        {/* ── Description card ── */}
-        {props.description && (
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm px-5 py-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center">
-                <Home className="w-3.5 h-3.5 text-blue-500" />
+            {slots.map((slot, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Input
+                  type="datetime-local"
+                  value={slot}
+                  min={minLocalDateTime()}
+                  onChange={(e) => handleSlotChange(idx, e.target.value)}
+                  aria-label={`Preferred slot ${idx + 1}`}
+                  required={idx === 0}
+                />
+                {slots.length > 1 ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => removeSlot(idx)}
+                    aria-label={`Remove slot ${idx + 1}`}
+                  >
+                    <Trash2 className="size-4 text-muted-foreground" aria-hidden="true" />
+                  </Button>
+                ) : null}
               </div>
-              <h2 className="text-sm font-semibold text-zinc-800 tracking-wide uppercase">
-                About this property
-              </h2>
-            </div>
-            <p className="text-sm text-zinc-600 leading-relaxed">
-              {props.description}
+            ))}
+            <p className="text-xs text-muted-foreground">
+              Giving 2–3 options helps the owner and assigned broker confirm faster.
             </p>
           </div>
-        )}
 
-        {/* ── Key highlights ── */}
-        {/* <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm px-5 py-4">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-6 h-6 rounded-md bg-emerald-50 flex items-center justify-center">
-              <Star className="w-3.5 h-3.5 text-emerald-500" />
-            </div>
-            <h2 className="text-sm font-semibold text-zinc-800 tracking-wide uppercase">
-              Key highlights
-            </h2>
-          </div>
-        
-        </div> */}
+          <Field
+            label="Note for the owner & broker (optional)"
+            hint="Questions about parking, furnishings, lease length, or directions."
+          >
+            <Textarea
+              rows={3}
+              value={visitNote}
+              onChange={(e) => setVisitNote(e.target.value)}
+              placeholder="e.g., Moving next month with family, available weekday mornings…"
+            />
+          </Field>
 
-        {/* ── Extended property details (your existing component) ── */}
-
-        {/* ── Contact / CTA nudge ── */}
-        <div className="bg-gradient-to-r from-zinc-900 to-zinc-700 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-white font-semibold text-sm mb-0.5">
-              Interested in this property?
+          {visitError ? (
+            <p
+              role="alert"
+              className="rounded-xl border border-destructive/30 bg-danger-soft px-3.5 py-2.5 text-xs font-medium text-destructive"
+            >
+              {visitError}
             </p>
-            <p className="text-zinc-400 text-xs">
-              Book now or save it for later.
-            </p>
-          </div>
-          <Link to={`/book/${params.id}/${props.price}`}>
-            <button className="shrink-0 bg-white text-black text-xs font-bold px-4 py-2.5 rounded-full hover:bg-zinc-100 active:scale-95 transition-all">
-              Book Now
-            </button>
-          </Link>
-        </div>
-
-        {/* ── Related Properties ── */}
-        <div className="pt-4">
-          <div className="flex items-center gap-4 mb-5">
-            <h3 className="text-lg font-semibold tracking-tight text-black">
-              Related Properties
-            </h3>
-            <div className="flex-1 h-px bg-zinc-200" />
-          </div>
-          <Reccomended id={props._id} />
-          <p className="text-center text-xs text-zinc-400 mt-8 tracking-widest uppercase">
-            End of recommendations
-          </p>
-        </div>
-      </div>
-
-      {/* ── Sticky Booking Bar ── */}
-      <div className="chrome-fixed-bottom fixed bottom-0 left-0 right-0 z-[998] bg-white/90 backdrop-blur-xl border-t border-zinc-200">
-        <div className="chrome-fixed-inner max-w-2xl mx-auto px-3 py-2.5 flex items-center gap-3 shrink-0">
-          {/* Price + status */}
-          {props.price && (
-            <>
-              <div className="hidden sm:flex flex-col gap-0.5 shrink-0 min-w-[80px]">
-                <span className="text-[10px] text-zinc-400 uppercase tracking-widest">
-                  Price
-                </span>
-                <span className="text-xl font-semibold text-black leading-tight">
-                  ₹
-                  {props.price
-                    ? new Intl.NumberFormat("en-IN").format(props.price)
-                    : "—"}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                  <span className="text-[10px] text-emerald-600 font-medium">
-                    Available
-                  </span>
-                </span>
-              </div>
-              <div className="hidden sm:block w-px h-10 bg-zinc-200 shrink-0" />
-            </>
-          )}
-
-          {/* Actions */}
-          <div className="flex-1 flex flex-col gap-1.5">
-            <Link to={`/book/${params.id}/${props.price}`}>
-              <button className="w-full py-3 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 bg-zinc-900 hover:bg-black active:scale-[0.97] transition-all">
-                <CheckCircle className="w-4 h-4" />
-                Book Now
-              </button>
-            </Link>
-            <div className="flex gap-1.5">
-              <button
-                onClick={handleSave}
-                className={`flex-1 py-1.5 rounded-lg border border-zinc-200 text-xs font-medium  hover:bg-zinc-50 flex items-center justify-center gap-1.5 transition-colors ${
-                  !action
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-black border-zinc-300 hover:border-black"
-                } `}
-              >
-                {!action ? (
-                  <>
-                    <BookmarkCheck className="w-4 h-4" /> Saved
-                  </>
-                ) : (
-                  <>
-                    <Bookmark className="w-4 h-4" /> Save
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShareOpen(true)}
-                className="flex-1 py-1.5 rounded-lg border border-zinc-200 text-xs font-medium text-zinc-600 hover:bg-zinc-50 flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <Share2 className="w-3 h-3" /> Share
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      `}</style>
+          ) : null}
+        </form>
+      </Sheet>
     </div>
   );
 };

@@ -1,71 +1,37 @@
 import React from "react";
-import { XCircle, CheckCircle, Info, TriangleAlert } from "lucide-react";
-import { motion } from "framer-motion";
-const AlertBox = ({ message, type, onClose }) => {
-  const getColors = () => {
-    switch (type) {
-      case "success":
-        return "text-emerald-600 dark:text-emerald-400";
-      case "error":
-        return "text-red-600 dark:text-red-400";
-      case "warning":
-        return "text-amber-600 dark:text-amber-400";
-      case "info":
-        return "text-blue-600 dark:text-blue-400";
-      default:
-        return "text-foreground";
-    }
-  };
+import { Dialog } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
-  const getIcon = () => {
-    switch (type) {
-      case "success":
-        return <CheckCircle size={20} />;
-      case "error":
-        return <XCircle size={20} />;
-      case "warning":
-        return <TriangleAlert size={20} />;
-      case "info":
-        return <Info size={20} />;
-      default:
-        return null;
-    }
-  };
-
+/**
+ * Compatibility wrapper around native `<dialog>` `Dialog`.
+ * New screens should prefer `useToast()` from `@/components/ui/toast`.
+ */
+const AlertBox = ({ message, type = "info", onClose }) => {
   if (!message) return null;
 
+  const titles = {
+    success: "Success",
+    error: "Something went wrong",
+    warning: "Heads up",
+    info: "Notice",
+  };
+
   return (
-    <>
-      <div className="fixed inset-0  w-full h-full z-[3000]  bg-black/80"></div>
-      <motion.div
-        initial={{ bottom: "-100px", opacity: 0 }}
-        animate={{ bottom: "0px", opacity: 1, pathLength: 0.1 }}
-        transition={{
-          duration: 0.3,
-          type: "tween",
-          ease: ["easeIn", "easeOut"],
-        }}
-        className="chrome-fixed-bottom chrome-fixed-inner fixed z-[3001] bottom-0 left-0 right-0 w-full min-h-[7.5rem] py-6 px-3 shadow-2xl rounded-t-3xl bg-background text-foreground flex flex-col border-t border-border shrink-0"
-        role="alert"
-      >
-        <div className="flex items-center">
-          {getIcon()}
-          <span
-            className={`block sm:inline font-semibold ml-2 text-sm ${getColors()}`}
-          >
-            {message}
-          </span>
-        </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="mt-4 bg-foreground hover:bg-foreground/90 text-background font-medium p-4 rounded-2xl transition-all"
-          >
+    <Dialog
+      open={Boolean(message)}
+      onOpenChange={(open) => {
+        if (!open) onClose?.();
+      }}
+      title={titles[type] || "Notice"}
+      description={message}
+      footer={
+        onClose ? (
+          <Button onClick={onClose} data-autofocus="">
             OK
-          </button>
-        )}
-      </motion.div>
-    </>
+          </Button>
+        ) : null
+      }
+    />
   );
 };
 

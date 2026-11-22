@@ -1,201 +1,167 @@
 import React, { useContext, useState } from "react";
-import { AppContext } from "../../contexts/AppContext";
-import { Loader2, Eye, EyeClosed, Lock } from "lucide-react";
-import AlertBox from "../../components/AlertBox";
-import api from "../../api/client";
 import { useNavigate } from "react-router-dom";
+import { ChevronLeft, Eye, EyeClosed, Lock, ShieldAlert } from "lucide-react";
 
-const EditProfile = () => {
-  const [errors, setErrors] = useState([]);
-  const [backendError, setBackendError] = useState(null);
-  const [success, setSuccess] = useState(null);
+import { AppContext } from "../../contexts/AppContext";
+import api from "../../api/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input, Field } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
+
+const ChangePassword = () => {
+  const { user } = useContext(AppContext);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const { user, setUser } = useContext(AppContext);
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [fields] = useState([
-    {
-      name: "Current Password",
-      type: "password",
-      placeholder: "********",
-      icon: <Lock size={20} />,
-    },
-    {
-      name: "New Password",
-      type: "password",
-      placeholder: "********",
-      icon: <Lock size={20} />,
-    },
-  ]);
-  const [fieldData, setFieldData] = useState([]);
 
-  const validate = () => {
-    const newErrors = {};
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  const handleSubmit = async (e) => {
-    try {
-      e.preventDefault();
-      if (!validate()) {
-        return;
-      }
-
-      setLoading(true);
-      const res = await api.post("/api/auth/edit-profile", {
-        currentPassword: fieldData["Current Password"],
-        newPassword: fieldData["New Password"],
-      });
-      if (res.status === 200) {
-        setLoading(false);
-        setSuccess("Password changed Successfully.");
-      } else {
-        setLoading(false);
-      }
-    } catch (err) {
-      setLoading(false);
-      setBackendError(err.response.data.message);
-    }
-  };
-  if (user?.uuid)
+  if (user?.uuid) {
     return (
-      <div className="flex flex-col items-center justify-center w-full h-screen">
-        <h2 className="text-xl font-bold ">Your password cannot be changed</h2>
-        <p className="text-center">Since you are signed in with Google account, you can't change your password :(</p>
+      <div className="mx-auto max-w-md py-12">
+        <EmptyState
+          icon={ShieldAlert}
+          title="Managed by Google Sign-In"
+          description="Your account uses Google authentication, so there is no separate Propatyc password to change."
+          action={
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              Go back
+            </Button>
+          }
+        />
       </div>
     );
+  }
+
+  const validate = () => {
+    const e = {};
+    if (!currentPassword) e.current = "Enter your current password";
+    if (!newPassword) e.next = "Enter a new password";
+    else if (newPassword.length < 6) e.next = "At least 6 characters";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSubmit = async (ev) => {
+    ev.preventDefault();
+    if (!validate()) return;
+
+    try {
+      setLoading(true);
+      const res = await api.post("/api/auth/edit-profile", {
+        currentPassword,
+        newPassword,
+      });
+      if (res.status === 200) {
+        setCurrentPassword("");
+        setNewPassword("");
+        toast({
+          title: "Password updated",
+          description: "Your password has been changed successfully.",
+          variant: "success",
+        });
+        navigate("/settings");
+      }
+    } catch (err) {
+      toast({
+        title: "Could not change password",
+        description: err.response?.data?.message || "Check your current password.",
+        variant: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="w-full h-screen pt-20">
-      {/* Main Content */}
-      <div className="max-w-2xl mx-auto flex flex-col items-center justify-center h-full">
-        {/* Alert Messages */}
-        {backendError && (
-          <div className="px-4 pt-4">
-            <AlertBox
-              message={backendError}
-              type="error"
-              onClose={() => setBackendError(null)}
-            />
+    <div className="mx-auto flex max-w-md flex-col gap-5 py-6 sm:py-10">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate(-1)}
+        className="-ml-2 self-start gap-1.5"
+      >
+        <ChevronLeft className="size-4" aria-hidden="true" />
+        <span>Back</span>
+      </Button>
+
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+            <Lock className="size-5" aria-hidden="true" />
           </div>
-        )}
-        {success && (
-          <div className="px-4 pt-4">
-            <AlertBox
-              message={success}
-              type="success"
-              onClose={() => setSuccess(null)}
-            />
-          </div>
-        )}
-        {/* {console.log(fieldData["Current Password"])} */}
+          <CardTitle className="text-xl">Change Password</CardTitle>
+          <CardDescription>
+            Choose a strong password that you don&apos;t reuse elsewhere.
+          </CardDescription>
+        </CardHeader>
 
-        {/* Edit Form */}
-        <div className="w-full py-6 border-b border-zinc-200">
-          <h2 className="text-3xl font-bold ">Change your Password</h2>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <Field label="Current Password" required error={errors.current}>
+              <Input
+                type={showPass ? "text" : "password"}
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => {
+                  setCurrentPassword(e.target.value);
+                  setErrors((p) => ({ ...p, current: "" }));
+                }}
+                placeholder="••••••••"
+              />
+            </Field>
 
-          <form
-            onSubmit={(e) => handleSubmit(e)}
-            className="space-y-4"
-          >
-            {fields.map((field, i) => (
-              <div
-                className="relative "
-                key={i}
-              >
-                <h4>{field.name}</h4>
-                <span className="absolute z-10 left-4 top-1/2 -translate-y-1/2 mt-2  text-gray-400 pointer-events-none">
-                  {field.icon}
-                </span>
-
-                <input
-                  id={field.name}
-                  name={field.name}
+            <Field
+              label="New Password"
+              required
+              error={errors.next}
+              hint="Minimum 6 characters"
+            >
+              <div className="relative">
+                <Input
                   type={showPass ? "text" : "password"}
-                  value={
-                    fieldData[field?.name]?.length > 0
-                      ? fieldData[field.name]
-                      : ""
-                  }
-                  autoComplete={field.type}
+                  autoComplete="new-password"
+                  value={newPassword}
                   onChange={(e) => {
-                    if (e.target.value.trim()) {
-                      setFieldData((prev) => ({
-                        ...prev,
-                        [field.name]: e.target.value,
-                      }));
-                      setErrors((prev) => ({
-                        ...prev,
-                        [field.name]: "",
-                      }));
-                    } else {
-                      setFieldData((prev) => ({
-                        ...prev,
-                        [field.name]: "",
-                      }));
-                    }
+                    setNewPassword(e.target.value);
+                    setErrors((p) => ({ ...p, next: "" }));
                   }}
-                  className={`w-full py-3 pl-12 pr-4 rounded-xl border ${
-                    errors[field.name] ? "border-red-500" : "border-gray-200"
-                  } bg-white/80 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-zinc-200 focus:outline-none transition-all`}
-                  placeholder={field.placeholder}
+                  placeholder="••••••••"
+                  className="pr-10"
                 />
-
-                {showPass ? (
-                  <Eye
-                    onClick={() => setShowPass(false)}
-                    className="absolute z-20 right-4 top-1/2 -translate-y-1/2 mt-2 text-gray-400 "
-                    size={20}
-                  />
-                ) : (
-                  <EyeClosed
-                    onClick={() => setShowPass(true)}
-                    className="absolute z-20  top-1/2 right-4 -translate-y-1/2 mt-2 text-gray-400 "
-                    size={20}
-                  />
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowPass((v) => !v)}
+                  aria-label={showPass ? "Hide passwords" : "Show passwords"}
+                  className="absolute right-2.5 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                >
+                  {showPass ? (
+                    <Eye className="size-4" aria-hidden="true" />
+                  ) : (
+                    <EyeClosed className="size-4" aria-hidden="true" />
+                  )}
+                </button>
               </div>
-            ))}
-          </form>
-        </div>
+            </Field>
 
-        {/* Action Buttons */}
-        <div className=" py-4 bg-white border-t border-zinc-200 sticky bottom-0 md:static">
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="flex-1 h-10 px-4 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              disabled={loading}
-              type="submit"
-              onClick={handleSubmit}
-              className={`w-full  cursor-pointer h-10 px-4 text-sm font-medium text-white rounded-lg transition-all flex items-center justify-center gap-2 ${
-                loading
-                  ? "bg-zinc-400 cursor-not-allowed"
-                  : "bg-black hover:bg-zinc-800 active:scale-[0.98]"
-              }`}
-            >
-              {loading ? (
-                <>
-                  <Loader2
-                    size={16}
-                    className="animate-spin"
-                  />
-                  Saving...
-                </>
-              ) : (
-                "Save"
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="brand" loading={loading}>
+                Update Password
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export default EditProfile;
+export default ChangePassword;

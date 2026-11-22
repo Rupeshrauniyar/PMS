@@ -1,131 +1,127 @@
-import api from "../../api/client";
-import { Loader2, Mail } from "lucide-react";
 import React, { useState } from "react";
-import AlertBox from "../../components/AlertBox";
+import { Link } from "react-router-dom";
+import { Mail, CheckCircle2, ChevronLeft } from "lucide-react";
+
+import api from "../../api/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input, Field } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
 
 const PassResetMail = () => {
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState([]);
-  const [backendError, setBackendError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [s, setS] = useState(false);
-  const validate = () => {
-    const newErrors = {};
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!email.trim()) {
-      newErrors.email = "Email cannot be empty";
-    } else if (!/^[\w.-]+@[\w.-]+\.[A-Z]{2,4}$/i.test(email.trim())) {
-      newErrors.email = "Invalid email address";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  const sendEmail = async (e) => {
-    try {
-      e.preventDefault();
-      if (!validate()) {
-        return;
-      }
-      setLoading(true);
-      const res = await api.post("/api/cred/send-pass-reset-mail", { email });
+  const [sent, setSent] = useState(false);
 
+  const validate = () => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError("Email is required");
+      return false;
+    }
+    if (!/^[\w.-]+@[\w.-]+\.[A-Z]{2,8}$/i.test(trimmed)) {
+      setError("Enter a valid email address");
+      return false;
+    }
+    setError("");
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    try {
+      setLoading(true);
+      const res = await api.post("/api/cred/send-pass-reset-mail", {
+        email: email.trim(),
+      });
       if (res.status === 200) {
-        setSuccess(res.data.message);
-        setLoading(false);
-        setS(true);
-      } else {
-        setBackendError(res.data.message);
-        setLoading(false);
+        setSent(true);
+        toast({
+          title: "Reset email sent",
+          description: res.data?.message || "Check your inbox for the reset link.",
+          variant: "success",
+        });
       }
     } catch (err) {
+      toast({
+        title: "Could not send reset email",
+        description: err.response?.data?.message || "Please verify your email address.",
+        variant: "error",
+      });
+    } finally {
       setLoading(false);
-      setBackendError(err.response.data.message);
     }
   };
+
   return (
-    <div className="pt-16 max-w-2xl mx-auto min-h-screen flex flex-col items-center justify-center">
-      {backendError && (
-        <AlertBox
-          message={backendError}
-          type="error"
-          onClose={() => setBackendError(null)}
-        />
-      )}
-      {success && (
-        <AlertBox
-          message={success}
-          type="success"
-          onClose={() => setSuccess(null)}
-        />
-      )}
-      <h2 className="text-3xl font-bold">Reset your password</h2>
-      <div className="w-full ">
-        {s ? (
-          <button
-            className="w-full
-                bg-zinc-800
-              hover:bg-zinc-700 cursor-pointer mt-2 text-white font-medium px-6 py-3 rounded-xl transition-colors flex items-center justify-center"
-          >
-            Mail Sent
-          </button>
-        ) : (
-          <form
-            onSubmit={(e) => sendEmail(e)}
-            noValidate
-            className="w-full gap-3 flex flex-col items-center justify-center"
-          >
-            <p>Enter your email to get Reset link inside your Gmail</p>
+    <div className="mx-auto flex min-h-[calc(100svh-7rem)] max-w-md flex-col justify-center py-8">
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+            {sent ? (
+              <CheckCircle2 className="size-5 text-success" aria-hidden="true" />
+            ) : (
+              <Mail className="size-5" aria-hidden="true" />
+            )}
+          </div>
+          <CardTitle className="text-xl">
+            {sent ? "Check your inbox" : "Reset your password"}
+          </CardTitle>
+          <CardDescription>
+            {sent
+              ? `We sent a password reset link to ${email.trim()}.`
+              : "Enter your account email and we'll send you a secure reset link."}
+          </CardDescription>
+        </CardHeader>
 
-            <div className="w-full">
-              <div className="w-full relative mt-1">
-                <span className="absolute z-10 left-4 top-1/2 -translate-y-1/2  text-gray-400 pointer-events-none">
-                  <Mail size={20} />
-                </span>
-
-                <input
-                  id={"email"}
-                  name={"email"}
+        <CardContent className="flex flex-col gap-4">
+          {sent ? (
+            <div className="flex flex-col gap-2.5">
+              <Button asChild variant="brand" className="w-full">
+                <Link to="/signin">Return to Sign In</Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSent(false)}
+                className="w-full"
+              >
+                Try another email
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+              <Field label="Email Address" required error={error}>
+                <Input
                   type="email"
-                  autoComplete={"email"}
+                  autoComplete="email"
+                  value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    errors.email = "";
+                    setError("");
                   }}
-                  className={`w-full py-3 pl-12 pr-4 rounded-xl border ${
-                    errors["email"] ? "border-red-500" : "border-gray-200"
-                  } bg-white/80 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-zinc-200 focus:outline-none transition-all`}
-                  placeholder={"Enter your email"}
+                  placeholder="you@example.com"
                 />
-              </div>
-              {errors["email"] && (
-                <p className="text-red-500 text-xs ml-1 font-medium ">
-                  {errors["email"]}
-                </p>
-              )}
-            </div>
+              </Field>
 
-            <button
-              disabled={loading ? true : false}
-              // onClick={() => sendEmail()}
-              type="submit"
-              className={`w-full ${
-                loading ? "bg-zinc-600" : "bg-zinc-900"
-              } hover:bg-zinc-800 cursor-pointer text-white font-medium px-6 py-3 rounded-xl transition-colors flex items-center justify-center`}
-            >
-              {loading ? (
-                <Loader2
-                  size={18}
-                  className="animate-spin ml-1"
-                />
-              ) : (
-                <>Send Mail</>
-              )}
-            </button>
-          </form>
-        )}
-      </div>
+              <Button type="submit" variant="brand" loading={loading} className="w-full">
+                Send Reset Link
+              </Button>
+
+              <Button asChild variant="ghost" size="sm" className="w-full">
+                <Link to="/signin">
+                  <ChevronLeft className="size-4" aria-hidden="true" />
+                  <span>Back to Sign In</span>
+                </Link>
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

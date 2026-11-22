@@ -1,16 +1,21 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Bell } from "lucide-react";
 import api from "../api/client";
+import { cn } from "@/lib/utils";
 
 /**
- * Navbar entry: links to `/notifications` and shows unread badge (polls lightly).
+ * Navbar entry: links to `/notifications` and shows unread badge.
  */
-export function NotificationBell({ user }) {
+export function NotificationBell({ user, className }) {
   const [unreadCount, setUnreadCount] = useState(0);
+  const location = useLocation();
 
   const loadCount = useCallback(async () => {
-    if (!user) return;
+    if (!user?._id) {
+      setUnreadCount(0);
+      return;
+    }
     try {
       const { data } = await api.get("/api/auth/notifications");
       const list = data?.notifications ?? [];
@@ -22,25 +27,36 @@ export function NotificationBell({ user }) {
     } catch {
       setUnreadCount(0);
     }
-  }, [user]);
+  }, [user?._id]);
 
   useEffect(() => {
     loadCount();
+  }, [loadCount, location.pathname]);
+
+  useEffect(() => {
+    if (!user?._id) return undefined;
     const iv = setInterval(loadCount, 60_000);
     return () => clearInterval(iv);
-  }, [loadCount]);
+  }, [loadCount, user?._id]);
 
   if (!user) return null;
 
   return (
     <Link
       to="/notifications"
-      aria-label="Notifications"
-      className="relative rounded-full p-2 hover:bg-accent text-foreground transition-colors"
+      aria-label={
+        unreadCount > 0
+          ? `Notifications (${unreadCount} unread)`
+          : "Notifications"
+      }
+      className={cn(
+        "relative inline-flex size-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+        className,
+      )}
     >
-      <Bell className="w-[1.125rem] h-[1.125rem] sm:w-5 sm:h-5" />
+      <Bell className="size-5" aria-hidden="true" />
       {unreadCount > 0 ? (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-[3px] rounded-full bg-red-600 text-[10px] font-bold leading-4 text-white flex items-center justify-center border border-background tabular-nums">
+        <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold leading-none text-brand-foreground ring-2 ring-background tabular-nums">
           {unreadCount > 99 ? "99+" : unreadCount}
         </span>
       ) : null}

@@ -110,31 +110,41 @@ export function VisitStepper({ visit, className }) {
             <li
               key={step}
               className={cn(
-                "relative flex items-center gap-3 rounded-2xl border p-3 transition-colors sm:flex-col sm:items-start sm:gap-2",
+                "relative flex items-center gap-3 rounded-2xl border p-3.5 transition-colors sm:flex-col sm:items-start sm:gap-2",
                 current
-                  ? "border-brand/50 bg-brand-soft/60 text-foreground shadow-soft"
+                  ? "border-foreground bg-foreground text-background"
                   : done
-                    ? "border-success/30 bg-success-soft/45 text-foreground"
-                    : "border-border/60 bg-card/50 text-muted-foreground",
+                    ? "border-border bg-secondary/70 text-foreground"
+                    : "border-border/50 bg-transparent text-muted-foreground",
               )}
             >
               <div
                 className={cn(
-                  "flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                  "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                   current
-                    ? "bg-brand text-brand-foreground ring-4 ring-brand/20"
+                    ? "bg-background text-foreground"
                     : done
-                      ? "bg-success text-white"
+                      ? "bg-foreground text-background"
                       : "bg-muted text-muted-foreground",
                 )}
               >
-                <Icon className="size-4" aria-hidden="true" />
+                <Icon className="size-3.5" aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold leading-snug text-foreground">
+                <p
+                  className={cn(
+                    "text-xs font-semibold leading-snug",
+                    current ? "text-background" : "text-foreground",
+                  )}
+                >
                   {stepMeta.shortLabel}
                 </p>
-                <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground sm:line-clamp-2">
+                <p
+                  className={cn(
+                    "mt-0.5 text-[11px] leading-snug sm:line-clamp-2",
+                    current ? "text-background/75" : "text-muted-foreground",
+                  )}
+                >
                   {STEP_DESCRIPTIONS[step]}
                 </p>
               </div>

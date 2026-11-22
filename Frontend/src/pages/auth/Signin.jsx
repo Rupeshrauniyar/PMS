@@ -1,15 +1,18 @@
-import { Eye, EyeClosed, Loader2, Lock, Mail } from "lucide-react";
 import React, { useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AppContext } from "../../contexts/AppContext";
-import api from "../../api/client";
-import AlertBox from "../../components/AlertBox";
+import { Eye, EyeClosed } from "lucide-react";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../../contexts/Firebase";
 import { Capacitor } from "@capacitor/core";
 import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 
-/* Only init native Google plugin when running in Capacitor — avoids web/build issues */
+import { AppContext } from "../../contexts/AppContext";
+import api from "../../api/client";
+import { auth } from "../../contexts/Firebase";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input, Field } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
+
 if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
   try {
     GoogleAuth.initialize({
@@ -18,8 +21,8 @@ if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
       scopes: ["profile", "email"],
       grantOfflineAccess: true,
     });
-  } catch (e) {
-    console.warn("[GoogleAuth] initialize failed:", e?.message || e);
+  } catch {
+    /* ignore duplicate init */
   }
 }
 
@@ -34,139 +37,9 @@ function resolveReturnPath(props, location) {
   return "/";
 }
 
-const Signin = (props) => {
-  const { setUser } = useContext(AppContext);
-  const [showPass, setShowPass] = useState(false);
-  const location = useLocation();
-  const returnPath = resolveReturnPath(props, location);
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [fieldData, setFieldData] = useState({});
-  const [errors, setErrors] = useState({});
-  const [backendError, setBackendError] = useState(null);
-  const navigate = useNavigate();
-
-  const fields = [
-    {
-      name: "Email",
-      type: "email",
-      placeholder: "you@example.com",
-      icon: <Mail size={15} />,
-    },
-    {
-      name: "Password",
-      type: "password",
-      placeholder: "••••••••",
-      icon: <Lock size={15} />,
-    },
-  ];
-
-  const validate = () => {
-    const newErrors = {};
-    const email = fieldData.Email?.trim() ?? "";
-    if (!email) {
-      newErrors.Email = "Required";
-    } else if (!/^[\w.-]+@[\w.-]+\.[A-Z]{2,4}$/i.test(email)) {
-      newErrors.Email = "Invalid email";
-    }
-    if (!fieldData.Password?.trim()) {
-      newErrors.Password = "Required";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const finishGoogleSignin = async ({ email, uuid, username, pp }) => {
-    const res = await api.post("/api/auth/signinWithGoogle", {
-      email,
-      uuid,
-      username,
-      pp,
-      type: "google",
-    });
-    setUser(res.data.user);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    navigate(returnPath, { replace: true });
-  };
-
-  const handleGoogleAuth = async () => {
-    setBackendError(null);
-    setGoogleLoading(true);
-    try {
-      if (Capacitor.isNativePlatform()) {
-        await GoogleAuth.signOut().catch(() => {});
-        const data = await GoogleAuth.signIn();
-        await finishGoogleSignin({
-          email: data.email,
-          uuid: data.id,
-          username: data.displayName,
-          pp: data.imageUrl,
-        });
-      } else {
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const p = result.user.providerData[0];
-        await finishGoogleSignin({
-          email: p.email,
-          uuid: p.uid,
-          username: p.displayName,
-          pp: p.photoURL,
-        });
-      }
-    } catch (err) {
-      console.error("[Google Sign-in]", err);
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Google sign-in failed. Please try again.";
-      const code = err?.response?.data?.code;
-      if (code === "EMAIL_PASSWORD_ACCOUNT") {
-        setBackendError(
-          "This email uses password sign-in. Sign in with email and password.",
-        );
-      } else {
-        setBackendError(msg);
-      }
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setBackendError(null);
-    if (!validate()) return;
-    setLoading(true);
-    try {
-      const res = await api.post("/api/auth/signin", {
-        email: fieldData.Email.trim(),
-        password: fieldData.Password,
-      });
-      if (res.status === 200 && res.data?.user) {
-        setUser(res.data.user);
-        localStorage.setItem("user", JSON.stringify(res.data.user));
-        navigate(returnPath, { replace: true });
-      } else {
-        setBackendError(res?.data?.message || "Sign-in failed.");
-      }
-    } catch (err) {
-      const code = err?.response?.data?.code;
-      const msg =
-        err?.response?.data?.message || err?.message || "Sign-in failed.";
-      if (code === "USE_GOOGLE") {
-        setBackendError(
-          "This account uses Google. Continue with Google instead.",
-        );
-      } else {
-        setBackendError(msg);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const GoogleSVG = () => (
-    <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
+function GoogleLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
       <path
         d="M17.64,9.20454545 C17.64,8.56636364 17.5827273,7.95272727 17.4763636,7.36363636 L9,7.36363636 L9,10.845 L13.8436364,10.845 C13.635,11.97 13.0009091,12.9231818 12.0477273,13.5613636 L12.0477273,15.8195455 L14.9563636,15.8195455 C16.6581818,14.2527273 17.64,11.9454545 17.64,9.20454545 Z"
         fill="#4285F4"
@@ -185,132 +58,260 @@ const Signin = (props) => {
       />
     </svg>
   );
+}
 
-  const formContent = (
-    <>
-      {backendError && (
-        <AlertBox
-          message={backendError}
-          type="error"
-          onClose={() => setBackendError(null)}
-        />
-      )}
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2">
-        {fields.map((field) => (
-          <div key={field.name}>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] font-semibold tracking-wider uppercase text-zinc-500">
-                {field.name}
-              </label>
-              {errors[field.name] && (
-                <span className="text-[11px] text-red-500 font-medium">
-                  {errors[field.name]}
-                </span>
+const Signin = (props) => {
+  const { setUser } = useContext(AppContext);
+  const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const returnPath = resolveReturnPath(props, location);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const validate = () => {
+    const e = {};
+    const trimmed = email.trim();
+    if (!trimmed) e.email = "Email is required";
+    else if (!/^[\w.-]+@[\w.-]+\.[A-Z]{2,8}$/i.test(trimmed)) {
+      e.email = "Enter a valid email address";
+    }
+    if (!password) e.password = "Password is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const persistSession = (data) => {
+    if (data?.token) {
+      try {
+        localStorage.setItem("token", data.token);
+      } catch {
+        /* ignore */
+      }
+    }
+    if (data?.user) {
+      setUser(data.user);
+      try {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
+  const finishGoogleSignin = async ({ email: gEmail, uuid, username, pp }) => {
+    const res = await api.post("/api/auth/signinWithGoogle", {
+      email: gEmail,
+      uuid,
+      username,
+      pp,
+      type: "google",
+    });
+    persistSession(res.data);
+    toast({
+      title: `Welcome back${res.data?.user?.username ? `, ${res.data.user.username}` : ""}!`,
+      variant: "success",
+    });
+    navigate(returnPath, { replace: true });
+  };
+
+  const handleGoogleAuth = async () => {
+    setGoogleLoading(true);
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await GoogleAuth.signOut().catch(() => {});
+        const data = await GoogleAuth.signIn();
+        await finishGoogleSignin({
+          email: data.email,
+          uuid: data.id,
+          username: data.displayName,
+          pp: data.imageUrl,
+        });
+      } else {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const p = result.user.providerData[0] || result.user;
+        await finishGoogleSignin({
+          email: p.email,
+          uuid: p.uid,
+          username: p.displayName,
+          pp: p.photoURL,
+        });
+      }
+    } catch (err) {
+      const code = err?.response?.data?.code;
+      const msg =
+        code === "EMAIL_PASSWORD_ACCOUNT"
+          ? "This email uses password sign-in. Sign in with your email and password."
+          : err?.response?.data?.message ||
+            "Google sign-in was cancelled or failed.";
+      toast({
+        title: "Google sign-in failed",
+        description: msg,
+        variant: "error",
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      const res = await api.post("/api/auth/signin", {
+        email: email.trim(),
+        password,
+      });
+      if (res.status === 200 && res.data?.user) {
+        persistSession(res.data);
+        toast({
+          title: `Welcome back, ${res.data.user.username || "there"}!`,
+          variant: "success",
+        });
+        navigate(returnPath, { replace: true });
+      } else {
+        toast({
+          title: "Sign-in failed",
+          description: res?.data?.message || "Invalid credentials.",
+          variant: "error",
+        });
+      }
+    } catch (err) {
+      const code = err?.response?.data?.code;
+      const msg =
+        code === "USE_GOOGLE"
+          ? "This account uses Google. Tap 'Continue with Google' below."
+          : err?.response?.data?.message || "Invalid email or password.";
+      toast({
+        title: "Sign-in failed",
+        description: msg,
+        variant: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formBody = (
+    <div className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        <Field label="Email" required error={errors.email}>
+          <Input
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setErrors((p) => ({ ...p, email: "" }));
+            }}
+            placeholder="you@example.com"
+          />
+        </Field>
+
+        <Field label="Password" required error={errors.password}>
+          <div className="relative">
+            <Input
+              type={showPass ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setErrors((p) => ({ ...p, password: "" }));
+              }}
+              placeholder="••••••••"
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass((v) => !v)}
+              aria-label={showPass ? "Hide password" : "Show password"}
+              className="absolute right-2.5 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+            >
+              {showPass ? (
+                <Eye className="size-4" aria-hidden="true" />
+              ) : (
+                <EyeClosed className="size-4" aria-hidden="true" />
               )}
-            </div>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none">
-                {field.icon}
-              </span>
-              <input
-                id={field.name}
-                name={field.name}
-                type={
-                  field.name === "Password"
-                    ? showPass
-                      ? "text"
-                      : "password"
-                    : field.type
-                }
-                autoComplete={
-                  field.name === "Password" ? "current-password" : "email"
-                }
-                onChange={(e) => {
-                  setFieldData((prev) => ({
-                    ...prev,
-                    [field.name]: e.target.value,
-                  }));
-                  setErrors((prev) => ({ ...prev, [field.name]: "" }));
-                }}
-                placeholder={field.placeholder}
-                className={`w-full py-2 pl-9 pr-9 rounded-lg border text-sm bg-white outline-none focus:ring-2 focus:ring-black focus:border-black transition-all ${errors[field.name] ? "border-red-400" : "border-zinc-200"}`}
-              />
-              {field.name === "Password" && (
-                <button
-                  type="button"
-                  onClick={() => setShowPass((p) => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
-                  aria-label={showPass ? "Hide password" : "Show password"}
-                >
-                  {showPass ? <Eye size={15} /> : <EyeClosed size={15} />}
-                </button>
-              )}
-            </div>
+            </button>
           </div>
-        ))}
-        <div className="text-right">
+        </Field>
+
+        <div className="flex justify-end">
           <Link
             to="/pass-reset-mail"
-            className="text-[11px] text-zinc-400 hover:text-zinc-700 transition-colors"
+            className="text-xs font-semibold text-brand hover:underline"
           >
             Forgot password?
           </Link>
         </div>
-        <button
-          disabled={loading}
-          type="submit"
-          className="w-full py-2.5 rounded-xl bg-black text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-zinc-800 disabled:opacity-60 active:scale-[0.98] transition-all"
-        >
-          {loading ? <Loader2 size={15} className="animate-spin" /> : "Sign In"}
-        </button>
+
+        <Button type="submit" variant="brand" loading={loading} className="w-full">
+          Sign In
+        </Button>
       </form>
 
-      <div className="flex items-center gap-2 my-3">
-        <div className="h-px bg-zinc-100 flex-1" />
-        <span className="text-[11px] text-zinc-400">or</span>
-        <div className="h-px bg-zinc-100 flex-1" />
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs text-muted-foreground">or</span>
+        <div className="h-px flex-1 bg-border" />
       </div>
 
-      <button
+      <Button
         type="button"
-        disabled={googleLoading}
+        variant="outline"
+        loading={googleLoading}
         onClick={handleGoogleAuth}
-        className="w-full border border-zinc-200 rounded-xl px-4 py-2.5 mb-3 hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+        className="w-full"
       >
-        {googleLoading ? (
-          <>
-            <Loader2 size={15} className="animate-spin text-zinc-400" />
-            <span className="text-xs text-zinc-400">Signing in…</span>
-          </>
-        ) : (
-          <>
-            <GoogleSVG />
-            <span className="text-xs font-medium text-zinc-600">
-              Continue with Google
-            </span>
-          </>
-        )}
-      </button>
-    </>
+        <GoogleLogo />
+        <span>Continue with Google</span>
+      </Button>
+    </div>
   );
 
-  if (props.css) return <div className="w-full">{formContent}</div>;
+  if (props.css) {
+    return <div className="w-full">{formBody}</div>;
+  }
 
   return (
-    <div className="w-full min-h-svh p-2 flex items-center justify-center xl:px-4">
-      <div className="w-full xl:max-w-md xl:backdrop-blur-xl xl:border xl:border-zinc-200/60 xl:shadow-xl xl:rounded-2xl xl:p-8">
-        {formContent}
-        <p className="text-center text-xs text-zinc-500 mt-2">
-          New here?{" "}
-          <Link
-            to="/signup"
-            state={location.state}
-            className="font-semibold text-zinc-800 hover:text-black transition-colors"
-          >
-            Create an account
-          </Link>
-        </p>
-      </div>
+    <div className="mx-auto flex min-h-[calc(100svh-7rem)] max-w-md flex-col justify-center py-8">
+      <Card className="shadow-card">
+        <CardHeader className="text-center">
+          <img
+            src="/web-app-manifest-512x512.png"
+            alt="Propatyc"
+            width={48}
+            height={48}
+            className="mx-auto mb-2 size-12 rounded-2xl object-contain"
+          />
+          <CardTitle className="text-2xl font-extrabold">Welcome back</CardTitle>
+          <CardDescription>
+            Sign in to request site visits, save homes, or manage listings.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="flex flex-col gap-5">
+          {formBody}
+          <p className="text-center text-xs text-muted-foreground">
+            New to Propatyc?{" "}
+            <Link
+              to="/signup"
+              state={location.state}
+              className="font-semibold text-brand hover:underline"
+            >
+              Create an account
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
