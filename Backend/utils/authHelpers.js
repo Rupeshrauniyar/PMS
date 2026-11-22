@@ -121,7 +121,74 @@ function decodeAccessFromRequest(req, role = "user") {
 
 function tryUserIdFromRefreshCookie(req, role = "user") {
   const names = getCookieNames(role);
-  return tryDecodeRefreshTokenString(req.cookies?.[names.refresh]);
+  const fromCookie = tryDecodeRefreshTokenString(req.cookies?.[names.refresh]);
+  if (fromCookie) return fromCookie;
+  const headerRefresh = req.headers?.["x-refresh-token"];
+  if (typeof headerRefresh === "string" && headerRefresh.trim()) {
+    const decoded = tryDecodeRefreshTokenString(headerRefresh.trim());
+    if (decoded) return decoded;
+  }
+  if (typeof req.body?.refreshToken === "string" && req.body.refreshToken.trim()) {
+    return tryDecodeRefreshTokenString(req.body.refreshToken.trim());
+  }
+  return null;
+}
+
+/**
+ * Verify an incoming Google / Firebase `idToken` when provided (Android GoogleAuth or Web Firebase).
+ * Falls back cleanly to body fields for older client versions.
+ */
+async function resolveGoogleIdentity(body = {}) {
+  const { idToken, email, uuid, username, pp } = body || {};
+  if (idToken && typeof idToken === "string") {
+    // 1. Try Firebase Admin ID token verification (Web signInWithPopup)
+    try {
+      const admin = require("firebase-admin");
+      if (admin.apps.length) {
+        const decoded = await admin.auth().verifyIdToken(idToken);
+        if (decoded?.email) {
+          return {
+            email: decoded.email,
+            uuid: decoded.sub || decoded.uid || uuid,
+            username: decoded.name || username || decoded.email.split("@")[0],
+            pp: decoded.picture || pp || "",
+            verified: true,
+          };
+        }
+      }
+    } catch {
+      /* Not a Firebase ID token — try Google OAuth2 tokeninfo next */
+    }
+
+    // 2. Try Google OAuth2 ID token (Native Android GoogleAuth.signIn)
+    try {
+      const resp = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
+      );
+      if (resp.ok) {
+        const info = await resp.json();
+        if (info?.email && info?.sub) {
+          return {
+            email: info.email,
+            uuid: uuid || info.sub,
+            username: info.name || username || info.email.split("@")[0],
+            pp: info.picture || pp || "",
+            verified: true,
+          };
+        }
+      }
+    } catch {
+      /* Fallback to explicit payload fields if offline / network issue */
+    }
+  }
+
+  return {
+    email,
+    uuid,
+    username: username || (email ? String(email).split("@")[0] : "User"),
+    pp: pp || "",
+    verified: false,
+  };
 }
 
 function isValidObjectId(id) {
@@ -172,6 +239,7 @@ module.exports = {
   getCookieNames,
   decodeAccessFromRequest,
   tryUserIdFromRefreshCookie,
+  resolveGoogleIdentity,
   isValidObjectId,
   normalizeEmail,
   isValidEmail,

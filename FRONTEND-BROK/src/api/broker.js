@@ -28,13 +28,14 @@ export const authApi = {
     data(
       api.post("/api/broker/auth/signup", { username, email, phone, password }),
     ),
-  signinWithGoogle: ({ email, uuid, username, pp }) =>
+  signinWithGoogle: ({ email, uuid, username, pp, idToken }) =>
     data(
       api.post("/api/broker/auth/signinWithGoogle", {
         email,
         uuid,
         username,
         pp,
+        idToken,
         type: "google",
       }),
     ),

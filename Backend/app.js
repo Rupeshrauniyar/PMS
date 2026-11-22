@@ -53,10 +53,23 @@ function isLoopbackBrowserOrigin(origin) {
   }
 }
 
+function isNativeCapacitorOrigin(origin) {
+  return (
+    origin === "https://localhost" ||
+    origin === "http://localhost" ||
+    origin === "capacitor://localhost" ||
+    origin === "ionic://localhost"
+  );
+}
+
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin))
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        isNativeCapacitorOrigin(origin)
+      )
         return cb(null, true);
       if (
         nodeEnv !== "production" &&

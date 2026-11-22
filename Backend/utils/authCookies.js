@@ -51,11 +51,16 @@ function clearAuthCookies(res, role) {
   res.clearCookie(names.refresh, { ...base, maxAge: 0 });
 }
 
+/**
+ * Sets httpOnly cookies for browsers AND returns `{ token, refreshToken }`
+ * so Capacitor Android / native apps work reliably when WebView blocks third-party cookies.
+ */
 function setSessionForUser(res, userDoc, role = "user") {
   const payload = tokenPayloadFromUserDoc(userDoc);
   const access = signAccessToken(payload);
   const refresh = signRefreshToken(payload);
   setAuthCookies(res, role, access, refresh);
+  return { token: access, refreshToken: refresh };
 }
 
 /**
@@ -67,6 +72,7 @@ function rotateSessionFromPayload(res, payload, role = "user") {
   const access = signAccessToken(p);
   const refresh = signRefreshToken(p);
   setAuthCookies(res, role, access, refresh);
+  return { token: access, refreshToken: refresh };
 }
 
 module.exports = {

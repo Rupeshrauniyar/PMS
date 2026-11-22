@@ -1,117 +1,51 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Sun, Moon, ShieldCheck, CalendarCheck, Inbox } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 
 import { useTheme } from "@/lib/theme";
-import { Button } from "@/components/ui/button";
 import { BrokerBrand } from "./BrokerBrand";
-
-const HIGHLIGHTS = [
-  {
-    icon: Inbox,
-    title: "Live Open Request Pool",
-    desc: "Claim owner-approved property visit requests in real time.",
-  },
-  {
-    icon: CalendarCheck,
-    title: "3-Way Site Visit Scheduler",
-    desc: "Confirm date, meeting point, and .ics invites for buyer & owner.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Protected Contact Hub",
-    desc: "Direct one-tap Call, WhatsApp & Email once a visit is assigned.",
-  },
-];
 
 export function AuthLayout({ title, subtitle, children, footer }) {
   const { isDark, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-svh w-full bg-background text-foreground">
-      {/* Minimal top bar */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link to="/intro" className="outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-xl">
+    <div className="flex min-h-svh w-full flex-col bg-background text-foreground">
+      <header className="mx-auto flex w-full max-w-md items-center justify-between px-4 pt-6">
+        <Link to="/intro" className="outline-none">
           <BrokerBrand />
         </Link>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={toggleTheme}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {isDark ? (
-              <Sun className="size-4.5" aria-hidden="true" />
-            ) : (
-              <Moon className="size-4.5" aria-hidden="true" />
-            )}
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/intro">About Portal</Link>
-          </Button>
-        </div>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          className="inline-flex size-9 items-center justify-center rounded-full border border-border hover:bg-accent"
+        >
+          {isDark ? (
+            <Sun className="size-4" aria-hidden="true" />
+          ) : (
+            <Moon className="size-4" aria-hidden="true" />
+          )}
+        </button>
       </header>
 
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 py-6 sm:px-6 lg:grid-cols-12 lg:py-12">
-        {/* Left brand pitch (desktop) */}
-        <div className="hidden space-y-6 lg:col-span-6 lg:block">
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand-soft px-3.5 py-1 text-xs font-bold text-brand">
-            <span>Propatyc Broker Portal</span>
-          </div>
-
-          <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-foreground">
-            Coordinate verified property visits with zero friction.
-          </h2>
-
-          <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
-            Built exclusively for Propatyc field brokers and superbrokers to claim owner-approved site visits, lock 3-way appointments, and guide buyers &amp; owners on site.
-          </p>
-
-          <div className="space-y-3.5 pt-2">
-            {HIGHLIGHTS.map((h) => {
-              const Icon = h.icon;
-              return (
-                <div
-                  key={h.title}
-                  className="flex items-start gap-3.5 rounded-2xl border border-border/75 bg-card/80 p-4 shadow-soft"
-                >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold text-foreground">{h.title}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{h.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right form card */}
-        <div className="mx-auto w-full max-w-md lg:col-span-6">
-          <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-card sm:p-8">
-            <div className="mb-6 space-y-1.5">
-              <p className="text-xs font-bold uppercase tracking-wider text-brand lg:hidden">
-                Propatyc Broker Portal — Coordinate verified property visits
-              </p>
-              <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-                {title}
-              </h1>
-              {subtitle ? (
-                <p className="text-sm text-muted-foreground">{subtitle}</p>
-              ) : null}
-            </div>
-
-            {children}
-
-            {footer ? (
-              <div className="mt-6 border-t border-border/65 pt-5 text-center text-sm text-muted-foreground">
-                {footer}
-              </div>
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-8">
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              {title}
+            </h1>
+            {subtitle ? (
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
             ) : null}
           </div>
+
+          {children}
+
+          {footer ? (
+            <div className="pt-2 text-center text-sm text-muted-foreground">
+              {footer}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

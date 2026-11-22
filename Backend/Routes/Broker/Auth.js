@@ -5,6 +5,7 @@ const {
   signin,
   signinWithGoogle,
   checkAuth,
+  refreshSession,
   editProfile,
   updateFCM, 
   signout,
@@ -20,6 +21,7 @@ router.post("/signout", signout);
 
 router.post("/signinWithGoogle", signinWithGoogle);
 router.get("/checkAuth", checkAuth);
+router.post("/refresh", refreshSession);
 router.post("/edit-profile", requireBrokerAuth, editProfile);
 router.post("/update-fcm-token", requireBrokerAuth, updateFCM);
 

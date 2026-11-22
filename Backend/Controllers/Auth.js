@@ -7,6 +7,7 @@ const {
   sendServerError,
   decodeAccessFromRequest,
   tryUserIdFromRefreshCookie,
+  resolveGoogleIdentity,
   isValidObjectId,
 } = require("../utils/authHelpers");
 const {
@@ -68,11 +69,12 @@ exports.signup = async (req, res) => {
       authProvider: "local",
     });
 
-    setSessionForUser(res, newUser, "user");
+    const tokens = setSessionForUser(res, newUser, "user");
 
     return res.status(200).json({
       message: "User registered successfully.",
       user: sanitizeUser(newUser),
+      ...tokens,
     });
   } catch (err) {
     return sendServerError(res, err, "signup");
@@ -114,11 +116,12 @@ exports.signin = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    setSessionForUser(res, user, "user");
+    const tokens = setSessionForUser(res, user, "user");
 
     return res.status(200).json({
       message: "Signed in successfully.",
       user: sanitizeUser(user),
+      ...tokens,
     });
   } catch (err) {
     return sendServerError(res, err, "signin");
@@ -128,7 +131,8 @@ exports.signin = async (req, res) => {
 // SIGNIN WITH GOOGLE
 exports.signinWithGoogle = async (req, res) => {
   try {
-    const { email, uuid, username, pp } = req.body;
+    const resolved = await resolveGoogleIdentity(req.body);
+    const { email, uuid, username, pp } = resolved;
     if (!uuid || !email) {
       return res
         .status(400)
@@ -143,10 +147,15 @@ exports.signinWithGoogle = async (req, res) => {
     }).populate({ path: "bookedProperties" });
 
     if (user) {
-      setSessionForUser(res, user, "user");
+      if (pp && !user.pp) {
+        user.pp = pp;
+        await user.save();
+      }
+      const tokens = setSessionForUser(res, user, "user");
       return res.status(200).json({
         message: "Signed in successfully.",
         user: sanitizeUser(user),
+        ...tokens,
       });
     }
 
@@ -162,15 +171,17 @@ exports.signinWithGoogle = async (req, res) => {
             "An account with this email already exists. Sign in with your email and password.",
         });
       }
-      if (
-        existing.authProvider === "google" &&
-        String(existing.uuid) !== String(uuid)
-      ) {
-        return res.status(409).json({
-          message:
-            "This email is linked to a different Google account. Use the original Google sign-in.",
-        });
-      }
+      user = await UserModel.findByIdAndUpdate(
+        existing._id,
+        { $set: { uuid, ...(pp ? { pp } : {}) } },
+        { new: true },
+      ).populate({ path: "bookedProperties" });
+      const tokens = setSessionForUser(res, user, "user");
+      return res.status(200).json({
+        message: "Signed in successfully.",
+        user: sanitizeUser(user),
+        ...tokens,
+      });
     }
 
     const created = await UserModel.create({
@@ -185,11 +196,12 @@ exports.signinWithGoogle = async (req, res) => {
       path: "bookedProperties",
     });
 
-    setSessionForUser(res, user, "user");
+    const tokens = setSessionForUser(res, user, "user");
 
     return res.status(200).json({
       message: "Signed in successfully.",
       user: sanitizeUser(user),
+      ...tokens,
     });
   } catch (err) {
     return sendServerError(res, err, "signinWithGoogle");
@@ -286,6 +298,7 @@ exports.checkAuth = async (req, res) => {
   try {
     let payload = decodeAccessFromRequest(req, "user");
     let findUser;
+    let rotated = null;
 
     if (!payload) {
       const refreshPayload = tryUserIdFromRefreshCookie(req, "user");
@@ -302,7 +315,7 @@ exports.checkAuth = async (req, res) => {
         return res.status(401).json({ success: false });
       }
 
-      rotateSessionFromPayload(res, refreshPayload, "user");
+      rotated = rotateSessionFromPayload(res, refreshPayload, "user");
     } else {
       findUser = await UserModel.findById(payload.id)
         .populate({ path: "bookedProperties" })
@@ -317,10 +330,29 @@ exports.checkAuth = async (req, res) => {
     return res.status(200).json({
       success: true,
       user: findUser,
+      ...(rotated || {}),
     });
   } catch (err) {
     console.error("checkAuth:", err);
     return res.status(500).json({ serverSuccess: false });
+  }
+};
+
+exports.refreshSession = async (req, res) => {
+  try {
+    const refreshPayload = tryUserIdFromRefreshCookie(req, "user");
+    if (!refreshPayload?.id) {
+      return res.status(401).json({ message: "Session expired." });
+    }
+    const exists = await UserModel.exists({ _id: refreshPayload.id });
+    if (!exists) {
+      clearAuthCookies(res, "user");
+      return res.status(401).json({ message: "Account not found." });
+    }
+    const tokens = rotateSessionFromPayload(res, refreshPayload, "user");
+    return res.status(200).json({ success: true, ...tokens });
+  } catch (err) {
+    return sendServerError(res, err, "refreshSession");
   }
 };
 

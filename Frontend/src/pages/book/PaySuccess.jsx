@@ -1,78 +1,231 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
+import api from "../../api/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { formatPrice } from "@/lib/format";
+
+/**
+ * Extract query parameter even when gateways append a second '?' (e.g. `?gateway=esewa?data=...`).
+ */
+function extractCallbackParam(searchParams, key) {
+  const direct = searchParams.get(key);
+  if (direct) return direct;
+  if (typeof window === "undefined") return null;
+  const regex = new RegExp(`[?&]${key}=([^&#]+)`);
+  const match = window.location.href.match(regex);
+  if (!match?.[1]) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
+function readPendingPayment() {
+  try {
+    const raw = localStorage.getItem("pending_payment");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.ts && Date.now() - parsed.ts > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem("pending_payment");
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
 const PaySuccess = () => {
   const [params] = useSearchParams();
-  const rawData = params.get("data");
+  const esewaData = extractCallbackParam(params, "data");
+  const khaltiPidx = extractCallbackParam(params, "pidx");
 
-  const decoded = useMemo(() => {
-    if (!rawData) return null;
-    try {
-      return JSON.parse(atob(rawData));
-    } catch {
-      return null;
-    }
-  }, [rawData]);
+  const [state, setState] = useState({
+    verifying: true,
+    verified: false,
+    payment: null,
+    error: "",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const verify = async () => {
+      try {
+        if (esewaData) {
+          const normalized = esewaData.trim().replace(/\s/g, "+");
+          const res = await api.post("/api/payment/verify/esewa", {
+            data: normalized,
+          });
+          try {
+            localStorage.removeItem("pending_payment");
+          } catch {
+            /* ignore */
+          }
+          if (!cancelled) {
+            setState({
+              verifying: false,
+              verified: true,
+              payment: res.data?.payment || null,
+              error: "",
+            });
+          }
+          return;
+        }
+
+        if (khaltiPidx) {
+          const res = await api.post("/api/payment/verify/khalti", {
+            pidx: khaltiPidx,
+          });
+          try {
+            localStorage.removeItem("pending_payment");
+          } catch {
+            /* ignore */
+          }
+          if (!cancelled) {
+            setState({
+              verifying: false,
+              verified: true,
+              payment: res.data?.payment || null,
+              error: "",
+            });
+          }
+          return;
+        }
+
+        // Fallback: check localStorage pending_payment via server-to-server Status API
+        const pending = readPendingPayment();
+        if (pending?.gateway === "esewa" && (pending.transactionUuid || pending.bookingId)) {
+          const res = await api.post("/api/payment/verify/esewa", {
+            transactionUuid: pending.transactionUuid,
+            bookingId: pending.bookingId,
+          });
+          localStorage.removeItem("pending_payment");
+          if (!cancelled) {
+            setState({
+              verifying: false,
+              verified: true,
+              payment: res.data?.payment || null,
+              error: "",
+            });
+          }
+          return;
+        }
+
+        if (pending?.gateway === "khalti" && pending.pidx) {
+          const res = await api.post("/api/payment/verify/khalti", {
+            pidx: pending.pidx,
+          });
+          localStorage.removeItem("pending_payment");
+          if (!cancelled) {
+            setState({
+              verifying: false,
+              verified: true,
+              payment: res.data?.payment || null,
+              error: "",
+            });
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          setState({
+            verifying: false,
+            verified: false,
+            payment: null,
+            error: "Missing payment verification reference.",
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setState({
+            verifying: false,
+            verified: false,
+            payment: null,
+            error:
+              err.response?.data?.message ||
+              "Could not verify payment with the gateway.",
+          });
+        }
+      }
+    };
+
+    verify();
+    return () => {
+      cancelled = true;
+    };
+  }, [esewaData, khaltiPidx]);
+
+  if (state.verifying) {
+    return (
+      <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-3 py-24 text-center">
+        <Loader2 className="size-7 animate-spin text-foreground" aria-hidden="true" />
+        <p className="text-sm font-semibold text-foreground">
+          Verifying payment…
+        </p>
+      </div>
+    );
+  }
+
+  if (!state.verified) {
+    return (
+      <div className="mx-auto flex max-w-sm flex-col items-center gap-4 py-20 text-center">
+        <div className="flex size-12 items-center justify-center rounded-full bg-danger-soft text-destructive">
+          <AlertCircle className="size-6" aria-hidden="true" />
+        </div>
+        <h1 className="text-xl font-bold text-foreground">
+          Verification incomplete
+        </h1>
+        <p className="text-sm text-muted-foreground">{state.error}</p>
+        <Button asChild className="mt-2 rounded-full px-6">
+          <Link to="/profile">Go to bookings</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const p = state.payment || {};
+  const backLink = p.propId ? `/booked/${p.propId}` : "/profile";
 
   return (
-    <div className="mx-auto flex max-w-md flex-col justify-center py-14">
-      <Card className="text-center shadow-card">
-        <CardContent className="flex flex-col items-center gap-4 pt-4">
-          <div className="flex size-14 items-center justify-center rounded-full bg-success-soft text-success">
-            <CheckCircle2 className="size-7" aria-hidden="true" />
-          </div>
+    <div className="mx-auto flex max-w-sm flex-col items-center gap-5 py-16 text-center">
+      <div className="flex size-12 items-center justify-center rounded-full bg-foreground text-background">
+        <CheckCircle2 className="size-6" aria-hidden="true" />
+      </div>
 
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-              Payment Successful
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Your eSewa payment has been confirmed and recorded.
-            </p>
-          </div>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          Payment verified
+        </h1>
+        <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wider">
+          {p.gateway === "khalti" ? "Khalti" : "eSewa"}
+        </p>
+      </div>
 
-          {decoded ? (
-            <div className="w-full rounded-2xl border border-border/70 bg-muted/40 p-4 text-left text-xs">
-              {decoded.total_amount ? (
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground">Amount Paid</span>
-                  <span className="font-bold text-foreground tabular-nums">
-                    {formatPrice(decoded.total_amount)}
-                  </span>
-                </div>
-              ) : null}
-              {decoded.transaction_code ? (
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground">Reference Code</span>
-                  <span className="selectable font-mono font-semibold text-foreground">
-                    {decoded.transaction_code}
-                  </span>
-                </div>
-              ) : null}
-              {decoded.status ? (
-                <div className="flex justify-between py-1">
-                  <span className="text-muted-foreground">Status</span>
-                  <span className="font-semibold text-success">{decoded.status}</span>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className="flex w-full flex-col gap-2 pt-2 sm:flex-row">
-            <Button asChild variant="brand" className="flex-1">
-              <Link to="/bookings">View My Bookings</Link>
-            </Button>
-            <Button asChild variant="outline" className="flex-1">
-              <Link to="/">Explore Home</Link>
-            </Button>
+      <div className="w-full divide-y divide-border/70 rounded-2xl border border-border px-4 text-left text-sm">
+        {p.amount ? (
+          <div className="flex justify-between py-3">
+            <span className="text-muted-foreground">Amount</span>
+            <span className="font-bold tabular-nums text-foreground">
+              {formatPrice(p.amount)}
+            </span>
           </div>
-        </CardContent>
-      </Card>
+        ) : null}
+        {p.reference ? (
+          <div className="flex justify-between gap-3 py-3">
+            <span className="text-muted-foreground">Reference</span>
+            <span className="selectable truncate font-mono text-xs font-semibold text-foreground">
+              {p.reference}
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      <Button asChild className="w-full rounded-full">
+        <Link to={backLink}>Done</Link>
+      </Button>
     </div>
   );
 };

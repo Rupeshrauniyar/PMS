@@ -1,52 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Bell,
-  CheckCheck,
-  Check,
-  RefreshCw,
-  Inbox,
-  UserCheck,
-  Undo2,
-  CalendarCheck,
-  CalendarClock,
-  Ban,
-  CheckCircle2,
-  AlertTriangle,
-  AlarmClock,
-  ShieldCheck,
-  Building2,
-} from "lucide-react";
+import { Bell, Check, RefreshCw } from "lucide-react";
 
 import { useLive } from "@/contexts/LiveContext";
 import { timeAgo } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-
-const KIND_META = {
-  visit_pool_new: { icon: Inbox, tone: "text-brand bg-brand-soft" },
-  visit_claimed: { icon: UserCheck, tone: "text-brand bg-brand-soft" },
-  visit_released: { icon: Undo2, tone: "text-warning bg-warning-soft" },
-  visit_scheduled: { icon: CalendarCheck, tone: "text-success bg-success-soft" },
-  visit_rescheduled: { icon: CalendarClock, tone: "text-info bg-info-soft" },
-  visit_cancelled: { icon: Ban, tone: "text-muted-foreground bg-muted" },
-  visit_completed: { icon: CheckCircle2, tone: "text-success bg-success-soft" },
-  visit_no_show: { icon: AlertTriangle, tone: "text-destructive bg-danger-soft" },
-  visit_reminder: { icon: AlarmClock, tone: "text-warning bg-warning-soft" },
-  visit_reassigned: { icon: ShieldCheck, tone: "text-brand bg-brand-soft" },
-  visit_requested: { icon: Inbox, tone: "text-info bg-info-soft" },
-  visit_owner_approved: { icon: CheckCircle2, tone: "text-info bg-info-soft" },
-  visit_owner_rejected: { icon: Ban, tone: "text-destructive bg-danger-soft" },
-  listing_live: { icon: Building2, tone: "text-info bg-info-soft" },
-  booking_new: { icon: Inbox, tone: "text-brand bg-brand-soft" },
-  booking_confirmed: { icon: CheckCircle2, tone: "text-success bg-success-soft" },
-  booking_rejected: { icon: Ban, tone: "text-destructive bg-danger-soft" },
-  booking_cancelled: { icon: Ban, tone: "text-muted-foreground bg-muted" },
-};
 
 export default function Notifications() {
   const navigate = useNavigate();
@@ -63,16 +25,6 @@ export default function Notifications() {
   const loading = live?.notifLoading ?? false;
   const error = live?.notifError ?? null;
 
-  const { unread, earlier } = useMemo(() => {
-    const u = [];
-    const e = [];
-    for (const n of notifications) {
-      if (n.read) e.push(n);
-      else u.push(n);
-    }
-    return { unread: u, earlier: e };
-  }, [notifications]);
-
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -87,72 +39,64 @@ export default function Notifications() {
     setMarkingAll(true);
     try {
       await live?.markAllRead?.();
-      toast({ variant: "success", title: "All notifications marked as read" });
+      toast({ variant: "success", title: "Marked all as read" });
     } catch {
-      toast({ variant: "error", title: "Couldn't mark all as read" });
+      toast({ variant: "error", title: "Could not mark all as read" });
     } finally {
       setMarkingAll(false);
     }
   };
 
-  const handleOpenNotification = (n) => {
-    if (!n.read) {
-      live?.markRead?.(n._id);
-    }
-    if (n.bookingId) {
-      navigate(`/visits/${n.bookingId}`);
-    } else if (n.kind === "visit_pool_new") {
-      navigate("/pool");
-    }
+  const handleOpen = (n) => {
+    if (!n.read) live?.markRead?.(n._id);
+    if (n.bookingId) navigate(`/visits/${n.bookingId}`);
+    else if (n.kind === "visit_pool_new") navigate("/pool");
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              Notifications
-            </h1>
-            {unreadCount > 0 ? (
-              <Badge variant="destructive">{unreadCount} unread</Badge>
-            ) : null}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Real-time alerts for open pool requests, schedule changes, reminders, and assignments.
-          </p>
+    <div className="mx-auto max-w-2xl space-y-6 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Notifications
+          </h1>
+          {unreadCount > 0 ? (
+            <span className="text-xs font-semibold text-muted-foreground tabular-nums">
+              {unreadCount} new
+            </span>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
+          {unreadCount > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleMarkAll}
+              loading={markingAll}
+              className="rounded-full"
+            >
+              Mark all read
+            </Button>
+          ) : null}
+          <button
+            type="button"
             onClick={handleRefresh}
-            loading={refreshing}
-            aria-label="Refresh notifications"
+            aria-label="Refresh"
+            className="inline-flex size-9 items-center justify-center rounded-full border border-border hover:bg-accent"
           >
-            <RefreshCw className="size-4" aria-hidden="true" />
-            <span>Refresh</span>
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleMarkAll}
-            loading={markingAll}
-            disabled={unreadCount === 0}
-          >
-            <CheckCheck className="size-4" aria-hidden="true" />
-            <span>Mark all read</span>
-          </Button>
+            <RefreshCw
+              className={`size-4 ${refreshing ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
+          </button>
         </div>
-      </header>
+      </div>
 
       {error ? (
         <EmptyState
           icon={Bell}
-          title="Couldn't load notifications"
-          description={error}
+          title="Could not load notifications"
           action={
             <Button variant="outline" size="sm" onClick={handleRefresh}>
               Retry
@@ -160,145 +104,71 @@ export default function Notifications() {
           }
         />
       ) : loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3, 4].map((k) => (
-            <Skeleton key={k} className="h-22 w-full rounded-3xl" />
+        <div className="space-y-2.5">
+          {[1, 2, 3].map((k) => (
+            <Skeleton key={k} className="h-16 w-full rounded-2xl" />
           ))}
         </div>
       ) : notifications.length === 0 ? (
-        <EmptyState
-          icon={Bell}
-          title="You're all caught up"
-          description="Alerts for newly owner-approved pool requests, visit confirmations, and reminders will show up here."
-        />
+        <EmptyState icon={Bell} title="No notifications" />
       ) : (
-        <div className="space-y-6">
-          {unread.length > 0 ? (
-            <section aria-labelledby="unread-notif-heading" className="space-y-2.5">
-              <h2
-                id="unread-notif-heading"
-                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-              >
-                New ({unread.length})
-              </h2>
-              <div className="space-y-2">
-                {unread.map((n) => (
-                  <NotificationItem
-                    key={n._id}
-                    item={n}
-                    onSelect={() => handleOpenNotification(n)}
-                    onMarkRead={() => live?.markRead?.(n._id)}
-                  />
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          {earlier.length > 0 ? (
-            <section aria-labelledby="earlier-notif-heading" className="space-y-2.5">
-              <h2
-                id="earlier-notif-heading"
-                className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-              >
-                Earlier
-              </h2>
-              <div className="space-y-2">
-                {earlier.map((n) => (
-                  <NotificationItem
-                    key={n._id}
-                    item={n}
-                    onSelect={() => handleOpenNotification(n)}
-                  />
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function NotificationItem({ item, onSelect, onMarkRead }) {
-  const meta = KIND_META[item.kind] || {
-    icon: Bell,
-    tone: "text-brand bg-brand-soft",
-  };
-  const Icon = meta.icon;
-  const actionable = Boolean(item.bookingId || item.kind === "visit_pool_new");
-
-  return (
-    <div
-      className={cn(
-        "group relative flex items-start gap-3.5 rounded-3xl border p-4 transition-all",
-        item.read
-          ? "border-border/65 bg-card/70 text-foreground hover:bg-card"
-          : "border-brand/35 bg-card shadow-soft ring-1 ring-brand/10 hover:shadow-card",
-      )}
-    >
-      <button
-        type="button"
-        onClick={onSelect}
-        className={cn(
-          "flex min-w-0 flex-1 items-start gap-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-2xl",
-          !actionable && "cursor-default",
-        )}
-      >
-        <span
-          className={cn(
-            "mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl",
-            meta.tone,
-          )}
-        >
-          <Icon className="size-5" aria-hidden="true" />
-        </span>
-
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p
+        <div className="divide-y divide-border rounded-2xl border border-border">
+          {notifications.map((n) => (
+            <div
+              key={n._id}
               className={cn(
-                "text-sm leading-snug",
-                item.read ? "font-semibold text-foreground/90" : "font-bold text-foreground",
+                "flex items-start justify-between gap-3 p-4 transition-colors hover:bg-secondary/30",
+                !n.read && "bg-secondary/20",
               )}
             >
-              {item.title || "Notification"}
-            </p>
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {timeAgo(item.createdAt)}
-            </span>
-          </div>
+              <button
+                type="button"
+                onClick={() => handleOpen(n)}
+                className="flex min-w-0 flex-1 items-start gap-3 text-left"
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "mt-1.5 size-2 shrink-0 rounded-full",
+                    n.read ? "bg-transparent" : "bg-foreground",
+                  )}
+                />
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p
+                      className={cn(
+                        "truncate text-sm text-foreground",
+                        n.read ? "font-medium" : "font-bold",
+                      )}
+                    >
+                      {n.title || "Update"}
+                    </p>
+                    <span className="shrink-0 text-[11px] text-muted-foreground">
+                      {timeAgo(n.createdAt)}
+                    </span>
+                  </div>
+                  {n.body ? (
+                    <p className="line-clamp-2 text-xs text-muted-foreground">
+                      {n.body}
+                    </p>
+                  ) : null}
+                </div>
+              </button>
 
-          {item.body ? (
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {item.body}
-            </p>
-          ) : null}
-
-          {item.bookingId ? (
-            <span className="inline-block pt-0.5 text-[11px] font-semibold text-brand group-hover:underline">
-              Open site visit →
-            </span>
-          ) : item.kind === "visit_pool_new" ? (
-            <span className="inline-block pt-0.5 text-[11px] font-semibold text-brand group-hover:underline">
-              Open request pool →
-            </span>
-          ) : null}
+              {!n.read ? (
+                <button
+                  type="button"
+                  onClick={() => live?.markRead?.(n._id)}
+                  aria-label="Mark read"
+                  className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <Check className="size-3.5" aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
+          ))}
         </div>
-      </button>
-
-      {!item.read && onMarkRead ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMarkRead();
-          }}
-          aria-label="Mark notification as read"
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-        >
-          <Check className="size-4" aria-hidden="true" />
-        </button>
-      ) : null}
+      )}
     </div>
   );
 }

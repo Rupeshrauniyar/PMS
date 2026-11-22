@@ -12,6 +12,7 @@ exports.NOTIFICATION_KINDS = Object.freeze({
   BOOKING_CONFIRMED: "booking_confirmed",
   BOOKING_REJECTED: "booking_rejected",
   BOOKING_CANCELLED: "booking_cancelled",
+  PAYMENT_RECEIVED: "payment_received",
 
   VISIT_REQUESTED: "visit_requested",
   VISIT_OWNER_APPROVED: "visit_owner_approved",

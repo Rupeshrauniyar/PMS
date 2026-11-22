@@ -104,17 +104,18 @@ const Signin = (props) => {
     }
   };
 
-  const finishGoogleSignin = async ({ email: gEmail, uuid, username, pp }) => {
+  const finishGoogleSignin = async ({ email: gEmail, uuid, username, pp, idToken }) => {
     const res = await api.post("/api/auth/signinWithGoogle", {
       email: gEmail,
       uuid,
       username,
       pp,
+      idToken,
       type: "google",
     });
     persistSession(res.data);
     toast({
-      title: `Welcome back${res.data?.user?.username ? `, ${res.data.user.username}` : ""}!`,
+      title: `Welcome${res.data?.user?.username ? `, ${res.data.user.username}` : ""}`,
       variant: "success",
     });
     navigate(returnPath, { replace: true });
@@ -129,18 +130,21 @@ const Signin = (props) => {
         await finishGoogleSignin({
           email: data.email,
           uuid: data.id,
-          username: data.displayName,
+          username: data.displayName || data.givenName,
           pp: data.imageUrl,
+          idToken: data.authentication?.idToken,
         });
       } else {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
+        const idToken = await result.user.getIdToken().catch(() => undefined);
         const p = result.user.providerData[0] || result.user;
         await finishGoogleSignin({
           email: p.email,
           uuid: p.uid,
           username: p.displayName,
           pp: p.photoURL,
+          idToken,
         });
       }
     } catch (err) {

@@ -42,8 +42,13 @@ export function getPublicAppOrigin() {
  */
 export function universalLinkToAppPath(urlString) {
   try {
+    if (!urlString) return null;
+    if (/^myapp:\/\//i.test(urlString)) {
+      const rest = urlString.replace(/^myapp:\/\/+/i, "/");
+      return rest.startsWith("/") ? rest : `/${rest}`;
+    }
     const expected = getPublicAppOrigin();
-    if (!expected || !urlString) return null;
+    if (!expected) return null;
     const u = new URL(urlString);
     if (u.protocol !== "http:" && u.protocol !== "https:") return null;
     const actual = normalizeOrigin(`${u.protocol}//${u.host}`);

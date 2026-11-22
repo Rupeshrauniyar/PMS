@@ -36,18 +36,13 @@ export function BrokerBrand({ compact = false, className }) {
         />
       </svg>
       {!compact ? (
-        <div className="min-w-0 leading-none">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[15.5px] font-extrabold tracking-[-0.03em] text-foreground">
-              Propatyc
-            </span>
-            <span className="rounded-full bg-foreground px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-background">
-              Broker
-            </span>
-          </div>
-          <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-            Visit Console
-          </p>
+        <div className="flex items-center gap-1.5 leading-none">
+          <span className="text-[15.5px] font-extrabold tracking-[-0.03em] text-foreground">
+            Propatyc
+          </span>
+          <span className="rounded-full bg-foreground px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-background">
+            Broker
+          </span>
         </div>
       ) : null}
     </div>

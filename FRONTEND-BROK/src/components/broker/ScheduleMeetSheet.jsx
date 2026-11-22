@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CalendarClock, Sparkles, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 import * as brokerApi from "@/api/broker";
 import { getErrorMessage } from "@/lib/errors";
@@ -33,17 +33,13 @@ function defaultFutureSlot() {
 }
 
 const DURATION_OPTIONS = [
-  { value: "15", label: "15 minutes — Quick walkthrough" },
-  { value: "30", label: "30 minutes — Standard visit" },
-  { value: "45", label: "45 minutes — Detailed inspection" },
-  { value: "60", label: "60 minutes — Full tour & discussion" },
-  { value: "90", label: "90 minutes — Extended evaluation" },
+  { value: "15", label: "15 min" },
+  { value: "30", label: "30 min" },
+  { value: "45", label: "45 min" },
+  { value: "60", label: "60 min" },
+  { value: "90", label: "90 min" },
 ];
 
-/**
- * Sheet for scheduling (from `claimed`) or rescheduling (from `scheduled`)
- * a 3-way site visit between buyer, owner, and broker.
- */
 export function ScheduleMeetSheet({
   open,
   onOpenChange,
@@ -98,23 +94,23 @@ export function ScheduleMeetSheet({
     if (!visit?._id || submitting) return;
 
     const nextErrors = {};
-    if (!date) nextErrors.date = "Select a visit date.";
-    if (!time) nextErrors.time = "Select a start time.";
+    if (!date) nextErrors.date = "Select date";
+    if (!time) nextErrors.time = "Select time";
 
     let startAtIso = null;
     if (date && time) {
       const combined = new Date(`${date}T${time}`);
       if (Number.isNaN(combined.getTime())) {
-        nextErrors.date = "Invalid date or time.";
+        nextErrors.date = "Invalid date";
       } else if (combined.getTime() <= Date.now() + 60 * 1000) {
-        nextErrors.time = "Choose a future date and time.";
+        nextErrors.time = "Must be in the future";
       } else {
         startAtIso = combined.toISOString();
       }
     }
 
     if (!meetingPoint.trim()) {
-      nextErrors.meetingPoint = "Specify where all 3 parties should meet.";
+      nextErrors.meetingPoint = "Enter meeting point";
     }
 
     setErrors(nextErrors);
@@ -130,17 +126,14 @@ export function ScheduleMeetSheet({
       });
       toast({
         variant: "success",
-        title: isReschedule
-          ? "Site visit rescheduled!"
-          : "3-way site visit scheduled!",
-        description: "Both the buyer and property owner have been notified.",
+        title: isReschedule ? "Visit rescheduled" : "Visit scheduled",
       });
       onScheduled?.(res.visit);
       onOpenChange?.(false);
     } catch (err) {
       toast({
         variant: "error",
-        title: "Couldn't save schedule",
+        title: "Could not save schedule",
         description: getErrorMessage(err),
       });
     } finally {
@@ -157,12 +150,8 @@ export function ScheduleMeetSheet({
         if (!submitting) onOpenChange?.(v);
       }}
       dismissible={!submitting}
-      title={isReschedule ? "Reschedule 3-Way Site Visit" : "Schedule 3-Way Site Visit"}
-      description={
-        visit?.property?.title
-          ? `Confirming time & meeting point for "${visit.property.title}". Buyer and owner will receive instant confirmation.`
-          : "Confirm date, time, and landmark for buyer and property owner."
-      }
+      title={isReschedule ? "Reschedule Visit" : "Schedule Visit"}
+      description={visit?.property?.title || undefined}
       footer={
         <>
           <Button
@@ -172,24 +161,16 @@ export function ScheduleMeetSheet({
           >
             Cancel
           </Button>
-          <Button
-            variant="brand"
-            onClick={handleSubmit}
-            loading={submitting}
-          >
-            <CalendarClock className="size-4" aria-hidden="true" />
-            <span>{isReschedule ? "Confirm Reschedule" : "Confirm & Notify All 3"}</span>
+          <Button onClick={handleSubmit} loading={submitting}>
+            {isReschedule ? "Save Changes" : "Confirm Meet"}
           </Button>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {preferredSlots.length > 0 ? (
-          <div className="rounded-2xl border border-brand/25 bg-brand-soft/45 p-3.5">
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
-              <Sparkles className="size-3.5 text-brand" aria-hidden="true" />
-              <span>Buyer&apos;s preferred slots — tap to fill</span>
-            </p>
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">Preferred slots</p>
             <div className="flex flex-wrap gap-1.5">
               {preferredSlots.map((slot, idx) => {
                 const isPast = new Date(slot).getTime() <= Date.now();
@@ -201,12 +182,12 @@ export function ScheduleMeetSheet({
                     type="button"
                     disabled={isPast}
                     onClick={() => applySlot(slot)}
-                    className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                       selected
-                        ? "border-brand bg-brand text-brand-foreground"
+                        ? "border-foreground bg-foreground text-background"
                         : isPast
-                          ? "cursor-not-allowed border-border/50 bg-muted/60 text-muted-foreground line-through opacity-60"
-                          : "border-border bg-card text-foreground hover:border-brand/50 hover:bg-accent"
+                          ? "cursor-not-allowed border-border text-muted-foreground line-through opacity-50"
+                          : "border-border bg-background text-foreground hover:bg-accent"
                     }`}
                   >
                     {formatVisitDate(slot)}
@@ -217,8 +198,8 @@ export function ScheduleMeetSheet({
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-          <Field label="Visit Date" required error={errors.date}>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Date" required error={errors.date}>
             <Input
               type="date"
               min={todayMin}
@@ -231,7 +212,7 @@ export function ScheduleMeetSheet({
             />
           </Field>
 
-          <Field label="Start Time" required error={errors.time}>
+          <Field label="Time" required error={errors.time}>
             <Input
               type="time"
               value={time}
@@ -243,11 +224,8 @@ export function ScheduleMeetSheet({
           </Field>
         </div>
 
-        <Field label="Duration" hint="Between 15 and 90 minutes">
-          <Select
-            value={durationMin}
-            onChange={(e) => setDurationMin(e.target.value)}
-          >
+        <Field label="Duration">
+          <Select value={durationMin} onChange={(e) => setDurationMin(e.target.value)}>
             {DURATION_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
@@ -256,12 +234,7 @@ export function ScheduleMeetSheet({
           </Select>
         </Field>
 
-        <Field
-          label="Meeting Point"
-          required
-          error={errors.meetingPoint}
-          hint="Exact landmark, gate, or street corner where buyer, owner & broker will meet"
-        >
+        <Field label="Meeting Point" required error={errors.meetingPoint}>
           <div className="relative">
             <MapPin
               aria-hidden="true"
@@ -273,21 +246,18 @@ export function ScheduleMeetSheet({
                 setMeetingPoint(e.target.value);
                 setErrors((p) => ({ ...p, meetingPoint: undefined }));
               }}
-              placeholder="e.g., Main gate near Bhatbhateni, Kalanki"
+              placeholder="Landmark or gate"
               className="pl-10"
             />
           </div>
         </Field>
 
-        <Field
-          label="Instructions for Buyer & Owner"
-          hint="Optional directions, parking notes, or documents to bring"
-        >
+        <Field label="Note (optional)">
           <Textarea
-            rows={3}
+            rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Call me 10 minutes before arrival at the main entrance..."
+            placeholder="Directions or instructions..."
           />
         </Field>
       </form>

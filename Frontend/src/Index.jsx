@@ -243,10 +243,11 @@ const Index = () => {
                     <Route path="/bookings" element={<Bookings />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/pay/:id/:price" element={<Pay />} />
-                    <Route path="/payment-success" element={<PaySuccess />} />
-                    <Route path="/payment-failure" element={<PayFailure />} />
                     <Route path="/change-password" element={<ChangePassword />} />
                   </Route>
+
+                  <Route path="/payment-success" element={<PaySuccess />} />
+                  <Route path="/payment-failure" element={<PayFailure />} />
 
                   <Route path="/" element={<Home />} />
                   <Route path="/search" element={<Search />} />

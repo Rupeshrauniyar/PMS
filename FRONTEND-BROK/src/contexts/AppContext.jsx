@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { authApi } from "../api/broker";
-import { UNAUTHORIZED_EVENT } from "../api/client";
+import { UNAUTHORIZED_EVENT, clearBrokerTokens } from "../api/client";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AppContext = createContext(null);
@@ -30,7 +30,10 @@ export const AppProvider = ({ children }) => {
       setUser(res?.success ? res.user : null);
     } catch (err) {
       // Keep the cached user on network failure (offline start); drop it on 401.
-      if (err?.response) setUser(null);
+      if (err?.response) {
+        clearBrokerTokens();
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -53,6 +56,7 @@ export const AppProvider = ({ children }) => {
       // ignore — we clear the local session regardless
     }
     localStorage.removeItem("fcmToken");
+    clearBrokerTokens();
     setUser(null);
   }, [setUser]);
 

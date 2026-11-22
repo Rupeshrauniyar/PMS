@@ -60,7 +60,7 @@ exports.getProperty = async (req, res) => {
           userId: viewer.id,
           active: true,
         })
-          .select("_id bType visitStatus status schedule")
+          .select("_id bType visitStatus status schedule price paymentStatus paymentGateway paymentRef paidAt")
           .lean();
       }
 

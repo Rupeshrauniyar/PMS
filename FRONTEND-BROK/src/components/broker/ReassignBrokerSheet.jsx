@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, ShieldCheck, CheckCircle2, Users } from "lucide-react";
+import { Search, CheckCircle2, Users } from "lucide-react";
 
 import * as brokerApi from "@/api/broker";
 import { useBrokers } from "@/hooks/useVisits";
@@ -8,15 +8,11 @@ import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
-/**
- * Superbroker-exclusive Sheet to assign/reassign a visit to any registered broker.
- */
 export function ReassignBrokerSheet({
   open,
   onOpenChange,
@@ -56,20 +52,13 @@ export function ReassignBrokerSheet({
     setSubmitting(true);
     try {
       const res = await brokerApi.reassignVisit(visit._id, selectedId);
-      const target = brokers.find((b) => b._id === selectedId);
-      toast({
-        variant: "success",
-        title: "Visit reassigned",
-        description: target?.username
-          ? `Assigned to ${target.username}. All parties notified.`
-          : "Broker assignment updated.",
-      });
+      toast({ variant: "success", title: "Broker reassigned" });
       onReassigned?.(res.visit);
       onOpenChange?.(false);
     } catch (err) {
       toast({
         variant: "error",
-        title: "Couldn't reassign broker",
+        title: "Could not reassign",
         description: getErrorMessage(err),
       });
     } finally {
@@ -84,8 +73,7 @@ export function ReassignBrokerSheet({
         if (!submitting) onOpenChange?.(v);
       }}
       dismissible={!submitting}
-      title="Reassign Visit Broker"
-      description="Superbroker override — transfer ownership of this visit to another Propatyc broker."
+      title="Reassign Broker"
       footer={
         <>
           <Button
@@ -96,17 +84,16 @@ export function ReassignBrokerSheet({
             Cancel
           </Button>
           <Button
-            variant="brand"
             onClick={handleConfirm}
             loading={submitting}
             disabled={!selectedId || selectedId === currentBrokerId}
           >
-            Confirm Assignment
+            Confirm
           </Button>
         </>
       }
     >
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="relative">
           <Search
             aria-hidden="true"
@@ -116,23 +103,22 @@ export function ReassignBrokerSheet({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter brokers by name, email, or phone..."
-            aria-label="Filter brokers"
+            placeholder="Search brokers..."
+            aria-label="Search brokers"
             className="pl-10"
           />
         </div>
 
         {loading ? (
-          <div className="space-y-2.5">
-            {[1, 2, 3, 4].map((k) => (
-              <Skeleton key={k} className="h-18 w-full rounded-2xl" />
+          <div className="space-y-2">
+            {[1, 2, 3].map((k) => (
+              <Skeleton key={k} className="h-14 w-full rounded-2xl" />
             ))}
           </div>
         ) : error ? (
           <EmptyState
             icon={Users}
-            title="Couldn't load brokers"
-            description={error.message}
+            title="Could not load brokers"
             action={
               <Button variant="outline" size="sm" onClick={refetch}>
                 Retry
@@ -140,16 +126,11 @@ export function ReassignBrokerSheet({
             }
           />
         ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title="No matching brokers"
-            description="Try clearing your search query."
-          />
+          <EmptyState icon={Users} title="No matching brokers" />
         ) : (
-          <div className="space-y-2" role="radiogroup" aria-label="Select a broker">
+          <div className="divide-y divide-border rounded-2xl border border-border" role="radiogroup">
             {filtered.map((b) => {
               const isSelected = selectedId === b._id;
-              const isCurrent = currentBrokerId === b._id;
               return (
                 <button
                   key={b._id}
@@ -158,43 +139,27 @@ export function ReassignBrokerSheet({
                   aria-checked={isSelected}
                   onClick={() => setSelectedId(b._id)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                    isSelected
-                      ? "border-brand bg-brand-soft/45 shadow-soft"
-                      : "border-border/75 bg-card hover:bg-accent/60",
+                    "flex w-full items-center gap-3 p-3 text-left transition-colors",
+                    isSelected ? "bg-secondary/60" : "hover:bg-secondary/30",
                   )}
                 >
-                  <Avatar src={b.pp} name={b.username} size="default" />
+                  <Avatar src={b.pp} name={b.username} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="truncate text-sm font-bold text-foreground">
-                        {b.username || "Broker"}
-                      </span>
-                      {b.role === "superbroker" ? (
-                        <Badge variant="brand" className="px-2 py-0 text-[10px]">
-                          <ShieldCheck className="size-3" aria-hidden="true" />
-                          Superbroker
-                        </Badge>
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {b.username || "Broker"}
+                      {currentBrokerId === b._id ? (
+                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                          (current)
+                        </span>
                       ) : null}
-                      {isCurrent ? (
-                        <Badge variant="muted" className="px-2 py-0 text-[10px]">
-                          Current
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {b.email}
-                      {b.phone ? ` · ${b.phone}` : ""}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {b.assigned ?? 0} active · {b.email}
                     </p>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <Badge variant="secondary" className="text-[11px]">
-                      {b.assigned ?? 0} active
-                    </Badge>
-                    {isSelected ? (
-                      <CheckCircle2 className="size-4 text-brand" aria-hidden="true" />
-                    ) : null}
-                  </div>
+                  {isSelected ? (
+                    <CheckCircle2 className="size-4 shrink-0 text-foreground" aria-hidden="true" />
+                  ) : null}
                 </button>
               );
             })}

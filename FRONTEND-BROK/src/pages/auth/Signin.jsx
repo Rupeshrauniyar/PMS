@@ -2,8 +2,23 @@ import React, { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeClosed, Lock, Mail } from "lucide-react";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { Capacitor } from "@capacitor/core";
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 
 import { authApi } from "@/api/broker";
+
+if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+  try {
+    GoogleAuth.initialize({
+      clientId:
+        "740141742340-u1ila9q261spisi75680vlhaptp00kqg.apps.googleusercontent.com",
+      scopes: ["profile", "email"],
+      grantOfflineAccess: true,
+    });
+  } catch {
+    /* ignore duplicate init */
+  }
+}
 import { useApp } from "@/contexts/AppContext";
 import { auth } from "@/contexts/Firebase";
 import { getErrorMessage } from "@/lib/errors";
@@ -79,17 +94,32 @@ export default function Signin(props) {
 
   const handleGoogleAuth = async () => {
     if (googleLoading || loading) return;
-    const provider = new GoogleAuthProvider();
     setGoogleLoading(true);
     try {
-      const result = await signInWithPopup(auth, provider);
-      const profile = result?.user?.providerData?.[0] || result?.user;
-      const res = await authApi.signinWithGoogle({
-        email: profile?.email,
-        uuid: profile?.uid,
-        username: profile?.displayName,
-        pp: profile?.photoURL,
-      });
+      let res;
+      if (Capacitor.isNativePlatform()) {
+        await GoogleAuth.signOut().catch(() => {});
+        const data = await GoogleAuth.signIn();
+        res = await authApi.signinWithGoogle({
+          email: data.email,
+          uuid: data.id,
+          username: data.displayName || data.givenName,
+          pp: data.imageUrl,
+          idToken: data.authentication?.idToken,
+        });
+      } else {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const idToken = await result.user.getIdToken().catch(() => undefined);
+        const profile = result?.user?.providerData?.[0] || result?.user;
+        res = await authApi.signinWithGoogle({
+          email: profile?.email,
+          uuid: profile?.uid,
+          username: profile?.displayName,
+          pp: profile?.photoURL,
+          idToken,
+        });
+      }
       if (res?.user) {
         setUser(res.user);
         toast({
@@ -111,17 +141,16 @@ export default function Signin(props) {
 
   return (
     <AuthLayout
-      title="Broker Sign In"
-      subtitle="Sign in to claim pool requests and coordinate 3-way property visits."
+      title="Sign in"
       footer={
         <>
-          <span>New to the Propatyc broker network? </span>
+          <span>New broker? </span>
           <button
             type="button"
             onClick={() => navigate("/signup", { state: { from } })}
-            className="font-bold text-brand hover:underline"
+            className="font-semibold text-foreground hover:underline"
           >
-            Create broker account
+            Create account
           </button>
         </>
       }

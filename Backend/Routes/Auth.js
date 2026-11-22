@@ -5,6 +5,7 @@ const {
   signin,
   signinWithGoogle,
   checkAuth,
+  refreshSession,
   editProfile,
   updateFCM,
   signout,
@@ -20,6 +21,7 @@ router.post("/signout", signout);
 
 router.post("/signinWithGoogle", signinWithGoogle);
 router.get("/checkAuth", checkAuth);
+router.post("/refresh", refreshSession);
 router.get("/notifications", requireUserAuth, getNotifications);
 router.patch(
   "/notifications/:notificationId/read",

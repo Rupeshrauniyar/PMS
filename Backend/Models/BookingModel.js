@@ -61,6 +61,16 @@ const bookingSchema = mongoose.Schema({
     default: true,
   },
 
+  // ---- Payment tracking (for bType === "pay") ----
+  paymentStatus: {
+    type: String,
+    enum: ["unpaid", "paid", "pay_at_property"],
+    default: "unpaid",
+  },
+  paymentGateway: { type: String, default: null },
+  paymentRef: { type: String, default: null },
+  paidAt: { type: Date, default: null },
+
   // ---- Visit workflow (only meaningful when bType === "visit") ----
   visitStatus: { type: String, enum: VISIT_STATUSES, default: undefined },
   preferredSlots: [{ type: Date }],

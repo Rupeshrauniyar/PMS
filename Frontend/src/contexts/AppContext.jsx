@@ -1,14 +1,17 @@
 import React, { createContext, useEffect, useState } from "react";
-import api from "../api/client";
+import api, { clearAuthTokens } from "../api/client";
 
 export const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState(
-    localStorage.getItem("user")
-      ? JSON.parse(localStorage.getItem("user"))
-      : null,
-  );
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   const checkAuth = async () => {
@@ -20,12 +23,14 @@ export const AppProvider = ({ children }) => {
       } else {
         setUser(null);
         localStorage.removeItem("user");
+        clearAuthTokens();
       }
     } catch (err) {
-      setUser(null);
-      localStorage.removeItem("user");
-      if (!err.response?.data?.serverSuccess) {
-        /* session invalid */
+      // Keep cached session on transient offline startup; clear only on 401/403
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        setUser(null);
+        localStorage.removeItem("user");
+        clearAuthTokens();
       }
     } finally {
       setLoading(false);
